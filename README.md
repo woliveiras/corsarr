@@ -10,6 +10,7 @@ In this guide, you’ll learn how to set up a fully automated media server that,
 - Manage content with Sonarr (TV shows), Radarr (movies), Readarr (books), and Lidarr (music)
 - Download subtitles with Bazarr
 - Download files via qBittorrent
+- FlareSolverr to bypass Cloudflare restrictions
 - Stream your media to your TV with Jellyfin
 
 All you need is my `docker-compose.yml` file and a few environment variables!
@@ -122,6 +123,12 @@ Go to **Settings** > **Radarr** and add Radarr (address: `radarr`, port: `7878`,
 Go to **Settings** > **Sonarr** and add Radarr (address: `sonarr`, port: `8989`, base URL: `/`, your API Key).
 
 For Multi-language Search: In Settings > Profiles, edit profiles and change Language to `<Language You Want>` to search for `<Language>` content.
+
+### FlareSolver
+
+You'll need to configure FlareSolverr in each *arr application to bypass Cloudflare restrictions.
+
+Go to **Settings** > **Indexers** and edit each indexer you have added (you may need to add them first if you haven't done so).
 
 ### Jellyfin
 

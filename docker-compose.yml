@@ -37,7 +37,24 @@ services:
       - "9696:9696"       # Web Interface
     env_file:
       - ./.env
-  
+
+  # Captcha Solver
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    hostname: flaresolverr
+    networks:
+      - media
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+    ports:
+      - "${PORT:-8191}:8191"
+    env_file:
+      - ./.env
+
   # Media Management (Movies and Series)
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -157,7 +174,6 @@ services:
     ports:
       - "8096:8096/tcp"   # Web Interface
       - "7359:7359/udp"   # Auto Discovery
-      - "1900:1900/udp"   # DLNA/UPnP
     env_file:
       - ./.env
 
