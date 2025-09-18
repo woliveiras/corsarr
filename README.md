@@ -24,20 +24,32 @@ All you need is my `docker-compose.yml` file and a few environment variables!
 1. **Clone the Repository**: Clone this repository to your server using the following command:
 
    ```bash
-   git clone git@github.com:woliveiras/stack-rr.git
+   mkdir servarr && cd servarr
+
+   git clone git@github.com:woliveiras/stack-rr.git .
    ```
 
    If you prefer using HTTPS, use this command instead:
 
    ```bash
-   git clone https://github.com/woliveiras/stack-rr.git
+   mkdir servarr && cd servarr
+
+   git clone https://github.com/woliveiras/stack-rr.git .
    ```
 
-1. **Navigate to the Directory**: Change into the cloned directory:
+1. **Navigate to the Directory**: we can use two settings here:
 
-   ```bash
-   cd stack-rr
-   ```
+   - `simple`: without VPN
+
+      ```bash
+      cd simple
+      ```
+
+   - `vpn`: with VPN (you need to configure your VPN settings in the `.env` file)
+
+      ```bash
+      cd vpn
+      ```
 
 1. **Configure Environment Variables**: You need to set up your environment variables. Change the name of the file `.env.example` to `.env`. Set the following variables:
 
@@ -52,6 +64,9 @@ All you need is my `docker-compose.yml` file and a few environment variables!
    PGID=1000
    UMASK=002
    ```
+
+   If you are using the VPN setup, you also need to configure your VPN settings in the `.env` file. Check to the comments in the file for guidance.
+
 
 ## Running the Stack
 
@@ -71,8 +86,12 @@ All you need is my `docker-compose.yml` file and a few environment variables!
    - Lidarr: `http://<your-server-ip>:8686`
    - Readarr: `http://<your-server-ip>:8787`
    - Bazarr: `http://<your-server-ip>:6767`
+   - qBittorrent: `http://<your-server-ip>:8081`
+   - Prowlarr: `http://<your-server-ip>:9696`
+   - Jellyfin: `http://<your-server-ip>:8096`
+   - Jellyseerr (optional): `http://<your-server-ip>:5055`
 
-   Ex.: Radarr: `http://localhost:7878/`, qBittorrent: `http://localhost:8081/`, Jellyfin: `http://localhost:8096/`
+   Ex.: Radarr: `http://localhost:7878/` for local access or `192.168.1.x:7878/` for network access (your computer need to be available in the network for this option).
 
 3. **Stopping the Stack**: To stop the stack, run:
 
@@ -145,43 +164,6 @@ Jellyseerr is a request management system for movies and TV shows that integrate
 It allows users to request new content, view existing requests, and manage their media library through a user-friendly interface.
 
 Access `http://localhost:5055/` and follow the initial setup instructions.
-
-## VPN Setup (Optional)
-
-For Global VPN: Go to the `docker-compose.yml` file and add the following lines:
-
-```yaml
-  gluetun:
-    image: ghcr.io/qdm12/gluetun
-    container_name: gluetun
-    restart: always
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    # ports:
-    #   - 8888:8888/tcp # HTTP proxy
-    #   - 8388:8388/tcp # Shadowsocks
-    #   - 8388:8388/udp # Shadowsocks
-    volumes:
-      - ./data:/gluetun
-      - ./wireguard.conf:/gluetun/wireguard/wg0.conf
-    environment:
-      # See https://github.com/qdm12/gluetun-wiki/tree/main/setup#setup
-      - VPN_SERVICE_PROVIDER=ivpn
-      - VPN_TYPE=openvpn
-      # OpenVPN:
-      - OPENVPN_USER=
-      - OPENVPN_PASSWORD=
-      # Wireguard:
-      # - WIREGUARD_PRIVATE_KEY=wOEI9rqqbDwnN8/Bpp22sVz48T71vJ4fYmFWujulwUU=
-      # - WIREGUARD_ADDRESSES=10.64.222.21/32
-      # Timezone for accurate log times
-      - TZ=
-      # Server list updater
-      # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
-      - UPDATER_PERIOD=
-```
 
 ## Demo: Downloading Public Domain Content
 

@@ -1,0 +1,166 @@
+services:
+  # Download Managers (Torrent)
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    hostname: qbittorrent
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/qbittorrent:/config
+      - ${ARRPATH}data/downloads:/downloads
+      - ${ARRPATH}data/movies:/data/movies
+    ports:
+      - "8081:8081"       # Web Interface
+      - "6881:6881"       # TCP Port for Torrents
+      - "6881:6881/udp"   # UDP Port for Torrents
+    environment:
+      - WEBUI_PORT=8081
+      - TORRENTING_PORT=6881
+    env_file:
+      - ./.env
+
+  # Indexers
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    hostname: prowlarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/prowlarr:/config
+      - ${ARRPATH}backup/prowlarr:/data/backup
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "9696:9696"       # Web Interface
+    env_file:
+      - ./.env
+  
+  # Media Management (Movies and Series)
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    hostname: sonarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/sonarr:/config
+      - ${ARRPATH}backup/sonarr:/data/backup
+      - ${ARRPATH}data/tvshows:/data/tvshows
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "8989:8989"       # Web Interface
+    env_file:
+      - ./.env
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    hostname: radarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/radarr:/config
+      - ${ARRPATH}backup/radarr:/data/backup
+      - ${ARRPATH}data/movies:/data/movies
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "7878:7878"       # Web Interface
+    env_file:
+      - ./.env
+  
+  # Music Management
+  lidarr:
+    image: ghcr.io/hotio/lidarr:latest
+    container_name: lidarr
+    hostname: lidarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/lidarr:/config
+      - ${ARRPATH}data/music:/music
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "8686:8686"       # Web Interface
+    env_file:
+      - ./.env
+  
+  # Book Management
+  readarr:
+    image: ghcr.io/hotio/readarr:latest
+    container_name: readarr
+    hostname: readarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/readarr:/config
+      - ${ARRPATH}data/books:/books
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "8787:8787"       # Web Interface
+    env_file:
+      - ./.env
+
+  # Subtitle Management
+  bazarr:
+    image: ghcr.io/hotio/bazarr:latest
+    container_name: bazarr
+    hostname: bazarr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/bazarr:/config
+      - ${ARRPATH}data/movies:/data/movies
+      - ${ARRPATH}data/tvshows:/data/tvshows
+    ports:
+      - "6767:6767"       # Web Interface
+    env_file:
+      - ./.env
+
+  # Request Management
+  # Unified Requests for Movies and TV Shows
+  # Connects with Sonarr, Radarr, Lidarr, Readarr, and Jellyfin
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    hostname: jellyseerr
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/jellyseerr:/app/config
+    ports:
+      - "5055:5055"       # Web Interface
+    env_file:
+      - ./.env
+
+  # Multimedia Streaming Servers
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    hostname: jellyfin
+    networks:
+      - media
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/jellyfin:/config
+      - ${ARRPATH}data/movies:/data/movies
+      - ${ARRPATH}data/tvshows:/data/tvshows
+      - ${ARRPATH}data/downloads:/downloads
+    ports:
+      - "8096:8096/tcp"   # Web Interface
+      - "7359:7359/udp"   # Auto Discovery
+      - "1900:1900/udp"   # DLNA/UPnP
+    env_file:
+      - ./.env
+
+networks:
+  media:
+    driver: bridge

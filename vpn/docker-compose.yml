@@ -1,20 +1,56 @@
 services:
+  # VPN Service
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}config/gluetun:/gluetun
+    ports:
+      # Common VPN Ports
+      - "8888:8888/tcp" # HTTP proxy
+      - "8388:8388/tcp" # Shadowsocks
+      - "8388:8388/udp" # Shadowsocks
+      # qBittorrent
+      - "8081:8081"       # Web Interface
+      - "6881:6881"       # TCP Port for Torrents
+      - "6881:6881/udp"   # UDP Port for Torrents
+      # Prowlarr
+      - "9696:9696"       # Web Interface
+      # FlareSolverr
+      - "8191:8191"       # Web Interface
+      # Sonarr
+      - "8989:8989"       # Web Interface
+      # Radarr
+      - "7878:7878"       # Web Interface
+      # Lidarr
+      - "8686:8686"       # Web Interface
+      # Readarr
+      - "8787:8787"       # Web Interface
+      # Bazarr
+      - "6767:6767"       # Web Interface
+      # Jellyseerr
+      - "5055:5055"       # Web Interface
+      # Jellyfin
+      - "8096:8096/tcp"   # Web Interface
+      - "7359:7359/udp"   # Auto Discovery
+    env_file:
+      - ./.env
+
   # Download Managers (Torrent)
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
-    hostname: qbittorrent
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/qbittorrent:/config
       - ${ARRPATH}data/downloads:/downloads
       - ${ARRPATH}data/movies:/data/movies
-    ports:
-      - "8081:8081"       # Web Interface
-      - "6881:6881"       # TCP Port for Torrents
-      - "6881:6881/udp"   # UDP Port for Torrents
     environment:
       - WEBUI_PORT=8081
       - TORRENTING_PORT=6881
@@ -25,16 +61,12 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
-    hostname: prowlarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/prowlarr:/config
       - ${ARRPATH}backup/prowlarr:/data/backup
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "9696:9696"       # Web Interface
     env_file:
       - ./.env
 
@@ -42,16 +74,12 @@ services:
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
-    hostname: flaresolverr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_HTML=${LOG_HTML:-false}
       - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-    ports:
-      - "${PORT:-8191}:8191"
     env_file:
       - ./.env
 
@@ -59,34 +87,26 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    hostname: sonarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/sonarr:/config
       - ${ARRPATH}backup/sonarr:/data/backup
       - ${ARRPATH}data/tvshows:/data/tvshows
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "8989:8989"       # Web Interface
     env_file:
       - ./.env
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    hostname: radarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/radarr:/config
       - ${ARRPATH}backup/radarr:/data/backup
       - ${ARRPATH}data/movies:/data/movies
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "7878:7878"       # Web Interface
     env_file:
       - ./.env
   
@@ -94,16 +114,12 @@ services:
   lidarr:
     image: ghcr.io/hotio/lidarr:latest
     container_name: lidarr
-    hostname: lidarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/lidarr:/config
       - ${ARRPATH}data/music:/music
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "8686:8686"       # Web Interface
     env_file:
       - ./.env
   
@@ -111,16 +127,12 @@ services:
   readarr:
     image: ghcr.io/hotio/readarr:latest
     container_name: readarr
-    hostname: readarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/readarr:/config
       - ${ARRPATH}data/books:/books
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "8787:8787"       # Web Interface
     env_file:
       - ./.env
 
@@ -128,16 +140,12 @@ services:
   bazarr:
     image: ghcr.io/hotio/bazarr:latest
     container_name: bazarr
-    hostname: bazarr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/bazarr:/config
       - ${ARRPATH}data/movies:/data/movies
       - ${ARRPATH}data/tvshows:/data/tvshows
-    ports:
-      - "6767:6767"       # Web Interface
     env_file:
       - ./.env
 
@@ -147,14 +155,10 @@ services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
-    hostname: jellyseerr
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/jellyseerr:/app/config
-    ports:
-      - "5055:5055"       # Web Interface
     env_file:
       - ./.env
 
@@ -162,21 +166,12 @@ services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    hostname: jellyfin
-    networks:
-      - media
+    network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/jellyfin:/config
       - ${ARRPATH}data/movies:/data/movies
       - ${ARRPATH}data/tvshows:/data/tvshows
       - ${ARRPATH}data/downloads:/downloads
-    ports:
-      - "8096:8096/tcp"   # Web Interface
-      - "7359:7359/udp"   # Auto Discovery
     env_file:
       - ./.env
-
-networks:
-  media:
-    driver: bridge
