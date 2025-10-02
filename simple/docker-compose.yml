@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/lidarr:/config
-      - ${ARRPATH}data/music:/music
+      - ${ARRPATH}data/music:/data/music
       - ${ARRPATH}data/downloads:/downloads
     ports:
       - "8686:8686"       # Web Interface
@@ -91,19 +91,21 @@ services:
       - ./.env
   
   # Book Management
-  readarr:
-    image: ghcr.io/hotio/readarr:latest
-    container_name: readarr
-    hostname: readarr
+  lazylibrarian:
+    image: lscr.io/linuxserver/lazylibrarian:latest
+    container_name: lazylibrarian
+    hostname: lazylibrarian
     networks:
       - media
+    environment:
+      - DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg
     restart: unless-stopped
     volumes:
-      - ${ARRPATH}config/readarr:/config
-      - ${ARRPATH}data/books:/books
+      - ${ARRPATH}config/lazylibrarian/data:/config
       - ${ARRPATH}data/downloads:/downloads
+      - ${ARRPATH}data/books:/books
     ports:
-      - "8787:8787"       # Web Interface
+      - "5299:5299"       # Web Interface
     env_file:
       - ./.env
 

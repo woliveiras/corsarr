@@ -29,8 +29,8 @@ services:
       - "7878:7878"       # Web Interface
       # Lidarr
       - "8686:8686"       # Web Interface
-      # Readarr
-      - "8787:8787"       # Web Interface
+      # LazyLibrarian
+      - "5299:5299"       # Web Interface
       # Bazarr
       - "6767:6767"       # Web Interface
       # Jellyseerr
@@ -118,21 +118,23 @@ services:
     restart: unless-stopped
     volumes:
       - ${ARRPATH}config/lidarr:/config
-      - ${ARRPATH}data/music:/music
+      - ${ARRPATH}data/music:/data/music
       - ${ARRPATH}data/downloads:/downloads
     env_file:
       - ./.env
   
   # Book Management
-  readarr:
-    image: ghcr.io/hotio/readarr:latest
-    container_name: readarr
+  lazylibrarian:
+    image: lscr.io/linuxserver/lazylibrarian:latest
+    container_name: lazylibrarian
+    environment:
+      - DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg
     network_mode: "service:gluetun"
     restart: unless-stopped
     volumes:
-      - ${ARRPATH}config/readarr:/config
-      - ${ARRPATH}data/books:/books
+      - ${ARRPATH}config/lazylibrarian/data:/config
       - ${ARRPATH}data/downloads:/downloads
+      - ${ARRPATH}data/books:/books
     env_file:
       - ./.env
 
