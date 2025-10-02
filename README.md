@@ -1,13 +1,13 @@
 # Stack*RR
 
-> Fast way for running for Radarr, Lidarr, Readarr, and Bazarr
+> Fast way for running for Radarr, Lidarr, LazyLibrarian, and Bazarr
 
-This repository contains a Docker Compose setup for managing various media applications, including Radarr, Lidarr, Readarr, and Bazarr. The setup is designed to run on a Linux server with Docker and Docker Compose installed.
+This repository contains a Docker Compose setup for managing various media applications, including Radarr, Lidarr, LazyLibrarian, and Bazarr. The setup is designed to run on a Linux server with Docker and Docker Compose installed.
 
 In this guide, you’ll learn how to set up a fully automated media server that, when you add a movie or TV show, will:
 
 - Search for torrents/magnet links using Prowlarr and Jellyseerr (optional)
-- Manage content with Sonarr (TV shows), Radarr (movies), Readarr (books), and Lidarr (music)
+- Manage content with Sonarr (TV shows), Radarr (movies), LazyLibrarian (books), and Lidarr (music)
 - Download subtitles with Bazarr
 - Download files via qBittorrent
 - FlareSolverr to bypass Cloudflare restrictions
@@ -84,7 +84,7 @@ All you need is my `docker-compose.yml` file and a few environment variables!
 
    - Radarr: `http://<your-server-ip>:7878`
    - Lidarr: `http://<your-server-ip>:8686`
-   - Readarr: `http://<your-server-ip>:8787`
+   - LazyLibrarian: `http://<your-server-ip>:5299`
    - Bazarr: `http://<your-server-ip>:6767`
    - qBittorrent: `http://<your-server-ip>:8081`
    - Prowlarr: `http://<your-server-ip>:9696`
@@ -113,7 +113,7 @@ Set the download path to `/downloads` in Tools > Options > Downloads and click S
 
 You don't need to paste magnet links in qBittorrent. The *arr applications will do that for you.
 
-### Radarr, Lidarr, Readarr
+### Radarr, Lidarr, LazyLibrarian, Sonarr
 
 Access `http://<YOUR_SERVER>:7878` (Radarr) or `8989` (Sonarr).
 
@@ -129,7 +129,7 @@ Access `http://<YOUR_SERVER>:9696`
 
 Go to **Settings** > **Download Clients** and click on the plus button (+): add *qBittorrent* (host: `qbittorrent`, port: `8081`, your username and password).
 
-Go to **Settings** > **Apps**: add Radarr, Lidarr, Readarr and Sonarr using their URLs and API Keys you copied earlier. In the Prowlarr Server, use `http://Prowlarr:9696`, and in the Radarr/Lidarr/Readarr/Sonarr Server, use `http://Lidarr:8686`, `http://Radarr:7878`, `http://Readarr:8787` or `http://Sonarr:8989`.
+Go to **Settings** > **Apps**: add Radarr, Lidarr, LazyLibrarian and Sonarr using their URLs and API Keys you copied earlier. In the Prowlarr Server, use `http://Prowlarr:9696`, and in the Radarr/Lidarr/LazyLibrarian/Sonarr Server, use `http://Lidarr:8686`, `http://Radarr:7878`, `http://LazyLibrarian:5299` or `http://Sonarr:8989`.
 
 ### Bazarr
 
@@ -235,7 +235,7 @@ For automated backups, consider using tools like [Duplicati](https://www.duplica
 - [Radarr Documentation](https://wiki.servarr.com/radarr)
 - [Sonarr Documentation](https://wiki.servarr.com/sonarr)
 - [Lidarr Documentation](https://wiki.servarr.com/lidarr)
-- [Readarr Documentation](https://wiki.servarr.com/readarr)
+- [LazyLibrarian Documentation](https://lazylibrarian.gitlab.io/)
 - [Bazarr Documentation](https://wiki.bazarr.media/)
 - [qBittorrent Documentation](https://github.com/qbittorrent/qBittorrent/wiki)
 - [Jellyfin Documentation](https://jellyfin.org/docs/)
