@@ -47,7 +47,8 @@ corsarr-cli/
 │   │   └── registry.go   # Registry pattern para gerenciar serviços
 │   │
 │   ├── generator/
-│   │   ├── compose.go    # Geração do docker-compose.yml
+│   │   ├── compose.go    # Orquestrador de geração do docker-compose.yml
+│   │   ├── strategy.go   # Strategy Pattern (VPN/Bridge mode)
 │   │   ├── env.go        # Geração do arquivo .env
 │   │   └── network.go    # Configuração de redes Docker
 │   │
@@ -66,11 +67,10 @@ corsarr-cli/
 │
 ├── templates/
 │   ├── docker-compose/
-│   │   ├── base.tmpl            # Template base do compose (services, networks, volumes)
-│   │   ├── vpn-mode.tmpl        # Configuração específica para modo VPN
-│   │   └── network-mode.tmpl    # Configuração específica para modo network bridge
+│   │   ├── vpn-mode.tmpl        # Template específico para modo VPN
+│   │   └── bridge-mode.tmpl     # Template específico para modo network bridge
 │   │
-│   ├── services/                # Definições de cada serviço
+│   ├── services/                # Definições de cada serviço (localizadas em internal/services/templates/)
 │   │   ├── qbittorrent.yaml
 │   │   ├── prowlarr.yaml
 │   │   ├── flaresolverr.yaml
@@ -750,26 +750,30 @@ require (
 - [x] Documentar cada serviço em múltiplos idiomas
 - [x] Criar testes unitários para services package
 
-### Fase 4: Templates
-- [ ] Criar template base do docker-compose
-- [ ] Criar definições YAML de cada serviço
-- [ ] Criar template de .env
-- [ ] Implementar parser de service definitions
-- [ ] Testar geração de templates com diferentes combinações
+### Fase 4: Templates ✅
+- [x] Criar templates separados para VPN e bridge mode
+- [x] Criar definições YAML de cada serviço
+- [x] Criar template de .env
+- [x] Implementar Strategy Pattern para geração de compose
+- [x] Implementar geradores (compose, env, network)
+- [x] Criar testes unitários para todos os geradores
+- [x] Testar geração com diferentes combinações
 
 ### Fase 5: Interface Interativa
-- [ ] Implementar prompt de seleção de idioma (PRIMEIRO PASSO)
+- [ ] Implementar prompt de seleção de idioma (usa sistema i18n existente)
 - [ ] Implementar prompt de seleção de VPN
-- [ ] Implementar prompt de seleção de serviços
-- [ ] Implementar prompt de configuração de variáveis
-- [ ] Implementar validações inline
-- [ ] Garantir que todas as mensagens sejam traduzidas
+- [ ] Implementar prompt de seleção de serviços (com categorias)
+- [ ] Implementar prompt de configuração de variáveis (ARRPATH, TZ, PUID, PGID, UMASK)
+- [ ] Implementar prompts de configuração VPN (se VPN habilitado)
+- [ ] Implementar validações inline durante prompts
+- [ ] Integrar com geradores criados na Fase 4
 
-### Fase 6: Geradores
-- [ ] Implementar gerador de docker-compose.yml
-- [ ] Implementar gerador de .env
-- [ ] Implementar sistema de backup
-- [ ] Testar geração com diferentes combinações
+### Fase 6: Geradores ✅
+- [x] Implementar gerador de docker-compose.yml com Strategy Pattern
+- [x] Implementar gerador de .env
+- [x] Implementar sistema de backup automático
+- [x] Implementar função Preview (sem salvar arquivos)
+- [x] Testar geração com diferentes combinações
 
 ### Fase 7: Validações
 - [ ] Validação de portas (mensagens traduzidas)
@@ -1027,6 +1031,6 @@ Todos os serviços usam `restart: unless-stopped`
 
 **Última atualização**: 2025-12-05
 
-**Status**: 📋 Planejamento completo
+**Status**: 🚧 Em desenvolvimento - Fase 5 (Interface Interativa)
 
-**Próximo passo**: Iniciar Fase 1 - Estrutura Base
+**Próximo passo**: Implementar prompts interativos com survey
