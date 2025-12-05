@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -252,16 +254,23 @@ func runGenerate(t *i18n.I18n) error {
 
 	// Step 4.5: Ask for output directory if not set via flag and in interactive mode
 	if outputDir == "." && !noInteractive && loadedProfile == nil {
+		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("\n📂 Output directory (default: current directory): ")
-		var userOutputDir string
-		fmt.Scanln(&userOutputDir)
+		userOutputDirInput, err := reader.ReadString('\n')
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("failed to read output directory: %w", err)
+		}
+		userOutputDir := strings.TrimSpace(userOutputDirInput)
 		if userOutputDir != "" {
 			outputDir = userOutputDir
-			
+
 			// Ask if user wants to use the same path for volumes
 			fmt.Print("📦 Use the same directory for service volumes? (Y/n): ")
-			var useForVolumes string
-			fmt.Scanln(&useForVolumes)
+			useForVolumesInput, err := reader.ReadString('\n')
+			if err != nil && err != io.EOF {
+				return fmt.Errorf("failed to read volume directory selection: %w", err)
+			}
+			useForVolumes := strings.TrimSpace(useForVolumesInput)
 			if useForVolumes == "" || strings.ToLower(useForVolumes) == "y" {
 				// Ensure path ends with /
 				if !strings.HasSuffix(outputDir, "/") {
