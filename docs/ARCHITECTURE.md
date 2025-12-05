@@ -1021,11 +1021,113 @@ Todos os serviços usam `restart: unless-stopped`
 
 ## 🔐 Segurança
 
-- [ ] Nunca logar senhas ou chaves
-- [ ] Arquivo .env com permissões 600
-- [ ] Validar inputs do usuário
-- [ ] Sanitizar paths
-- [ ] Não executar comandos shell com input do usuário
+### Análise de Implementação ✅
+
+#### 1. Nunca logar senhas ou chaves ✅
+- [x] **Implementado**: Senhas usam `EchoMode(huh.EchoModePassword)` (internal/prompts/config.go:47)
+- [x] **Verificado**: Nenhum `fmt.Print` de passwords/keys encontrado no código
+- [x] **Profiles**: Senhas armazenadas em profiles (JSON/YAML) com `omitempty` tag
+- [x] **Recomendação**: Considerar criptografia para profiles em versões futuras
+
+**Arquivos verificados**:
+- `internal/prompts/config.go`: Input de WireGuard private key usa password mode
+- `cmd/generate.go`: Nenhum log de credenciais
+- `internal/profile/profile.go`: Password field com tag `omitempty`
+
+#### 2. Arquivo .env com permissões adequadas ⚠️
+- [x] **Implementado**: `.env` criado com `0644` (internal/generator/env.go:68)
+- [ ] **MELHORIA NECESSÁRIA**: Deveria usar `0600` para maior segurança
+- [x] **Backup**: Arquivos de backup também usam `0644`
+
+**Ação requerida**:
+```go
+// internal/generator/env.go:68
+- os.WriteFile(outputPath, []byte(content), 0644)
++ os.WriteFile(outputPath, []byte(content), 0600)
+
+// internal/generator/env.go:119
+- os.WriteFile(backupPath, content, 0644)
++ os.WriteFile(backupPath, content, 0600)
+```
+
+#### 3. Validar inputs do usuário ✅
+- [x] **Path Validation**: `internal/validator/path.go` valida:
+  - Paths vazios
+  - Existência de diretórios
+  - Permissões de escrita
+  - Espaço em disco disponível
+- [x] **Port Validation**: `internal/validator/ports.go` detecta conflitos
+- [x] **Dependencies**: `internal/validator/dependencies.go` valida serviços
+- [x] **Docker**: `internal/validator/docker.go` verifica instalação
+
+**Implementação completa** em:
+- `internal/validator/path.go:125-152`: Funções `ValidatePath()` e `EnsurePathExists()`
+- `internal/validator/validator.go`: Sistema de validação com severidade
+
+#### 4. Sanitizar paths ✅
+- [x] **filepath.Join**: Usado em todos os lugares para construção de paths
+- [x] **filepath.Clean**: Implícito no uso de `filepath.Join`
+- [x] **MkdirAll**: Usa `0755` para permissões seguras de diretórios
+- [x] **Path traversal**: Não encontrado uso de concatenação insegura
+
+**Arquivos verificados**:
+- `internal/generator/compose.go:62,122,131`: Usa `filepath.Join`
+- `internal/generator/env.go:68,101,110`: Usa `filepath.Join`
+- `internal/profile/profile.go:59,77`: Usa `filepath.Join`
+- `internal/validator/path.go:102`: Usa `filepath.Join` para teste de escrita
+
+#### 5. Não executar comandos shell com input do usuário ✅
+- [x] **exec.Command**: Sempre usa argumentos fixos, nunca input do usuário
+- [x] **Docker commands**: Paths passados como argumentos separados
+- [x] **Sem shell injection**: Nenhum uso de `bash -c` ou concatenação de comandos
+
+**Comandos seguros verificados**:
+```go
+// cmd/health.go:143
+exec.CommandContext(ctx, "docker", "info")
+
+// cmd/health.go:151
+exec.CommandContext(ctx, "docker", "compose", "-f", dir+"/docker-compose.yml", "ps", "--format", "json")
+
+// cmd/check_ports.go:226
+exec.Command("lsof", "-i", fmt.Sprintf(":%d", port), "-t")
+
+// internal/validator/docker.go:75,94,107,125
+exec.Command("docker", "--version")
+exec.Command("docker", "compose", "version")
+```
+
+**Nota**: Todos os comandos usam argumentos separados, não shell strings.
+
+### Checklist Final
+
+- [x] ✅ Senhas não são logadas
+- [x] ✅ `.env` criado com permissão `0600` (CORRIGIDO)
+- [x] ✅ Backups do `.env` também com `0600` (CORRIGIDO)
+- [x] ✅ Inputs validados
+- [x] ✅ Paths sanitizados com `filepath.Join`
+- [x] ✅ Comandos shell seguros (sem user input)
+- [x] ✅ Profiles com `omitempty` para senhas
+- [x] ✅ Password input mode em prompts
+- [x] ✅ Teste automatizado de permissões adicionado
+
+### Melhorias Implementadas
+
+1. **Permissões de arquivo** (✅ IMPLEMENTADO):
+   - ✅ Alterado `.env` de `0644` para `0600`
+   - ✅ Backups do `.env` também usam `0600`
+   - ✅ Teste automatizado criado para validar permissões
+   
+### Melhorias Recomendadas (Pós-v1.0.0)
+
+1. **Criptografia de profiles** (PRIORIDADE MÉDIA):
+   - Criptografar senhas em profiles salvos
+   - Usar keyring do sistema operacional
+   
+2. **Auditoria de segurança** (PRIORIDADE BAIXA):
+   - Adicionar testes de segurança automatizados
+   - Scan de dependências para vulnerabilidades
+   - CodeQL analysis no GitHub Actions
 
 ---
 
@@ -1040,69 +1142,6 @@ Todos os serviços usam `restart: unless-stopped`
 - [go-i18n](https://github.com/nicksnyder/go-i18n)
 
 ---
-
-## 📊 Status Atual
-
-**Última atualização**: 2025-12-05
-
-**Status**: ✅ **Fase 9 Completa - Pronto para v1.0.0** 🎉
-
-### ✅ Completado
-
-**Fases 1-9**: Estrutura base, i18n, serviços, templates, interface interativa, geradores, validações, sistema de perfis, features extras e documentação completa
-
-**Funcionalidades Implementadas**:
-- ✅ CLI multilíngue (EN, PT-BR, ES) com go-i18n v2
-- ✅ Interface TUI moderna com Huh/Bubble Tea
-- ✅ 12 serviços suportados com registry pattern
-- ✅ Geração de docker-compose.yml (VPN/Bridge modes)
-- ✅ Geração de .env com variáveis configuráveis
-- ✅ Sistema de validação com 4 validadores
-- ✅ Sistema de perfis (save/load/list/delete/export/import)
-- ✅ Integração perfis + generate command
-- ✅ Preview e dry-run modes
-- ✅ Comando health (status dos containers)
-- ✅ Comando check-ports (verificação de conflitos de portas)
-- ✅ Modo não-interativo completo (CI/CD ready)
-- ✅ Suporte a arquivo de configuração (YAML/JSON)
-- ✅ 16 flags para modo não-interativo
-- ✅ Troubleshooting guide expandido (15+ problemas)
-- ✅ README principal atualizado
-- ✅ Documentação completa em 3 idiomas
-- ✅ 57 testes unitários (100% passing)
-
-**Cobertura de Testes**:
-- internal/generator: 13 testes
-- internal/services: 13 testes  
-- internal/validator: 18 testes
-- internal/profile: 13 testes
-
-### 🚀 Próximos Passos (v1.0.0)
-
-**Pronto para Release**:
-- ✅ Todas as features principais implementadas
-- ✅ Documentação completa
-- ✅ Testes unitários passando
-- ✅ CI/CD support
-- ✅ Troubleshooting guide
-
-**Opcional (pós-v1.0.0)**:
-- ⏳ Testes de integração end-to-end
-- ⏳ Binários pré-compilados para releases
-- ⏳ GitHub Actions para build automático
-- ⏳ Instalação via package managers (brew, apt)
-
-### 📝 Release Checklist v1.0.0
-
-- [x] Todas as features implementadas
-- [x] Documentação completa (README, ARCHITECTURE, CLI docs)
-- [x] Troubleshooting guide expandido
-- [x] Testes unitários (57 testes passando)
-- [x] Exemplos de uso (interativo, CI/CD, manual)
-- [ ] Criar tag v1.0.0 no Git
-- [ ] Gerar binários para Linux/Mac/Windows
-- [ ] Publicar release notes
-- [ ] Atualizar GitHub Pages (opcional)
 
 ### 🛠️ Stack Tecnológica
 

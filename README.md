@@ -2,414 +2,569 @@
 
 > Navigate the high seas of media automation
 
-Fast and easy way to run your *arr stack: Radarr, Sonarr, Lidarr, Prowlarr, Bazarr and more!
+The easiest way to set up and manage your complete media automation stack with Docker Compose.
 
-## 🚀 Quick Start with CLI (Recommended)
-
-**The easiest way to get started** is using the Corsarr CLI:
-
-```bash
-# Clone the repository
-git clone https://github.com/woliveiras/corsarr.git
-cd corsarr/cli
-
-# Build the CLI
-go build -o corsarr .
-
-# Generate your stack interactively
-./corsarr generate
-
-# Start your services
-docker compose up -d
-```
-
-**The CLI will**:
-- 🌍 Let you choose your language (EN/PT-BR/ES)
-- 🎯 Guide you through service selection
-- 🔧 Configure all environment variables
-- ✅ Validate your setup automatically
-- 📦 Generate `docker-compose.yml` and `.env` files
-
-**[→ Full CLI Documentation](cli/README.md)**
-
----
+**No configuration files to edit. No YAML to learn. Just answer a few questions.**
 
 ## 📖 What is Corsarr?
 
-This repository provides an automated media server setup that handles:
-
-- 🔍 **Search**: Find torrents with Prowlarr and request content via Jellyseerr
-- 📺 **Management**: Organize TV shows (Sonarr), movies (Radarr), music (Lidarr), books (LazyLibrarian)
-- 💬 **Subtitles**: Auto-download with Bazarr
-- ⬇️ **Downloads**: qBittorrent for torrent management
-- 🔓 **Bypass**: FlareSolverr to handle Cloudflare restrictions
-- 🎬 **Streaming**: Watch everything with Jellyfin
-- 🔒 **Security**: Optional VPN support with Gluetun
-
----
-
-## 🎯 Two Ways to Use Corsarr
-
-### Option 1: CLI Tool (Recommended) ⭐
-
-Modern, interactive CLI that generates custom configurations:
-
-**Features**:
-- ✅ Interactive TUI with validation
-- ✅ Multilingual (EN, PT-BR, ES)
-- ✅ Save/load configuration profiles
-- ✅ VPN and non-VPN modes
-- ✅ Health checks and port scanning
-- ✅ CI/CD ready (non-interactive mode)
-- ✅ 12 services supported
-
-**[→ CLI Documentation](cli/README.md)**
-
-### Option 2: Manual Setup (Traditional)
-
-Use pre-configured `docker-compose.yml` files in `simple/` or `vpn/` directories.
-
-**[→ Jump to Manual Setup Instructions](#manual-setup)**
-
----
-
-## Prerequisites
-
-- [Docker and Docker Compose](https://docs.docker.com/compose/install/#docker-desktop-recommended) v2+ installed
-- (For CLI) Go 1.24.2+ to build from source
-- Linux, macOS, or Windows with WSL2
-
----
-
-# Manual Setup
-
-**Note**: For a better experience, use the [CLI tool](#quick-start-with-cli-recommended) instead. The instructions below are for manual setup using pre-configured files.
-
-## Setup Instructions
-
-1. **Clone the Repository**: Clone this repository to your server using the following command:
-
-   ```bash
-   mkdir corsarr && cd corsarr
-
-   git clone git@github.com:woliveiras/corsarr.git .
-   ```
-
-   If you prefer using HTTPS, use this command instead:
-
-   ```bash
-   mkdir corsarr && cd corsarr
-
-   git clone https://github.com/woliveiras/corsarr.git .
-   ```
-
-1. **Navigate to the Directory**: we can use two settings here:
-
-   - `simple`: without VPN
-
-      ```bash
-      cd simple
-      ```
-
-   - `vpn`: with VPN (you need to configure your VPN settings in the `.env` file)
-
-      ```bash
-      cd vpn
-      ```
-
-1. **Configure Environment Variables**: You need to set up your environment variables. Change the name of the file `.env.example` to `.env`. Set the following variables:
-
-   ```env
-   ARRPATH=/arr/      # Path to your media library, keep the final slash
-                      # Example: ARRPATH=/path/to/your/media/ 
-                      # /Users/<User>/Downloads/RADARR/
-   TZ=Europe/Madrid   # Set your timezone https://www.timeanddate.com/time/map/
-
-   # You don't need to change the following ones unless you have a specific reason
-   PUID=1000
-   PGID=1000
-   UMASK=002
-   ```
-
-   If you are using the VPN setup, you also need to configure your VPN settings in the `.env` file. Check to the comments in the file for guidance.
-
-
-## Running the Stack
-
-1. **Start the Stack**: Use Docker Compose to start the stack. Run the following command in the directory where your `docker-compose.yml` file is located:
-
-   ```bash
-   docker-compose up -d
-   ```
-
-   This command will pull the necessary images and start the containers in detached mode.
-
-   The first time you run this command, it may take a while to download all the images and set up the containers.
-
-2. **Access the Applications**: Once the containers are running, you can access the applications via your web browser:
-
-   - Radarr: `http://<your-server-ip>:7878`
-   - Lidarr: `http://<your-server-ip>:8686`
-   - LazyLibrarian: `http://<your-server-ip>:5299`
-   - Bazarr: `http://<your-server-ip>:6767`
-   - qBittorrent: `http://<your-server-ip>:8081`
-   - Prowlarr: `http://<your-server-ip>:9696`
-   - Jellyfin: `http://<your-server-ip>:8096`
-   - Jellyseerr (optional): `http://<your-server-ip>:5055`
-
-   Ex.: Radarr: `http://localhost:7878/` for local access or `192.168.1.x:7878/` for network access (your computer need to be available in the network for this option).
-
-3. **Stopping the Stack**: To stop the stack, run:
-
-   ```bash
-   docker-compose down
-   ```
-
-## Initial Configuration of the *arr Suite
-
-After accessing each application for the first time, you will need to go through the initial setup process. This typically involves setting up your media library paths, configuring download clients, and adding indexers.
-
-###  qBittorrent
-
-Access `http://<YOUR_SERVER>:8081` (default user: `admin`, password: run `docker logs qbittorrent` in your terminal).
-
-You can change the credentials in **Settings** > **Web UI** > **Authentication** and click Save.
-
-Set the download path to `/downloads` in Tools > Options > Downloads and click Save.
-
-You don't need to paste magnet links in qBittorrent. The *arr applications will do that for you.
-
-### Radarr, Lidarr, LazyLibrarian, Sonarr
-
-Access `http://<YOUR_SERVER>:7878` (Radarr) or `8989` (Sonarr).
-
-Go to **Settings** > **Media Management**, click on **Add Root Folder** and add /data/movies for Radarr or /data/tvshows for Sonarr.
-
-Go to **Download Clients** and click on the plus button (+): add *qBittorrent* (host: `qbittorrent`, port: `8081`, your username and password).
-
-Copy the API Key from **General** > **Security** > API Key.
-
-### Prowlarr
-
-Access `http://<YOUR_SERVER>:9696`
-
-Go to **Settings** > **Download Clients** and click on the plus button (+): add *qBittorrent* (host: `qbittorrent`, port: `8081`, your username and password).
-
-Go to **Settings** > **Apps**: add Radarr, Lidarr, LazyLibrarian and Sonarr using their URLs and API Keys you copied earlier. In the Prowlarr Server, use `http://Prowlarr:9696`, and in the Radarr/Lidarr/LazyLibrarian/Sonarr Server, use `http://Lidarr:8686`, `http://Radarr:7878`, `http://LazyLibrarian:5299` or `http://Sonarr:8989`.
-
-### Bazarr
-
-Access `http://<YOUR_SERVER>:6767`
-
-Go to **Settings** > **Providers**: add the subtitle providers you want to use.
-
-Go to **Settings** > **Radarr** and add Radarr (address: `radarr`, port: `7878`, base URL: `/`, your API Key).
-
-Go to **Settings** > **Sonarr** and add Radarr (address: `sonarr`, port: `8989`, base URL: `/`, your API Key).
-
-For Multi-language Search: In Settings > Profiles, edit profiles and change Language to `<Language You Want>` to search for `<Language>` content.
-
-### FlareSolver
-
-You'll need to configure FlareSolverr in each *arr application to bypass Cloudflare restrictions.
-
-Go to **Settings** > **Indexers** and edit each indexer you have added (you may need to add them first if you haven't done so).
-
-### Jellyfin
-
-Access `http://<YOUR_SERVER>:8096`
-
-Go through the initial setup process, creating an admin user and adding your media libraries.
-
-You can install the Jellyfin app on your smart TV, phone, or tablet to stream your media. When asked for the server address, use `http://<YOUR_SERVER>:8096`. The username and password are the ones you created during the initial setup.
-
-### Jellyseerr (Optional)
-
-Jellyseerr is a request management system for movies and TV shows that integrates with Radarr, Sonarr, and Plex/Jellyfin.
-
-It allows users to request new content, view existing requests, and manage their media library through a user-friendly interface.
-
-Access `http://localhost:5055/` and follow the initial setup instructions.
-
-## Demo: Downloading Public Domain Content
-
-In Radarr, try downloading public domain movies:
-
-Click on **Add New Movie** and search for `Night of the Living Dead (1968)`.
-
-Watch as it changes to Downloading and appears in qBittorrent.
-
-Repeat with `Nosferatu (1922)` and `The City of the Dead (1960)`.
-
-In Jellyfin/Plex, you'll see the movies with covers, synopsis, and actors ready to play.
-
-You can find more public domain movies at [JustWatch](https://www.justwatch.com/us/provider/public-domain-movies?sort_by=trending_7_day).
-
-For public domain books, you can use [goodreads](https://www.goodreads.com/shelf/show/public-domain).
-
-## Update Instructions
-
-To update the stack, navigate to the directory where your `docker-compose.yml` file is located and run:
+Corsarr is a CLI tool that generates complete Docker Compose configurations for your media automation stack. It includes:
+
+- 🔍 **Prowlarr** - Search for torrents across multiple indexers
+- 🎬 **Radarr** - Automatically download and organize movies
+- 📺 **Sonarr** - Manage TV show downloads and library
+- 🎵 **Lidarr** - Music collection manager
+- 📚 **LazyLibrarian** - Book manager
+- 💬 **Bazarr** - Automatic subtitle downloads
+- ⬇️ **qBittorrent** - Torrent client for downloads
+- 🎭 **Jellyfin** - Stream your media library
+- 🎫 **Jellyseerr** - Request management interface
+- 🔓 **FlareSolverr** - Bypass Cloudflare restrictions
+- 📹 **FileFlows** - Transcode and optimize media
+- 🔒 **Gluetun** - VPN client (optional)
+
+**The CLI handles all the complexity** - service dependencies, network configuration, environment variables, port management, and more.
+
+## ⚡ Quick Start (For Beginners)
+
+### Prerequisites
+
+- **Docker & Docker Compose v2+** - [Install here](https://docs.docker.com/compose/install/)
+- **Go 1.24.2+** - [Install here](https://go.dev/doc/install)
+- **Git** - [Install here](https://git-scm.com/install/)
+- Linux, macOS, or Windows with WSL2 for using the CLI
 
 ```bash
-docker-compose pull
-docker-compose up -d
+# 1. Clone and build
+git clone https://github.com/woliveiras/corsarr.git
+cd corsarr/cli
+go build -o corsarr .
+
+# 2. Generate your stack (interactive)
+./corsarr generate
+
+# 3. Start everything
+docker compose up -d
 ```
 
-This will pull the latest images and restart the containers with the updated versions.
+**That's it!** Your media automation stack is now running. 🎉
+
+Access your services:
+
+- **Jellyfin** (Watch movies/TV): http://localhost:8096
+- **Jellyseerr** (Request content): http://localhost:5055
+- **Radarr** (Movies): http://localhost:7878
+- **Sonarr** (TV Shows): http://localhost:8989
+- **Prowlarr** (Search): http://localhost:9696
 
 ---
 
-## Example .env File
+## 🎯 Usage
 
-Here is a sample `.env` file for quick reference:
+### For Beginners: Interactive Mode
 
-```env
-ARRPATH=/Users/<User>/Downloads/RADARR/data/   # Path to your media library, keep the final slash
-TZ=Europe/Madrid                                # Set your timezone
-PUID=1000                                       # User ID for permissions
-PGID=1000                                       # Group ID for permissions
-UMASK=002                                       # File creation mask
-```
-
----
-
-## Backup and Restore Instructions
-
-To backup your configuration and databases, simply copy the relevant folders from the `config/` directory (e.g., `config/radarr/`, `config/sonarr/`, etc.) and the `data/` directory for your media files.
-
-**Backup Example:**
+The CLI will ask you questions and generate everything automatically:
 
 ```bash
-cp -r config/radarr/ ~/radarr-backup/
-cp -r data/movies/ ~/movies-backup/
+corsarr generate
 ```
 
-**Restore Example:**
+**You'll be asked about**:
 
+1. **Language** - Choose your preferred language
+2. **VPN** - Do you want to route traffic through a VPN?
+3. **Services** - Select which services you need
+4. **Configuration** - Set paths, timezone, and user IDs
+5. **VPN Details** - If enabled, configure your VPN provider
+
+**The CLI creates**:
+- `docker-compose.yml` - Complete service configuration
+- `.env` - All environment variables
+
+**Then start your stack**:
 ```bash
-cp -r ~/radarr-backup/ config/radarr/
-cp -r ~/movies-backup/ data/movies/
+docker compose up -d
 ```
 
-For automated backups, consider using tools like [Duplicati](https://www.duplicati.com/) or [rsync](https://rsync.samba.org/).
+### Useful Commands
 
----
-
-## Official Documentation Links
-
-- [Radarr Documentation](https://wiki.servarr.com/radarr)
-- [Sonarr Documentation](https://wiki.servarr.com/sonarr)
-- [Lidarr Documentation](https://wiki.servarr.com/lidarr)
-- [LazyLibrarian Documentation](https://lazylibrarian.gitlab.io/)
-- [Bazarr Documentation](https://wiki.bazarr.media/)
-- [qBittorrent Documentation](https://github.com/qbittorrent/qBittorrent/wiki)
-- [Jellyfin Documentation](https://jellyfin.org/docs/)
-- [Jellyseerr Documentation](https://docs.jellyseerr.com/)
-- **[Corsarr CLI Documentation](cli/README.md)**
-
----
-
-## Useful Docker Commands
-
-Check running containers:
-
+**Check if everything is healthy**:
 ```bash
-docker-compose ps
+corsarr health
+corsarr health --detailed  # With CPU/memory stats
 ```
 
-View logs for a specific container:
-
+**Check for port conflicts**:
 ```bash
-docker logs <container_name>
+corsarr check-ports
+corsarr check-ports --suggest  # Get alternative ports
 ```
 
-Restart a container:
-
+**Preview configuration without creating files**:
 ```bash
-docker-compose restart <service_name>
+corsarr preview
 ```
 
-Stop all containers:
-
+**Save your setup for later**:
 ```bash
-docker-compose down
+corsarr generate --save-profile --save-as my-setup
+```
+
+**Reuse a saved configuration**:
+```bash
+corsarr generate --profile my-setup
 ```
 
 ---
 
-## Security Recommendations
+## 🚀 Advanced Usage
 
-- **Restrict External Access:** Only expose necessary ports. Use firewall rules to block unwanted traffic.
-- **Use VPN:** For remote access, prefer VPN solutions (see the VPN Setup section above).
-- **Update Regularly:** Keep your Docker images up to date (`docker-compose pull`).
-- **Change Default Passwords:** Always change default credentials for all services.
-- **Use HTTPS:** If exposing services externally, consider using a reverse proxy (e.g., Nginx, Traefik) with SSL certificates.
+### Generate with Custom Options
 
----
+**Specify output directory**:
+```bash
+corsarr generate --output ~/my-media-stack
+```
 
-## Customizing Volumes and Paths
+**Enable VPN mode directly**:
+```bash
+corsarr generate --vpn
+```
 
-You can change the default paths for your media and configuration by editing the `docker-compose.yml` and `.env` files. For example, to use a different folder for movies, update the volume mapping:
+**Preview without creating files**:
+```bash
+corsarr generate --dry-run
+```
+
+**Use a specific language**:
+```bash
+corsarr generate --language pt-br  # Portuguese
+corsarr generate --language es     # Spanish
+```
+
+### Profile Management
+
+Profiles let you save and reuse configurations:
+
+**List all profiles**:
+```bash
+corsarr profile list
+```
+
+**Load a profile to see details**:
+```bash
+corsarr profile load my-setup
+```
+
+**Delete a profile**:
+```bash
+corsarr profile delete old-setup
+```
+
+**Export profile to share**:
+```bash
+corsarr profile export my-setup backup.json
+```
+
+**Import profile from file**:
+```bash
+corsarr profile import backup.json
+corsarr profile import backup.json --name new-name
+```
+
+### Non-Interactive Mode (CI/CD)
+
+For scripts, automation, and continuous deployment:
+
+```bash
+corsarr generate --no-interactive \
+  --services "prowlarr,radarr,sonarr,jellyfin,qbittorrent" \
+  --arr-path "/home/user/media" \
+  --timezone "America/Sao_Paulo" \
+  --puid "1000" \
+  --pgid "1000" \
+  --output ./stack
+```
+
+**With VPN**:
+
+```bash
+corsarr generate --no-interactive \
+  --vpn \
+  --vpn-provider protonvpn \
+  --vpn-password "your-wireguard-key" \
+  --services "radarr,sonarr,qbittorrent" \
+  --arr-path "/media" \
+  --timezone "UTC" \
+  --puid "1000" \
+  --pgid "1000"
+```
+
+**Using configuration file**:
 
 ```yaml
-   radarr:
-      ...existing code...
-      volumes:
-         - /custom/path/to/movies:/data/movies
-         - /custom/path/to/config:/config/radarr
+# config.yaml
+services:
+  - prowlarr
+  - radarr
+  - sonarr
+  - jellyfin
+  - qbittorrent
+arr_path: /home/user/media
+timezone: America/Sao_Paulo
+puid: 1000
+pgid: 1000
 ```
 
-Make sure the user running Docker has read/write permissions to these folders. Adjust `PUID`, `PGID`, and `UMASK` in your `.env` file as needed.
+```bash
+corsarr generate --config config.yaml --no-interactive
+```
+
+**All non-interactive flags**:
+
+- `--no-interactive` - Skip all prompts
+- `--services` - Comma-separated service list
+- `--arr-path` - Base path for media library
+- `--timezone` - Timezone (e.g., `America/Sao_Paulo`)
+- `--puid` - User ID for file permissions
+- `--pgid` - Group ID for file permissions
+- `--umask` - File creation mask (default: `002`)
+- `--project-name` - Docker Compose project name
+- `--vpn` - Enable VPN mode
+- `--vpn-provider` - VPN provider (required with `--vpn`)
+- `--vpn-password` - WireGuard key or OpenVPN password
+- `--vpn-type` - `wireguard` or `openvpn` (default: `wireguard`)
+- `--config` - Load from YAML/JSON config file
+- `--profile` - Load from saved profile
 
 ---
 
-## FAQ: Common Problems and Solutions
+## ⚙️ Configuration
 
-### 1. Permission Issues
+### Environment Variables
 
-- *Symptoms:* Containers fail to access files or folders, errors about permissions.
-- *Solution:* Ensure your media/config folders are owned by the correct user/group. Use `chown` and `chmod` as needed:
+The CLI will prompt you for these values:
 
-   ```bash
-   sudo chown -R 1000:1000 /path/to/media /path/to/config
-   sudo chmod -R 775 /path/to/media /path/to/config
-   ```
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ARRPATH` | Base path for media library | `/home/user/media/` |
+| `TZ` | Your timezone | `America/Sao_Paulo` |
+| `PUID` | User ID (run `id -u`) | `1000` |
+| `PGID` | Group ID (run `id -g`) | `1000` |
+| `UMASK` | File creation mask | `002` |
 
-### 2. Ports Already in Use
+**Finding your PUID/PGID**:
 
-- *Symptoms:* Docker fails to start containers due to port conflicts.
-- *Solution:* Change the exposed ports in `docker-compose.yml` or stop the conflicting service.
-- **Use CLI**: `cd cli && ./corsarr check-ports --suggest`
+```bash
+id $(whoami)
+# Output: uid=1000(user) gid=1000(user)
+```
 
-### 3. Containers Not Starting
+### VPN Configuration
 
-- *Symptoms:* `docker-compose up` fails, containers exit immediately.
-- *Solution:* Run `docker-compose logs <service_name>` to check for errors. Common issues include missing environment variables, permission problems, or port conflicts.
-- **Use CLI**: `cd cli && ./corsarr health --detailed`
+When VPN is enabled, you'll configure:
 
-### 4. Slow Downloads or No Connection
+- **Provider** - nordvpn, protonvpn, expressvpn, etc. ([see all supported](https://github.com/qdm12/gluetun-wiki))
+- **Type** - WireGuard (recommended) or OpenVPN
+- **Credentials** - Username/password or WireGuard private key
+- **Port Forwarding** - Enable for better torrent connectivity
+- **DNS** - Custom DNS server (default: 1.1.1.1)
 
-- *Symptoms:* qBittorrent or *arr apps can't download or connect to indexers.
-- *Solution:* Check your network settings, VPN configuration, and firewall rules. Make sure your server has internet access.
+### Network Modes
 
-### 5. Lost Configuration or Data
+**VPN Mode**: All traffic routes through Gluetun
+```yaml
+services:
+  radarr:
+    network_mode: "service:gluetun"
+```
 
-- *Symptoms:* Settings or media disappear after restart.
-- *Solution:* Ensure your volumes are mapped correctly in `docker-compose.yml` and data is stored outside the container.
-
-### 6. Web UI Not Accessible
-
-- *Symptoms:* Can't access service via browser.
-- *Solution:* Confirm the container is running (`docker-compose ps`), check the correct port, and verify firewall settings.
-
-**For more troubleshooting**, see the [CLI Troubleshooting Guide](cli/README.md#-troubleshooting).
+**Bridge Mode**: Direct network access (no VPN)
+```yaml
+services:
+  radarr:
+    networks:
+      - media
+```
 
 ---
 
-## 🤝 Contributing
+## 🔧 Initial Service Configuration
 
-Contributions are welcome! See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical documentation.
+After starting your stack, configure each service:
+
+### 1. qBittorrent
+
+Access `http://localhost:8080`
+
+- **Default login**: `admin` / run `docker logs qbittorrent` for password
+- **Set download path**: Tools → Options → Downloads → `/downloads`
+- **Change password**: Tools → Options → Web UI → Authentication
+
+### 2. Prowlarr
+
+Access `http://localhost:9696`
+
+1. **Add qBittorrent**: Settings → Download Clients → Add qBittorrent
+   - Host: `qbittorrent`
+   - Port: `8081`
+   - Username/password from step 1
+
+2. **Add indexers**: Indexers → Add Indexer
+   - Choose your preferred torrent sites
+   - Configure credentials
+
+3. **Copy API Key**: Settings → General → Security → Copy API Key
+
+### 3. Radarr (Movies) / Sonarr (TV Shows)
+
+Access `http://localhost:7878` (Radarr) or `http://localhost:8989` (Sonarr)
+
+1. **Add media folder**:
+   - Settings → Media Management → Add Root Folder
+   - Radarr: `/data/movies`
+   - Sonarr: `/data/tvshows`
+
+2. **Add qBittorrent**: Settings → Download Clients → Add qBittorrent
+   - Host: `qbittorrent`
+   - Port: `8081`
+
+3. **Connect to Prowlarr**: Settings → Indexers → Add → Prowlarr
+   - URL: `http://prowlarr:9696`
+   - API Key: (from Prowlarr)
+
+4. **Copy API Key**: Settings → General → Security → Copy API Key
+
+### 4. Bazarr (Subtitles)
+
+Access `http://localhost:6767`
+
+1. **Add subtitle providers**: Settings → Providers
+2. **Connect to Radarr**: Settings → Radarr
+   - Address: `radarr`
+   - Port: `7878`
+   - API Key: (from Radarr)
+3. **Connect to Sonarr**: Settings → Sonarr
+   - Address: `sonarr`
+   - Port: `8989`
+   - API Key: (from Sonarr)
+
+### 5. Jellyfin (Streaming)
+
+Access `http://localhost:8096`
+
+1. **Create admin account** during initial setup
+2. **Add libraries**:
+   - Movies: `/data/movies`
+   - TV Shows: `/data/tvshows`
+   - Music: `/data/music`
+3. **Install Jellyfin apps** on your devices
+
+### 6. Jellyseerr (Requests)
+
+Access `http://localhost:5055`
+
+1. **Sign in with Jellyfin** account
+2. **Connect to Radarr/Sonarr**: Settings → Services
+3. **Allow users to request** content
+
+---
+
+## 🆘 Troubleshooting
+
+### Service Can't Access Files
+
+**Problem**: Permission denied errors
+
+```bash
+# Fix ownership
+sudo chown -R 1000:1000 /path/to/media
+
+# Verify PUID/PGID match
+id $(whoami)
+```
+
+### Port Already in Use
+
+**Problem**: Port conflict errors
+
+```bash
+# Check which ports are in use
+corsarr check-ports --suggest
+
+# Or check manually
+docker ps
+netstat -tuln | grep LISTEN
+```
+
+### VPN Not Working
+
+**Problem**: Gluetun keeps restarting
+
+```bash
+# Check Gluetun logs
+docker compose logs gluetun
+
+# Test VPN connection
+docker exec gluetun curl ifconfig.me
+```
+
+**Common fixes**:
+- Verify VPN credentials in `.env`
+- Regenerate WireGuard keys from provider
+- Check provider is supported by Gluetun
+
+### Container Won't Start
+
+**Problem**: Service keeps restarting
+
+```bash
+# Check health status
+corsarr health --detailed
+
+# View service logs
+docker compose logs [service_name]
+
+# Check for errors
+docker compose ps
+```
+
+### Can't Connect to Other Services
+
+**Problem**: Radarr can't reach Prowlarr
+
+**Solution**: Use container names, not localhost
+- ✅ Correct: `http://prowlarr:9696`
+- ❌ Wrong: `http://localhost:9696`
+
+### High CPU Usage
+
+**Problem**: Container using too much CPU
+
+```bash
+# Check resource usage
+docker stats
+corsarr health --detailed
+```
+
+**Common causes**:
+- Jellyfin transcoding (normal during playback)
+- Radarr/Sonarr scanning library (temporary)
+- qBittorrent seeding (limit in settings)
+
+### Database Locked
+
+**Problem**: "Database is locked" errors
+
+```bash
+# Stop the affected service
+docker compose stop sonarr
+
+# Backup database
+cp config/sonarr/*.db config/sonarr/backup/
+
+# Restart service
+docker compose start sonarr
+```
+
+### Need More Help?
+
+**Collect diagnostic information**:
+
+```bash
+# System information
+uname -a
+docker --version
+docker compose version
+
+# Health report
+corsarr health --detailed > health-report.txt
+
+# Service logs
+docker compose logs --tail=100 > logs.txt
+```
+
+**Get help**:
+
+- Check [GitHub Issues](https://github.com/woliveiras/corsarr/issues)
+
+---
+
+## 🔒 Security Best Practices
+
+- **Use VPN** - Route torrent traffic through a VPN
+- **Change default passwords** - Update all service credentials
+- **Restrict external access** - Use firewall rules to limit ports
+- **Use reverse proxy** - Set up Nginx/Traefik with HTTPS for remote access
+- **Keep updated** - Run `docker compose pull && docker compose up -d` regularly
+
+---
+
+## 📚 Example: Downloading Legal Content
+
+Try downloading public domain content to test your setup:
+
+1. **Open Radarr** (`http://localhost:7878`)
+2. **Add movie**: Click "Add New Movie"
+3. **Search**: Try "Night of the Living Dead (1968)"
+4. **Monitor**: Select "Monitored"
+5. **Search**: Click "Search" to find torrents
+
+Watch it appear in qBittorrent, download, and show up in Jellyfin!
+
+**More public domain movies**:
+
+- Nosferatu (1922)
+- The City of the Dead (1960)
+- Plan 9 from Outer Space (1959)
+- Find more at [JustWatch Public Domain](https://www.justwatch.com/us/provider/public-domain-movies)
+
+---
+
+## 📦 Backup and Restore
+
+**Backup your configuration**:
+
+```bash
+# Backup config directory (includes databases)
+cp -r config/ ~/corsarr-backup/
+
+# Backup your media (optional, but recommended)
+rsync -av data/ /path/to/external/drive/
+```
+
+**Restore from backup**:
+
+```bash
+# Restore configuration
+cp -r ~/corsarr-backup/ config/
+
+# Start services
+docker compose up -d
+```
+
+**Automated backups**: Each service creates automatic backups in `config/[service]/Backups/`
+
+---
+
+## 🔄 Updating
+
+**Update Corsarr CLI**:
+
+```bash
+cd corsarr/cli
+git pull
+go build -o corsarr .
+```
+
+**Update Docker containers**:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+---
 
 ---
 
@@ -421,7 +576,9 @@ See [LICENSE](LICENSE) file.
 
 ## 🔗 Links
 
-- **[Corsarr CLI Documentation](cli/README.md)** - Full CLI guide
-- **[Technical Architecture](docs/ARCHITECTURE.md)** - Development docs
-- **[Issue Tracker](https://github.com/woliveiras/corsarr/issues)** - Report bugs
-- **[Servarr Discord](https://discord.gg/Urs6FLC)** - Community support
+- **[Issue Tracker](https://github.com/woliveiras/corsarr/issues)** - Report bugs or request features
+- **[Gluetun Wiki](https://github.com/qdm12/gluetun-wiki)** - VPN provider documentation
+
+---
+
+**Made with ❤️ by me for the community**

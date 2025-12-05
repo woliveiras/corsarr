@@ -64,9 +64,9 @@ func (g *EnvGenerator) Generate(config *EnvConfig, backup bool) error {
 		return fmt.Errorf("failed to render template: %w", err)
 	}
 
-	// Write file
+	// Write file with secure permissions (0600 - owner read/write only)
 	outputPath := filepath.Join(g.outputDir, ".env")
-	if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -115,8 +115,8 @@ func (g *EnvGenerator) backupExistingFile() error {
 		return fmt.Errorf("failed to read original file: %w", err)
 	}
 
-	// Write backup
-	if err := os.WriteFile(backupPath, content, 0644); err != nil {
+	// Write backup with secure permissions (0600 - owner read/write only)
+	if err := os.WriteFile(backupPath, content, 0600); err != nil {
 		return fmt.Errorf("failed to write backup: %w", err)
 	}
 

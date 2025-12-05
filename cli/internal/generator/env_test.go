@@ -194,4 +194,26 @@ func TestEnvGenerator_Generate(t *testing.T) {
 			t.Error("Backup doesn't contain original content")
 		}
 	})
+
+	t.Run("File permissions are secure (0600)", func(t *testing.T) {
+		config := NewDefaultEnvConfig()
+		err := generator.Generate(config, false)
+		if err != nil {
+			t.Fatalf("Failed to generate: %v", err)
+		}
+
+		// Check file permissions
+		outputPath := filepath.Join(tmpDir, ".env")
+		info, err := os.Stat(outputPath)
+		if err != nil {
+			t.Fatalf("Failed to stat file: %v", err)
+		}
+
+		// On Unix systems, check for 0600 permissions (owner read/write only)
+		mode := info.Mode().Perm()
+		expected := os.FileMode(0600)
+		if mode != expected {
+			t.Errorf("Expected file permissions %o, got %o", expected, mode)
+		}
+	})
 }
