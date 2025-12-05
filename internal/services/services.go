@@ -43,6 +43,7 @@ type Service struct {
 	Volumes     []VolumeMapping   `yaml:"volumes"`
 	Environment []string          `yaml:"environment,omitempty"`
 	Devices     []string          `yaml:"devices,omitempty"`
+	CapAdd      []string          `yaml:"cap_add,omitempty"`
 	Network     NetworkConfig     `yaml:"network"`
 	Restart     string            `yaml:"restart"`
 	SupportsVPN bool              `yaml:"supports_vpn"`

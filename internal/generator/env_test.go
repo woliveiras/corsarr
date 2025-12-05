@@ -86,7 +86,7 @@ func TestEnvGenerator_Preview(t *testing.T) {
 				"TZ=America/New_York",
 				"VPN_SERVICE_PROVIDER=mullvad",
 				"VPN_TYPE=wireguard",
-				"DNS_ADDRESS=1.1.1.1",
+				"VPN_DNS_ADDRESS=1.1.1.1",
 			},
 		},
 		{

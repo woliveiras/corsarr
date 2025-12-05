@@ -36,6 +36,12 @@ services:
       - {{ . }}
       {{- end }}
     {{- end }}
+    {{- if .CapAdd }}
+    cap_add:
+      {{- range .CapAdd }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
     restart: {{ .Restart }}
 {{- end }}
 

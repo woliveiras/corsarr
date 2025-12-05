@@ -65,6 +65,9 @@ volumes:
 devices:
   - "/dev/net/tun:/dev/net/tun"
 
+cap_add:
+  - "NET_ADMIN"
+
 environment:
   - "TZ=${TZ}"
   - "VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}"

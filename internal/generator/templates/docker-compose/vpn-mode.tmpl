@@ -29,6 +29,12 @@ services:
       - {{ . }}
       {{- end }}
     {{- end }}
+    {{- if .Gluetun.CapAdd }}
+    cap_add:
+      {{- range .Gluetun.CapAdd }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
     restart: {{ .Gluetun.Restart }}
 {{- range .Services }}
   {{ .ContainerName }}:
