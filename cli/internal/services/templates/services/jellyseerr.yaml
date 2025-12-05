@@ -1,0 +1,36 @@
+id: jellyseerr
+name: Jellyseerr
+category: request
+description: Request management for movies and TV shows
+image: fallenbagel/jellyseerr:latest
+container_name: jellyseerr
+
+ports:
+  - host: "5055"
+    container: "5055"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/jellyseerr"
+    container: "/app/config"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: jellyseerr
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - jellyfin
+optional: true

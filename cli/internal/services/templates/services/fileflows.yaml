@@ -1,0 +1,54 @@
+id: fileflows
+name: FileFlows
+category: transcode
+description: Media transcoding and optimization
+image: revenz/fileflows:latest
+container_name: fileflows
+
+ports:
+  - host: "19200"
+    container: "5000"
+    protocol: tcp
+
+volumes:
+  - host: "/var/run/docker.sock"
+    container: "/var/run/docker.sock"
+    read_only: true
+  - host: "${ARRPATH}config/fileflows"
+    container: "/app/Data"
+  - host: "${ARRPATH}config/fileflows/logs"
+    container: "/app/Logs"
+  - host: "${ARRPATH}data/movies"
+    container: "/media/movies"
+  - host: "${ARRPATH}data/tvshows"
+    container: "/media/tvshows"
+  - host: "${ARRPATH}data/downloads"
+    container: "/media/downloads"
+  - host: "/tmp/fileflows_temp"
+    container: "/temp"
+
+devices:
+  - "/dev/dri:/dev/dri"
+  - "/dev/dri/renderD128:/dev/dri/renderD128"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+  - "BROWSER_START_DIRECTORY=/media"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: fileflows
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - jellyfin
+optional: true

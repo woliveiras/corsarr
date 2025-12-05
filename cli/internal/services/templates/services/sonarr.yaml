@@ -1,0 +1,43 @@
+id: sonarr
+name: Sonarr
+category: media
+description: TV show collection manager
+image: lscr.io/linuxserver/sonarr:latest
+container_name: sonarr
+
+ports:
+  - host: "8989"
+    container: "8989"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/sonarr"
+    container: "/config"
+  - host: "${ARRPATH}backup/sonarr"
+    container: "/data/backup"
+  - host: "${ARRPATH}data/tvshows"
+    container: "/data/tvshows"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: sonarr
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - qbittorrent
+  - prowlarr
+optional: false

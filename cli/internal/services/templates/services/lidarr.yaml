@@ -1,0 +1,41 @@
+id: lidarr
+name: Lidarr
+category: media
+description: Music collection manager
+image: ghcr.io/hotio/lidarr:latest
+container_name: lidarr
+
+ports:
+  - host: "8686"
+    container: "8686"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/lidarr"
+    container: "/config"
+  - host: "${ARRPATH}data/music"
+    container: "/data/music"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: lidarr
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - qbittorrent
+  - prowlarr
+optional: true

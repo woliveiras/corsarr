@@ -1,0 +1,42 @@
+id: lazylibrarian
+name: LazyLibrarian
+category: media
+description: Book collection manager
+image: lscr.io/linuxserver/lazylibrarian:latest
+container_name: lazylibrarian
+
+ports:
+  - host: "5299"
+    container: "5299"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/lazylibrarian/data"
+    container: "/config"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+  - host: "${ARRPATH}data/books"
+    container: "/books"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+  - "DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: lazylibrarian
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - qbittorrent
+  - prowlarr
+optional: true

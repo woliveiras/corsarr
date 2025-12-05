@@ -1,0 +1,47 @@
+id: qbittorrent
+name: qBittorrent
+category: download
+description: BitTorrent client for downloading content
+image: lscr.io/linuxserver/qbittorrent:latest
+container_name: qbittorrent
+
+ports:
+  - host: "8081"
+    container: "8081"
+    protocol: tcp
+  - host: "6881"
+    container: "6881"
+    protocol: tcp
+  - host: "6881"
+    container: "6881"
+    protocol: udp
+
+volumes:
+  - host: "${ARRPATH}config/qbittorrent"
+    container: "/config"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+  - host: "${ARRPATH}data/movies"
+    container: "/data/movies"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+  - "WEBUI_PORT=8081"
+  - "TORRENTING_PORT=6881"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: qbittorrent
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies: []
+optional: false

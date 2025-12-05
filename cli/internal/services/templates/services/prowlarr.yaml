@@ -1,0 +1,39 @@
+id: prowlarr
+name: Prowlarr
+category: indexer
+description: Indexer manager for *arr apps
+image: lscr.io/linuxserver/prowlarr:latest
+container_name: prowlarr
+
+ports:
+  - host: "9696"
+    container: "9696"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/prowlarr"
+    container: "/config"
+  - host: "${ARRPATH}backup/prowlarr"
+    container: "/data/backup"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: prowlarr
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies: []
+optional: false

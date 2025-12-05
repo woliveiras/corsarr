@@ -1,0 +1,90 @@
+id: gluetun
+name: Gluetun
+category: vpn
+description: VPN client with support for multiple providers
+image: qmcgaw/gluetun:latest
+container_name: gluetun
+
+ports:
+  # Common VPN Ports
+  - host: "8888"
+    container: "8888"
+    protocol: tcp
+  - host: "8388"
+    container: "8388"
+    protocol: tcp
+  - host: "8388"
+    container: "8388"
+    protocol: udp
+  # qBittorrent
+  - host: "8081"
+    container: "8081"
+    protocol: tcp
+  - host: "6881"
+    container: "6881"
+    protocol: tcp
+  - host: "6881"
+    container: "6881"
+    protocol: udp
+  # Prowlarr
+  - host: "9696"
+    container: "9696"
+    protocol: tcp
+  # FlareSolverr
+  - host: "8191"
+    container: "8191"
+    protocol: tcp
+  # Sonarr
+  - host: "8989"
+    container: "8989"
+    protocol: tcp
+  # Radarr
+  - host: "7878"
+    container: "7878"
+    protocol: tcp
+  # Bazarr
+  - host: "6767"
+    container: "6767"
+    protocol: tcp
+  # Jellyseerr
+  - host: "5055"
+    container: "5055"
+    protocol: tcp
+  # Jellyfin
+  - host: "8096"
+    container: "8096"
+    protocol: tcp
+  - host: "7359"
+    container: "7359"
+    protocol: udp
+
+volumes:
+  - host: "${ARRPATH}config/gluetun"
+    container: "/gluetun"
+
+devices:
+  - "/dev/net/tun:/dev/net/tun"
+
+environment:
+  - "TZ=${TZ}"
+  - "VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}"
+  - "VPN_TYPE=${VPN_TYPE}"
+  - "WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}"
+  - "WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}"
+  - "VPN_PORT_FORWARDING=${VPN_PORT_FORWARDING}"
+  - "WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}"
+  - "VPN_DNS_ADDRESS=${VPN_DNS_ADDRESS}"
+
+network:
+  vpn_mode:
+    network_mode: "bridge"
+  bridge_mode:
+    hostname: gluetun
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: false
+requires_vpn: false
+dependencies: []
+optional: false

@@ -1,0 +1,43 @@
+id: radarr
+name: Radarr
+category: media
+description: Movie collection manager
+image: lscr.io/linuxserver/radarr:latest
+container_name: radarr
+
+ports:
+  - host: "7878"
+    container: "7878"
+    protocol: tcp
+
+volumes:
+  - host: "${ARRPATH}config/radarr"
+    container: "/config"
+  - host: "${ARRPATH}backup/radarr"
+    container: "/data/backup"
+  - host: "${ARRPATH}data/movies"
+    container: "/data/movies"
+  - host: "${ARRPATH}data/downloads"
+    container: "/downloads"
+
+environment:
+  - "TZ=${TZ}"
+  - "PUID=${PUID}"
+  - "PGID=${PGID}"
+  - "UMASK=${UMASK}"
+
+network:
+  vpn_mode:
+    network_mode: "service:gluetun"
+  bridge_mode:
+    hostname: radarr
+    networks:
+      - media
+
+restart: unless-stopped
+supports_vpn: true
+requires_vpn: false
+dependencies:
+  - qbittorrent
+  - prowlarr
+optional: false
