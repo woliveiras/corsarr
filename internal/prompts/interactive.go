@@ -2,6 +2,7 @@ package prompts
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/woliveiras/corsarr/internal/i18n"
@@ -116,6 +117,36 @@ func AskBasePath(t *i18n.I18n, defaultPath string) (string, error) {
 	}
 
 	return path, nil
+}
+
+// AskOutputDirectory prompts for an output directory and optional reuse for volumes.
+func AskOutputDirectory(t *i18n.I18n, defaultDir string) (string, bool, bool, error) {
+	var dir string
+	useSame := true
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title(fmt.Sprintf("%s (default: %s)", t.T("prompts.output_directory"), defaultDir)).
+				Value(&dir).
+				Placeholder(defaultDir),
+			huh.NewConfirm().
+				Title(t.T("prompts.use_same_directory")).
+				Value(&useSame),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return "", false, false, err
+	}
+
+	cleaned := strings.TrimSpace(strings.ReplaceAll(dir, "\r", ""))
+	provided := cleaned != ""
+	if !provided {
+		cleaned = defaultDir
+	}
+
+	return cleaned, useSame, provided, nil
 }
 
 // AskTimezone prompts for timezone

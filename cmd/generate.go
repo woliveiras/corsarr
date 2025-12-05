@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -100,7 +98,7 @@ func runGenerate(t *i18n.I18n) error {
 
 	// Step 0a: Load from config file if specified
 	if configFile != "" {
-		fmt.Printf("📋 Loading configuration from: %s\n", configFile)
+		fmt.Println(t.T("logs.loading_configuration", map[string]interface{}{"source": configFile}))
 		loadedProfile, err = loadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("failed to load config file: %w", err)
@@ -109,20 +107,21 @@ func runGenerate(t *i18n.I18n) error {
 		// Use outputDir from config file if flag wasn't explicitly set
 		if outputDir == "." && loadedProfile.OutputDir != "" {
 			outputDir = loadedProfile.OutputDir
-			fmt.Printf("📂 Output directory: %s (from config)\n", outputDir)
+			fmt.Println(t.T("logs.output_directory_from_config", map[string]interface{}{"directory": outputDir}))
 		}
 		
-		fmt.Printf("✅ Configuration loaded\n\n")
+		fmt.Println(t.T("logs.configuration_loaded"))
+		fmt.Println()
 	}
 
 	// Step 0b: Load profile if specified (overrides config file)
 	if profileName != "" {
-		fmt.Printf("📋 Loading profile: %s\n", profileName)
+		fmt.Println(t.T("logs.loading_profile", map[string]interface{}{"profile": profileName}))
 		loadedProfile, err = profile.LoadProfile(profileName)
 		if err != nil {
 			return fmt.Errorf("failed to load profile: %w", err)
 		}
-		fmt.Printf("✅ Profile loaded: %s\n", loadedProfile.Name)
+		fmt.Println(t.T("logs.profile_loaded", map[string]interface{}{"profile": loadedProfile.Name}))
 		if loadedProfile.Description != "" {
 			fmt.Printf("   %s\n", loadedProfile.Description)
 		}
@@ -130,7 +129,7 @@ func runGenerate(t *i18n.I18n) error {
 		// Use outputDir from profile if flag wasn't explicitly set
 		if outputDir == "." && loadedProfile.OutputDir != "" {
 			outputDir = loadedProfile.OutputDir
-			fmt.Printf("📂 Output directory: %s (from profile)\n", outputDir)
+			fmt.Println(t.T("logs.output_directory_from_profile", map[string]interface{}{"directory": outputDir}))
 		}
 		
 		fmt.Println()
@@ -153,7 +152,7 @@ func runGenerate(t *i18n.I18n) error {
 	vpnEnabled := useVPN
 	if loadedProfile != nil {
 		vpnEnabled = loadedProfile.VPN.Enabled
-		fmt.Printf("🔒 VPN: %v (from profile)\n", vpnEnabled)
+		fmt.Println(t.T("logs.vpn_from_profile", map[string]interface{}{"enabled": vpnEnabled}))
 	} else if !noInteractive && !dryRun && !useVPN {
 		vpnEnabled, err = prompts.AskVPN(t)
 		if err != nil {
@@ -165,14 +164,16 @@ func runGenerate(t *i18n.I18n) error {
 	var selectedIDs []string
 	if loadedProfile != nil && len(loadedProfile.Services) > 0 {
 		selectedIDs = loadedProfile.Services
-		fmt.Printf("📦 Services: %s (from profile)\n\n", strings.Join(selectedIDs, ", "))
+		fmt.Println(t.T("logs.services_from_profile", map[string]interface{}{"services": strings.Join(selectedIDs, ", ")}))
+		fmt.Println()
 	} else if servicesList != "" {
 		// Non-interactive: parse services from flag
 		selectedIDs = strings.Split(servicesList, ",")
 		for i := range selectedIDs {
 			selectedIDs[i] = strings.TrimSpace(selectedIDs[i])
 		}
-		fmt.Printf("📦 Services: %s (from flags)\n\n", strings.Join(selectedIDs, ", "))
+		fmt.Println(t.T("logs.services_from_flags", map[string]interface{}{"services": strings.Join(selectedIDs, ", ")}))
+		fmt.Println()
 	} else if !noInteractive {
 		// Interactive mode
 		fmt.Println()
@@ -183,6 +184,8 @@ func runGenerate(t *i18n.I18n) error {
 	} else {
 		return fmt.Errorf("non-interactive mode requires --services flag or --profile")
 	}
+
+	selectedIDs = dedupeServiceIDs(selectedIDs)
 
 	if len(selectedIDs) == 0 {
 		return fmt.Errorf("%s", t.T("errors.no_services_selected"))
@@ -216,7 +219,7 @@ func runGenerate(t *i18n.I18n) error {
 			}
 		}
 		
-		fmt.Println("⚙️  Using environment from profile")
+		fmt.Println(t.T("logs.environment_from_profile"))
 	} else if noInteractive {
 		// Non-interactive: use flags
 		envConfig = &generator.EnvConfig{
@@ -244,7 +247,7 @@ func runGenerate(t *i18n.I18n) error {
 			}
 		}
 		
-		fmt.Println("⚙️  Using environment from flags")
+		fmt.Println(t.T("logs.environment_from_flags"))
 	} else {
 		envConfig, err = prompts.ConfigureEnvironment(t, vpnEnabled)
 		if err != nil {
@@ -254,25 +257,13 @@ func runGenerate(t *i18n.I18n) error {
 
 	// Step 4.5: Ask for output directory if not set via flag and in interactive mode
 	if outputDir == "." && !noInteractive && loadedProfile == nil {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("\n📂 Output directory (default: current directory): ")
-		userOutputDirInput, err := reader.ReadString('\n')
-		if err != nil && err != io.EOF {
-			return fmt.Errorf("failed to read output directory: %w", err)
+		dir, useForVolumes, customDir, err := prompts.AskOutputDirectory(t, outputDir)
+		if err != nil {
+			return fmt.Errorf("failed to determine output directory: %w", err)
 		}
-		userOutputDir := strings.TrimSpace(userOutputDirInput)
-		if userOutputDir != "" {
-			outputDir = userOutputDir
-
-			// Ask if user wants to use the same path for volumes
-			fmt.Print("📦 Use the same directory for service volumes? (Y/n): ")
-			useForVolumesInput, err := reader.ReadString('\n')
-			if err != nil && err != io.EOF {
-				return fmt.Errorf("failed to read volume directory selection: %w", err)
-			}
-			useForVolumes := strings.TrimSpace(useForVolumesInput)
-			if useForVolumes == "" || strings.ToLower(useForVolumes) == "y" {
-				// Ensure path ends with /
+		if customDir {
+			outputDir = dir
+			if useForVolumes {
 				if !strings.HasSuffix(outputDir, "/") {
 					outputDir += "/"
 				}
@@ -292,17 +283,19 @@ func runGenerate(t *i18n.I18n) error {
 		}
 		if !hasGluetun {
 			selectedIDs = append([]string{"gluetun"}, selectedIDs...)
-			fmt.Println("🔒 VPN enabled: Gluetun added automatically")
+			fmt.Println(t.T("logs.vpn_gluetun_added"))
 		}
 	}
 
 	// Step 5: Validate configuration
-	fmt.Println("\n🔍 Validating configuration...")
-	validationResult := validateConfiguration(t, registry, selectedIDs, envConfig.ARRPath, outputDir, vpnEnabled)
+	fmt.Println()
+	fmt.Println(t.T("logs.validating_configuration"))
+	validationResult := validateConfiguration(registry, selectedIDs, envConfig.ARRPath, outputDir, vpnEnabled)
 	
 	// Show warnings
 	if validationResult.HasWarnings() {
-		fmt.Println("\n⚠️  Warnings:")
+		fmt.Println()
+		fmt.Println(t.T("logs.validation_warnings"))
 		for _, warning := range validationResult.Warnings {
 			fmt.Printf("   • %s\n", warning.Message)
 		}
@@ -310,14 +303,15 @@ func runGenerate(t *i18n.I18n) error {
 
 	// Check for errors
 	if validationResult.HasErrors() {
-		fmt.Println("\n❌ Validation failed:")
+		fmt.Println()
+		fmt.Println(t.T("logs.validation_failed"))
 		for _, err := range validationResult.Errors {
 			fmt.Printf("   • [%s] %s\n", err.Severity, err.Message)
 		}
 		return fmt.Errorf("configuration validation failed")
 	}
 
-	fmt.Println("✅ Configuration validated")
+	fmt.Println(t.T("logs.configuration_validated"))
 
 	// Step 6: Confirm generation
 	fmt.Println()
@@ -327,7 +321,8 @@ func runGenerate(t *i18n.I18n) error {
 	}
 
 	if !confirmed {
-		fmt.Println("\n❌", t.T("messages.generation_cancelled"))
+		fmt.Println()
+		fmt.Println(t.T("logs.generation_cancelled"))
 		return nil
 	}
 
@@ -350,7 +345,7 @@ func runGenerate(t *i18n.I18n) error {
 }
 
 // validateConfiguration runs all validators
-func validateConfiguration(t *i18n.I18n, registry *services.Registry, serviceIDs []string, basePath, outputDir string, vpnEnabled bool) *validator.ValidationResult {
+func validateConfiguration(registry *services.Registry, serviceIDs []string, basePath, outputDir string, vpnEnabled bool) *validator.ValidationResult {
 	config, err := validator.NewConfig(registry, serviceIDs, basePath, outputDir, vpnEnabled)
 	if err != nil {
 		result := &validator.ValidationResult{Valid: false}
@@ -358,12 +353,40 @@ func validateConfiguration(t *i18n.I18n, registry *services.Registry, serviceIDs
 		return result
 	}
 
-	return validator.ValidateAll(config)
+	result := validator.ValidateAll(config)
+
+	if err := generator.ValidateNetworkConfiguration(config.Services, vpnEnabled); err != nil {
+		result.AddError("network", err.Error(), validator.SeverityError)
+	}
+
+	return result
+}
+
+// dedupeServiceIDs removes duplicates while preserving order
+func dedupeServiceIDs(ids []string) []string {
+	seen := make(map[string]struct{})
+	result := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+		clean := strings.TrimSpace(id)
+		if clean == "" {
+			continue
+		}
+
+		if _, ok := seen[clean]; ok {
+			continue
+		}
+
+		seen[clean] = struct{}{}
+		result = append(result, clean)
+	}
+
+	return result
 }
 
 func previewGeneration(t *i18n.I18n, registry *services.Registry, selectedIDs []string, envConfig *generator.EnvConfig, vpnEnabled bool) error {
 	fmt.Println("\n" + "═══════════════════════════════════════════════════════")
-	fmt.Println("📋 DRY RUN - Preview Mode")
+	fmt.Println(t.T("logs.preview_dry_run_header"))
 	fmt.Println("═══════════════════════════════════════════════════════")
 
 	// Preview docker-compose.yml
@@ -374,7 +397,8 @@ func previewGeneration(t *i18n.I18n, registry *services.Registry, selectedIDs []
 		return fmt.Errorf("compose preview failed: %w", err)
 	}
 
-	fmt.Println("\n📄 docker-compose.yml:")
+	fmt.Println()
+	fmt.Println(t.T("logs.preview_compose_title"))
 	fmt.Println("───────────────────────────────────────────────────────")
 	fmt.Println(composePreview)
 	fmt.Println("───────────────────────────────────────────────────────")
@@ -386,12 +410,14 @@ func previewGeneration(t *i18n.I18n, registry *services.Registry, selectedIDs []
 		return fmt.Errorf("env preview failed: %w", err)
 	}
 
-	fmt.Println("\n📄 .env:")
+	fmt.Println()
+	fmt.Println(t.T("logs.preview_env_title"))
 	fmt.Println("───────────────────────────────────────────────────────")
 	fmt.Println(envPreview)
 	fmt.Println("───────────────────────────────────────────────────────")
 
-	fmt.Println("\n✅ Preview complete! Run without --dry-run to generate files.")
+	fmt.Println()
+	fmt.Println(t.T("logs.preview_complete"))
 	return nil
 }
 
@@ -402,28 +428,28 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 	}
 
 	// Create necessary directories for volumes
-	if err := createServiceDirectories(registry, selectedIDs, envConfig.ARRPath); err != nil {
+	if err := createServiceDirectories(t, registry, selectedIDs, envConfig.ARRPath); err != nil {
 		return fmt.Errorf("failed to create service directories: %w", err)
 	}
 
 	fmt.Println("\n" + "═══════════════════════════════════════════════════════")
-	fmt.Println("🚀 Generating files...")
+	fmt.Println(t.T("logs.generating_files"))
 	fmt.Println("═══════════════════════════════════════════════════════")
 
 	// Generate docker-compose.yml
 	composeGen := generator.NewComposeGenerator(registry, outputDir)
 	
 	if vpnEnabled {
-		fmt.Println("📡 VPN Mode: Services will use Gluetun network")
+		fmt.Println(t.T("logs.vpn_mode_status"))
 	} else {
-		fmt.Println("🌉 Bridge Mode: Each service on media network")
+		fmt.Println(t.T("logs.bridge_mode_status"))
 	}
 
 	if err := composeGen.Generate(selectedIDs, vpnEnabled, true); err != nil {
 		return fmt.Errorf("failed to generate docker-compose.yml: %w", err)
 	}
 	composePath := filepath.Join(outputDir, "docker-compose.yml")
-	fmt.Printf("✅ Created: %s\n", composePath)
+	fmt.Println(t.T("messages.file_created", map[string]interface{}{"path": composePath}))
 
 	// Generate .env
 	envGen := generator.NewEnvGenerator(outputDir)
@@ -431,17 +457,18 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 		return fmt.Errorf("failed to generate .env: %w", err)
 	}
 	envPath := filepath.Join(outputDir, ".env")
-	fmt.Printf("✅ Created: %s\n", envPath)
+	fmt.Println(t.T("messages.file_created", map[string]interface{}{"path": envPath}))
 
 	// Success message
 	fmt.Println("\n" + "═══════════════════════════════════════════════════════")
 	fmt.Println("🎉", t.T("messages.generation_complete"))
 	fmt.Println("═══════════════════════════════════════════════════════")
-	fmt.Printf("\n📂 Output directory: %s\n", outputDir)
-	fmt.Println("\n📝 Next steps:")
-	fmt.Println("   1. Review the generated files")
-	fmt.Println("   2. Adjust environment variables in .env if needed")
-	fmt.Printf("   3. Run: cd %s && docker compose up -d\n", outputDir)
+	fmt.Println(t.T("logs.output_directory", map[string]interface{}{"directory": outputDir}))
+	fmt.Println()
+	fmt.Println(t.T("logs.next_steps"))
+	fmt.Println(t.T("logs.next_step_review"))
+	fmt.Println(t.T("logs.next_step_adjust"))
+	fmt.Println(t.T("logs.next_step_run", map[string]interface{}{"directory": outputDir}))
 	fmt.Println()
 
 	return nil
@@ -455,23 +482,23 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 		name = saveProfileName
 	} else {
 		// Prompt for profile name
-		fmt.Print("\n💾 Profile name: ")
+		fmt.Print("\n" + t.T("logs.profile_name_prompt"))
 		_, _ = fmt.Scanln(&name)
 	}
 
 	if name == "" {
-		fmt.Println("⚠️  Profile name is required. Skipping profile save.")
+		fmt.Println(t.T("logs.profile_name_required"))
 		return nil
 	}
 
 	// Check if profile already exists
 	if profile.ProfileExists(name) {
-		fmt.Printf("⚠️  Profile '%s' already exists. Overwrite? (y/N): ", name)
+		fmt.Print(t.T("logs.profile_exists_overwrite", map[string]interface{}{"name": name}))
 		var response string
 		_, _ = fmt.Scanln(&response)
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response != "y" && response != "yes" && response != "s" && response != "sim" {
-			fmt.Println("ℹ️  Profile save cancelled")
+			fmt.Println(t.T("logs.profile_save_cancelled"))
 			return nil
 		}
 	}
@@ -500,7 +527,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 
 	// Prompt for description
 	if saveProfileName == "" {
-		fmt.Print("📝 Description (optional): ")
+		fmt.Print(t.T("logs.profile_description_prompt"))
 		var desc string
 		_, _ = fmt.Scanln(&desc)
 		p.Description = desc
@@ -512,7 +539,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	}
 
 	fmt.Printf("\n✅ %s: %s\n", t.T("profile.saved_successfully"), name)
-	fmt.Println("   Use it with: corsarr generate --profile", name)
+	fmt.Println(t.T("logs.profile_use_instruction", map[string]interface{}{"name": name}))
 
 	return nil
 }
@@ -582,7 +609,7 @@ func loadConfigFile(path string) (*profile.Profile, error) {
 }
 
 // createServiceDirectories creates all necessary directories for service volumes
-func createServiceDirectories(registry *services.Registry, serviceIDs []string, arrPath string) error {
+func createServiceDirectories(t *i18n.I18n, registry *services.Registry, serviceIDs []string, arrPath string) error {
 	dirSet := make(map[string]bool)
 	
 	// Collect all unique directories from service volumes
@@ -623,10 +650,10 @@ func createServiceDirectories(registry *services.Registry, serviceIDs []string, 
 	}
 	
 	if len(createdDirs) > 0 {
-		fmt.Printf("📁 Created %d directories for service volumes\n", len(createdDirs))
+		fmt.Println(t.T("logs.directories_created", map[string]interface{}{"count": len(createdDirs)}))
 	}
 	if len(existingDirs) > 0 {
-		fmt.Printf("✓ Found %d existing directories\n", len(existingDirs))
+		fmt.Println(t.T("logs.directories_found", map[string]interface{}{"count": len(existingDirs)}))
 	}
 	
 	return nil

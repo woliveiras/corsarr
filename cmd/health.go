@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -136,6 +138,13 @@ type ContainerInfo struct {
 	Ports   []string
 }
 
+type composePSOutput struct {
+	Name   string `json:"Name"`
+	State  string `json:"State"`
+	Status string `json:"Status"`
+	Health string `json:"Health"`
+}
+
 func isDockerAvailable() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -147,31 +156,31 @@ func isDockerAvailable() bool {
 func getContainerStatus(dir string) ([]ContainerInfo, error) {
 	ctx := context.Background()
 
-	// List containers for this project
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", dir+"/docker-compose.yml", "ps", "--format", "json")
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", filepath.Join(dir, "docker-compose.yml"), "ps", "--format", "json")
 	output, err := cmd.Output()
 	if err != nil {
-		// Try fallback without json format
 		return getContainerStatusFallback(dir)
 	}
 
-	var containers []ContainerInfo
-
-	// Parse JSON output (Docker Compose v2 format)
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-
-		// Simple parsing (Docker Compose ps format may vary)
-		info := parseContainerLine(line)
-		if info != nil {
-			containers = append(containers, *info)
-		}
+	var entries []composePSOutput
+	if err := json.Unmarshal(output, &entries); err != nil {
+		return getContainerStatusFallback(dir)
 	}
 
-	// Get additional details for each container if detailed mode
+	containers := make([]ContainerInfo, 0, len(entries))
+	for _, entry := range entries {
+		status := entry.State
+		if status == "" {
+			status = entry.Status
+		}
+
+		containers = append(containers, ContainerInfo{
+			Name:   entry.Name,
+			Status: status,
+			Health: entry.Health,
+		})
+	}
+
 	if healthDetailed {
 		for i := range containers {
 			enrichContainerInfo(&containers[i])
@@ -209,19 +218,6 @@ func getContainerStatusFallback(dir string) ([]ContainerInfo, error) {
 	}
 
 	return containers, nil
-}
-
-func parseContainerLine(line string) *ContainerInfo {
-	// Basic parsing - Docker Compose output format
-	fields := strings.Fields(line)
-	if len(fields) < 2 {
-		return nil
-	}
-
-	return &ContainerInfo{
-		Name:   fields[0],
-		Status: fields[1],
-	}
 }
 
 func enrichContainerInfo(info *ContainerInfo) {
