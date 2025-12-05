@@ -1,0 +1,59 @@
+services:
+  gluetun:
+    image: {{ .Gluetun.Image }}
+    container_name: {{ .Gluetun.ContainerName }}
+    {{- if .Gluetun.Ports }}
+    ports:
+      {{- range .Gluetun.Ports }}
+      - "{{ .Host }}:{{ .Container }}{{ if ne .Protocol "tcp" }}/{{ .Protocol }}{{ end }}"
+      {{- end }}
+      {{- range .ExposedPorts }}
+      - "{{ .Host }}:{{ .Container }}{{ if ne .Protocol "tcp" }}/{{ .Protocol }}{{ end }}"
+      {{- end }}
+    {{- end }}
+    {{- if .Gluetun.Volumes }}
+    volumes:
+      {{- range .Gluetun.Volumes }}
+      - {{ .Host }}:{{ .Container }}{{ if .ReadOnly }}:ro{{ end }}
+      {{- end }}
+    {{- end }}
+    {{- if .Gluetun.Environment }}
+    environment:
+      {{- range .Gluetun.Environment }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Gluetun.Devices }}
+    devices:
+      {{- range .Gluetun.Devices }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    restart: {{ .Gluetun.Restart }}
+{{- range .Services }}
+  {{ .ContainerName }}:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    network_mode: "{{ .Network.VPNMode.NetworkMode }}"
+    depends_on:
+      - gluetun
+    {{- if .Volumes }}
+    volumes:
+      {{- range .Volumes }}
+      - {{ .Host }}:{{ .Container }}{{ if .ReadOnly }}:ro{{ end }}
+      {{- end }}
+    {{- end }}
+    {{- if .Environment }}
+    environment:
+      {{- range .Environment }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Devices }}
+    devices:
+      {{- range .Devices }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    restart: {{ .Restart }}
+{{- end }}

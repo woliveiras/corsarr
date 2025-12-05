@@ -1,0 +1,44 @@
+services:
+{{- range .Services }}
+  {{ .ContainerName }}:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    {{- if .Network.BridgeMode.Hostname }}
+    hostname: {{ .Network.BridgeMode.Hostname }}
+    {{- end }}
+    {{- if .Network.BridgeMode.Networks }}
+    networks:
+      {{- range .Network.BridgeMode.Networks }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Ports }}
+    ports:
+      {{- range .Ports }}
+      - "{{ .Host }}:{{ .Container }}{{ if ne .Protocol "tcp" }}/{{ .Protocol }}{{ end }}"
+      {{- end }}
+    {{- end }}
+    {{- if .Volumes }}
+    volumes:
+      {{- range .Volumes }}
+      - {{ .Host }}:{{ .Container }}{{ if .ReadOnly }}:ro{{ end }}
+      {{- end }}
+    {{- end }}
+    {{- if .Environment }}
+    environment:
+      {{- range .Environment }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Devices }}
+    devices:
+      {{- range .Devices }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    restart: {{ .Restart }}
+{{- end }}
+
+networks:
+  media:
+    driver: bridge
