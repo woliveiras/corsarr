@@ -27,7 +27,7 @@ builds:
 archives:
   - id: corsarr
     format: tar.gz
-    name_template: "corsarr_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "corsarr_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip

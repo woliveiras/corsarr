@@ -39,32 +39,28 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 **Linux (AMD64):**
 
 ```bash
-wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_x86_64.tar.gz
-tar -xzf corsarr_Linux_x86_64.tar.gz
+curl -sL https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_linux_amd64.tar.gz | tar xz
 sudo mv corsarr /usr/local/bin/
 ```
 
 **Linux (ARM64):**
 
 ```bash
-wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_arm64.tar.gz
-tar -xzf corsarr_Linux_arm64.tar.gz
+curl -sL https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_linux_arm64.tar.gz | tar xz
 sudo mv corsarr /usr/local/bin/
 ```
 
 **macOS (Intel):**
 
 ```bash
-wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Darwin_x86_64.tar.gz
-tar -xzf corsarr_Darwin_x86_64.tar.gz
+curl -sL https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_darwin_amd64.tar.gz | tar xz
 sudo mv corsarr /usr/local/bin/
 ```
 
 **macOS (Apple Silicon):**
 
 ```bash
-wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Darwin_arm64.tar.gz
-tar -xzf corsarr_Darwin_arm64.tar.gz
+curl -sL https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_darwin_arm64.tar.gz | tar xz
 sudo mv corsarr /usr/local/bin/
 ```
 
@@ -72,7 +68,7 @@ sudo mv corsarr /usr/local/bin/
 
 ```powershell
 # Download and extract
-Invoke-WebRequest -Uri "https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Windows_x86_64.zip" -OutFile "corsarr.zip"
+Invoke-WebRequest -Uri "https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_windows_amd64.zip" -OutFile "corsarr.zip"
 Expand-Archive -Path "corsarr.zip" -DestinationPath "C:\Program Files\corsarr"
 
 # Add to PATH (permanent)
@@ -599,9 +595,7 @@ Download the latest release from [GitHub Releases](https://github.com/woliveiras
 
 ```bash
 # Linux/macOS - Download and replace
-cd /tmp
-wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_x86_64.tar.gz
-tar -xzf corsarr_Linux_x86_64.tar.gz
+curl -sL https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_linux_amd64.tar.gz | tar xz
 sudo mv corsarr /usr/local/bin/
 ```
 
