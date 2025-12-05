@@ -38,7 +38,7 @@ func TestService_GetDescriptionKey(t *testing.T) {
 		Name: "Prowlarr",
 	}
 
-	expected := "services.prowlarr.description"
+	expected := "services_prowlarr_description"
 	result := service.GetDescriptionKey()
 
 	if result != expected {
