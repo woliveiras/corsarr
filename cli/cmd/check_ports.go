@@ -208,7 +208,7 @@ func isPortAvailable(port int, protocol string) bool {
 		if err != nil {
 			return false
 		}
-		conn.Close()
+		_ = conn.Close()
 		return true
 	}
 
@@ -217,7 +217,7 @@ func isPortAvailable(port int, protocol string) bool {
 	if err != nil {
 		return false
 	}
-	listener.Close()
+	_ = listener.Close()
 	return true
 }
 
@@ -288,7 +288,7 @@ func displayPortStatus(t *i18n.I18n, ports []PortInfo) {
 			usedBy)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 }
 
 func suggestAlternativePorts(t *i18n.I18n, ports []PortInfo) {

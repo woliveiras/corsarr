@@ -127,7 +127,7 @@ var profileListCmd = &cobra.Command{
 				p.Name, servicesCount, updatedAt, description)
 		}
 
-		w.Flush()
+		_ = w.Flush()
 		return nil
 	},
 }
@@ -145,7 +145,7 @@ var profileDeleteCmd = &cobra.Command{
 		if !force {
 			fmt.Printf("⚠️  %s '%s'? (y/N): ", t.T("profile.confirm_delete"), name)
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			response = strings.ToLower(strings.TrimSpace(response))
 			if response != "y" && response != "yes" && response != "s" && response != "sim" {
 				fmt.Printf("ℹ️  %s\n", t.T("profile.delete_cancelled"))

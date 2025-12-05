@@ -104,8 +104,8 @@ func isWritable(path string) bool {
 	if err != nil {
 		return false
 	}
-	file.Close()
-	os.Remove(testFile)
+	_ = file.Close()
+	_ = os.Remove(testFile)
 	return true
 }
 

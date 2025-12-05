@@ -138,7 +138,7 @@ func runGenerate(t *i18n.I18n) error {
 	if loadedProfile != nil {
 		vpnEnabled = loadedProfile.VPN.Enabled
 		fmt.Printf("🔒 VPN: %v (from profile)\n", vpnEnabled)
-	} else if !noInteractive && !dryRun && useVPN == false {
+	} else if !noInteractive && !dryRun && !useVPN {
 		vpnEnabled, err = prompts.AskVPN(t)
 		if err != nil {
 			return fmt.Errorf("VPN selection failed: %w", err)
@@ -391,7 +391,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	} else {
 		// Prompt for profile name
 		fmt.Print("\n💾 Profile name: ")
-		fmt.Scanln(&name)
+		_, _ = fmt.Scanln(&name)
 	}
 
 	if name == "" {
@@ -403,7 +403,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	if profile.ProfileExists(name) {
 		fmt.Printf("⚠️  Profile '%s' already exists. Overwrite? (y/N): ", name)
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response != "y" && response != "yes" && response != "s" && response != "sim" {
 			fmt.Println("ℹ️  Profile save cancelled")
@@ -437,7 +437,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	if saveProfileName == "" {
 		fmt.Print("📝 Description (optional): ")
 		var desc string
-		fmt.Scanln(&desc)
+		_, _ = fmt.Scanln(&desc)
 		p.Description = desc
 	}
 

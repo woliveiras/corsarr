@@ -252,23 +252,6 @@ func enrichContainerInfo(info *ContainerInfo) {
 	}
 }
 
-func getProjectName(dir string) string {
-	// Try to extract project name from .env or use directory name
-	envPath := dir + "/.env"
-	if data, err := os.ReadFile(envPath); err == nil {
-		lines := strings.Split(string(data), "\n")
-		for _, line := range lines {
-			if strings.HasPrefix(line, "COMPOSE_PROJECT_NAME=") {
-				return strings.TrimPrefix(line, "COMPOSE_PROJECT_NAME=")
-			}
-		}
-	}
-
-	// Fallback to directory name
-	parts := strings.Split(strings.TrimRight(dir, "/"), "/")
-	return parts[len(parts)-1]
-}
-
 func displayHealthStatus(t *i18n.I18n, containers []ContainerInfo) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
@@ -326,7 +309,7 @@ func displayHealthStatus(t *i18n.I18n, containers []ContainerInfo) {
 		}
 	}
 
-	w.Flush()
+	_ = w.Flush()
 }
 
 func getStatusIcon(status string) string {

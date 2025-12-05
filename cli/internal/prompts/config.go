@@ -37,14 +37,13 @@ func ConfigureVPN(t *i18n.I18n) (*generator.VPNConfig, error) {
 		form2 := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title(t.T("prompts.vpn_provider")).
-					Value(&config.ServiceProvider).
-					Placeholder("custom"),
-				huh.NewInput().
-					Title(t.T("prompts.vpn_wireguard_private_key")).
-					Value(&config.WireguardPrivateKey).
-					Password(true).
-					EchoMode(huh.EchoModePassword),
+				Title(t.T("prompts.vpn_provider")).
+				Value(&config.ServiceProvider).
+				Placeholder("custom"),
+			huh.NewInput().
+				Title(t.T("prompts.vpn_wireguard_private_key")).
+				Value(&config.WireguardPrivateKey).
+				EchoMode(huh.EchoModePassword),
 				huh.NewInput().
 					Title(t.T("prompts.vpn_wireguard_addresses")).
 					Value(&config.WireguardAddresses).

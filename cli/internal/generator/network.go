@@ -43,7 +43,7 @@ func ConfigureServiceNetworking(service *services.Service, vpnMode bool) error {
 		}
 	} else {
 		// For bridge mode, ensure service has proper network configuration
-		if service.Network.BridgeMode.Networks == nil || len(service.Network.BridgeMode.Networks) == 0 {
+		if len(service.Network.BridgeMode.Networks) == 0 {
 			return fmt.Errorf("service %s has no bridge network configuration", service.ID)
 		}
 	}

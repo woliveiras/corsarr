@@ -114,12 +114,12 @@ func TestListProfiles(t *testing.T) {
 	p1 := NewProfile("profile1")
 	p1.Description = "First profile"
 	p1.Services = []string{"radarr"}
-	SaveProfile(p1)
+	_ = SaveProfile(p1)
 
 	p2 := NewProfile("profile2")
 	p2.Description = "Second profile"
 	p2.Services = []string{"sonarr", "prowlarr"}
-	SaveProfile(p2)
+	_ = SaveProfile(p2)
 
 	// List profiles
 	profiles, err = ListProfiles()
@@ -238,13 +238,13 @@ func TestImportProfile(t *testing.T) {
 	p.Description = "Import test"
 	p.Services = []string{"jellyfin", "jellyseerr"}
 	p.VPN.Enabled = false
-	SaveProfile(p)
+	_ = SaveProfile(p)
 
 	exportPath := filepath.Join(tmpDir, "import-test.json")
-	ExportProfile("test-import", exportPath)
+	_ = ExportProfile("test-import", exportPath)
 
 	// Delete the original profile
-	DeleteProfile("test-import")
+	_ = DeleteProfile("test-import")
 
 	// Import the profile
 	imported, err := ImportProfile(exportPath)
@@ -298,7 +298,7 @@ func TestProfileExists(t *testing.T) {
 
 	// Create profile
 	p := NewProfile("exists-test")
-	SaveProfile(p)
+	_ = SaveProfile(p)
 
 	// Profile should exist now
 	if !ProfileExists("exists-test") {
@@ -321,7 +321,7 @@ func TestGetMetadata(t *testing.T) {
 		"PGID": "1000",
 		"TZ":   "UTC",
 	}
-	SaveProfile(p)
+	_ = SaveProfile(p)
 
 	// Get metadata
 	meta, err := GetMetadata("metadata-test")
@@ -359,7 +359,7 @@ func TestProfileTimestamps(t *testing.T) {
 	initialUpdated := p.UpdatedAt
 
 	// Save profile
-	SaveProfile(p)
+	_ = SaveProfile(p)
 
 	// Wait a bit
 	time.Sleep(10 * time.Millisecond)
@@ -369,7 +369,7 @@ func TestProfileTimestamps(t *testing.T) {
 	loaded.Description = "Updated description"
 
 	// Save again
-	SaveProfile(loaded)
+	_ = SaveProfile(loaded)
 
 	// Load again
 	updated, _ := LoadProfile("timestamp-test")
