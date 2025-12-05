@@ -26,6 +26,8 @@ prompts:
   vpn_wireguard_private_key: "Chave privada Wireguard:"
   vpn_wireguard_addresses: "Endereços Wireguard:"
   vpn_wireguard_addresses_help: "ex: 10.64.0.1/32"
+  vpn_wireguard_public_key: "Chave pública Wireguard (servidor):"
+  vpn_wireguard_endpoint: "Endpoint Wireguard:"
   vpn_port_forwarding: "Habilitar encaminhamento de porta?"
   vpn_dns: "Servidor DNS customizado:"
   vpn_dns_help: "Mantenha o padrão ou especifique DNS customizado (ex: 1.1.1.1)"
@@ -79,9 +81,12 @@ services:
     description: "Cliente VPN com suporte para múltiplos provedores"
 
 messages:
-  welcome: "🏴‍☠️ Bem-vindo ao Corsarr - Navegue pelos mares da automação de mídia"
+  welcome: "🏴‍☠️ Bem-vindo ao Corsarr - Navegue pelos altos mares da automação de mídia"
   validation_success: "✓ Configuração validada com sucesso!"
   services_configured: "✓ %d serviços serão configurados"
+  services_selected: "serviços selecionados"
+  generation_cancelled: "Geração cancelada"
+  generation_complete: "Arquivos gerados com sucesso!"
   mode_vpn: "✓ Modo: COM VPN"
   mode_no_vpn: "✓ Modo: SEM VPN"
   no_port_conflicts: "✓ Nenhum conflito de portas detectado"

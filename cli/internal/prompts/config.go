@@ -9,10 +9,10 @@ import (
 // ConfigureVPN prompts for VPN configuration if VPN is enabled
 func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 	config := &generator.VPNConfig{
-		Provider:       "custom",
-		Type:           "wireguard",
-		PortForwarding: false,
-		DNS:            "1.1.1.1",
+		ServiceProvider: "custom",
+		Type:            "wireguard",
+		PortForwarding:  "off",
+		DNSAddress:      "1.1.1.1",
 	}
 
 	// VPN type selection
@@ -38,7 +38,7 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 			huh.NewGroup(
 				huh.NewInput().
 					Title(translator.T("prompts.vpn_provider")).
-					Value(&config.Provider).
+					Value(&config.ServiceProvider).
 					Placeholder("custom"),
 				huh.NewInput().
 					Title(translator.T("prompts.vpn_wireguard_private_key")).
@@ -53,10 +53,6 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 					Title(translator.T("prompts.vpn_wireguard_public_key")).
 					Value(&config.WireguardPublicKey).
 					Placeholder("server public key"),
-				huh.NewInput().
-					Title(translator.T("prompts.vpn_wireguard_endpoint")).
-					Value(&config.WireguardEndpoint).
-					Placeholder("vpn.example.com:51820"),
 			),
 		)
 
@@ -69,7 +65,7 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 			huh.NewGroup(
 				huh.NewInput().
 					Title(translator.T("prompts.vpn_provider")).
-					Value(&config.Provider).
+					Value(&config.ServiceProvider).
 					Placeholder("custom"),
 			),
 		)
@@ -80,14 +76,15 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 	}
 
 	// Port forwarding and DNS
+	var enablePortForwarding bool
 	form3 := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title(translator.T("prompts.vpn_port_forwarding")).
-				Value(&config.PortForwarding),
+				Value(&enablePortForwarding),
 			huh.NewInput().
 				Title(translator.T("prompts.vpn_dns")).
-				Value(&config.DNS).
+				Value(&config.DNSAddress).
 				Placeholder("1.1.1.1"),
 		),
 	)
@@ -96,8 +93,10 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 		return nil, err
 	}
 
-	if err := survey.AskOne(dnsPrompt, &customDNS); err != nil {
-		return nil, err
+	if enablePortForwarding {
+		config.PortForwarding = "on"
+	} else {
+		config.PortForwarding = "off"
 	}
 
 	return config, nil
