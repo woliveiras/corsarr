@@ -1,0 +1,27 @@
+# Corsarr CLI Configuration Example
+# Use this file with: corsarr generate --config config.yaml
+
+name: my-setup
+description: "My media stack configuration"
+
+vpn:
+  enabled: true
+  provider: protonvpn
+  password: "your-wireguard-private-key-here"
+
+services:
+  - prowlarr
+  - radarr
+  - sonarr
+  - jellyfin
+  - qbittorrent
+
+environment:
+  COMPOSE_PROJECT_NAME: corsarr
+  ARRPATH: /home/user/media
+  TZ: America/Sao_Paulo
+  PUID: "1000"
+  PGID: "1000"
+  UMASK: "002"
+
+outputDir: .

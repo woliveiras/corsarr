@@ -4,22 +4,86 @@
 
 Fast and easy way to run your *arr stack: Radarr, Sonarr, Lidarr, Prowlarr, Bazarr and more!
 
-This repository contains a Docker Compose setup for managing various media applications, including Radarr, Lidarr, LazyLibrarian, and Bazarr. The setup is designed to run on a Linux server with Docker and Docker Compose installed.
+## 🚀 Quick Start with CLI (Recommended)
 
-In this guide, you’ll learn how to set up a fully automated media server that, when you add a movie or TV show, will:
+**The easiest way to get started** is using the Corsarr CLI:
 
-- Search for torrents/magnet links using Prowlarr and Jellyseerr (optional)
-- Manage content with Sonarr (TV shows), Radarr (movies), LazyLibrarian (books), and Lidarr (music)
-- Download subtitles with Bazarr
-- Download files via qBittorrent
-- FlareSolverr to bypass Cloudflare restrictions
-- Stream your media to your TV with Jellyfin
+```bash
+# Clone the repository
+git clone https://github.com/woliveiras/corsarr.git
+cd corsarr/cli
 
-All you need is my `docker-compose.yml` file and a few environment variables!
+# Build the CLI
+go build -o corsarr .
+
+# Generate your stack interactively
+./corsarr generate
+
+# Start your services
+docker compose up -d
+```
+
+**The CLI will**:
+- 🌍 Let you choose your language (EN/PT-BR/ES)
+- 🎯 Guide you through service selection
+- 🔧 Configure all environment variables
+- ✅ Validate your setup automatically
+- 📦 Generate `docker-compose.yml` and `.env` files
+
+**[→ Full CLI Documentation](cli/README.md)**
+
+---
+
+## 📖 What is Corsarr?
+
+This repository provides an automated media server setup that handles:
+
+- 🔍 **Search**: Find torrents with Prowlarr and request content via Jellyseerr
+- 📺 **Management**: Organize TV shows (Sonarr), movies (Radarr), music (Lidarr), books (LazyLibrarian)
+- 💬 **Subtitles**: Auto-download with Bazarr
+- ⬇️ **Downloads**: qBittorrent for torrent management
+- 🔓 **Bypass**: FlareSolverr to handle Cloudflare restrictions
+- 🎬 **Streaming**: Watch everything with Jellyfin
+- 🔒 **Security**: Optional VPN support with Gluetun
+
+---
+
+## 🎯 Two Ways to Use Corsarr
+
+### Option 1: CLI Tool (Recommended) ⭐
+
+Modern, interactive CLI that generates custom configurations:
+
+**Features**:
+- ✅ Interactive TUI with validation
+- ✅ Multilingual (EN, PT-BR, ES)
+- ✅ Save/load configuration profiles
+- ✅ VPN and non-VPN modes
+- ✅ Health checks and port scanning
+- ✅ CI/CD ready (non-interactive mode)
+- ✅ 12 services supported
+
+**[→ CLI Documentation](cli/README.md)**
+
+### Option 2: Manual Setup (Traditional)
+
+Use pre-configured `docker-compose.yml` files in `simple/` or `vpn/` directories.
+
+**[→ Jump to Manual Setup Instructions](#manual-setup)**
+
+---
 
 ## Prerequisites
 
-- [Docker and Docker Compose](https://docs.docker.com/compose/install/#docker-desktop-recommended) installed on your server;
+- [Docker and Docker Compose](https://docs.docker.com/compose/install/#docker-desktop-recommended) v2+ installed
+- (For CLI) Go 1.24.2+ to build from source
+- Linux, macOS, or Windows with WSL2
+
+---
+
+# Manual Setup
+
+**Note**: For a better experience, use the [CLI tool](#quick-start-with-cli-recommended) instead. The instructions below are for manual setup using pre-configured files.
 
 ## Setup Instructions
 
@@ -105,7 +169,7 @@ All you need is my `docker-compose.yml` file and a few environment variables!
 
 After accessing each application for the first time, you will need to go through the initial setup process. This typically involves setting up your media library paths, configuring download clients, and adding indexers.
 
-###  qBittorrent
+###  qBittorrent
 
 Access `http://<YOUR_SERVER>:8081` (default user: `admin`, password: run `docker logs qbittorrent` in your terminal).
 
@@ -177,7 +241,7 @@ Watch as it changes to Downloading and appears in qBittorrent.
 
 Repeat with `Nosferatu (1922)` and `The City of the Dead (1960)`.
 
-In Jellyfin/Plex, you’ll see the movies with covers, synopsis, and actors ready to play.
+In Jellyfin/Plex, you'll see the movies with covers, synopsis, and actors ready to play.
 
 You can find more public domain movies at [JustWatch](https://www.justwatch.com/us/provider/public-domain-movies?sort_by=trending_7_day).
 
@@ -242,6 +306,7 @@ For automated backups, consider using tools like [Duplicati](https://www.duplica
 - [qBittorrent Documentation](https://github.com/qbittorrent/qBittorrent/wiki)
 - [Jellyfin Documentation](https://jellyfin.org/docs/)
 - [Jellyseerr Documentation](https://docs.jellyseerr.com/)
+- **[Corsarr CLI Documentation](cli/README.md)**
 
 ---
 
@@ -315,11 +380,13 @@ Make sure the user running Docker has read/write permissions to these folders. A
 
 - *Symptoms:* Docker fails to start containers due to port conflicts.
 - *Solution:* Change the exposed ports in `docker-compose.yml` or stop the conflicting service.
+- **Use CLI**: `cd cli && ./corsarr check-ports --suggest`
 
 ### 3. Containers Not Starting
 
 - *Symptoms:* `docker-compose up` fails, containers exit immediately.
 - *Solution:* Run `docker-compose logs <service_name>` to check for errors. Common issues include missing environment variables, permission problems, or port conflicts.
+- **Use CLI**: `cd cli && ./corsarr health --detailed`
 
 ### 4. Slow Downloads or No Connection
 
@@ -336,4 +403,25 @@ Make sure the user running Docker has read/write permissions to these folders. A
 - *Symptoms:* Can't access service via browser.
 - *Solution:* Confirm the container is running (`docker-compose ps`), check the correct port, and verify firewall settings.
 
-For more troubleshooting, consult the official documentation links above.
+**For more troubleshooting**, see the [CLI Troubleshooting Guide](cli/README.md#-troubleshooting).
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical documentation.
+
+---
+
+## 📄 License
+
+See [LICENSE](LICENSE) file.
+
+---
+
+## 🔗 Links
+
+- **[Corsarr CLI Documentation](cli/README.md)** - Full CLI guide
+- **[Technical Architecture](docs/ARCHITECTURE.md)** - Development docs
+- **[Issue Tracker](https://github.com/woliveiras/corsarr/issues)** - Report bugs
+- **[Servarr Discord](https://discord.gg/Urs6FLC)** - Community support

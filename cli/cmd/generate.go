@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/prompts"
 	"github.com/woliveiras/corsarr/internal/services"
 	"github.com/woliveiras/corsarr/internal/validator"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -23,6 +25,19 @@ var (
 	dryRun          bool
 	saveProfile     bool
 	saveProfileName string
+	// Non-interactive mode flags
+	servicesList    string
+	configFile      string
+	arrPath         string
+	timezone        string
+	puid            string
+	pgid            string
+	umask           string
+	projectName     string
+	vpnProvider     string
+	vpnType         string
+	vpnUser         string
+	vpnPassword     string
 )
 
 // generateCmd represents the generate command
@@ -54,18 +69,44 @@ func init() {
 	// Flags for generate command
 	generateCmd.Flags().StringVarP(&profileName, "profile", "p", "", "Load configuration from a saved profile")
 	generateCmd.Flags().StringVarP(&outputDir, "output", "o", ".", "Output directory for generated files")
-	generateCmd.Flags().BoolVar(&noInteractive, "no-interactive", false, "Run in non-interactive mode (requires config file or profile)")
+	generateCmd.Flags().BoolVar(&noInteractive, "no-interactive", false, "Run in non-interactive mode (requires all config flags)")
 	generateCmd.Flags().BoolVar(&useVPN, "vpn", false, "Enable VPN mode (Gluetun)")
 	generateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be generated without creating files")
 	generateCmd.Flags().BoolVar(&saveProfile, "save-profile", false, "Save configuration as a profile after generation")
 	generateCmd.Flags().StringVar(&saveProfileName, "save-as", "", "Profile name when using --save-profile")
+	
+	// Non-interactive mode configuration
+	generateCmd.Flags().StringVar(&configFile, "config", "", "Load configuration from YAML/JSON file")
+	generateCmd.Flags().StringVar(&servicesList, "services", "", "Comma-separated list of services (e.g., 'radarr,sonarr,prowlarr')")
+	generateCmd.Flags().StringVar(&arrPath, "arr-path", "", "Base path for media library")
+	generateCmd.Flags().StringVar(&timezone, "timezone", "", "Timezone (e.g., 'America/Sao_Paulo')")
+	generateCmd.Flags().StringVar(&puid, "puid", "", "User ID for file permissions")
+	generateCmd.Flags().StringVar(&pgid, "pgid", "", "Group ID for file permissions")
+	generateCmd.Flags().StringVar(&umask, "umask", "002", "File creation mask")
+	generateCmd.Flags().StringVar(&projectName, "project-name", "corsarr", "Docker Compose project name")
+	
+	// VPN configuration for non-interactive mode
+	generateCmd.Flags().StringVar(&vpnProvider, "vpn-provider", "", "VPN provider (nordvpn, protonvpn, etc.)")
+	generateCmd.Flags().StringVar(&vpnType, "vpn-type", "wireguard", "VPN type (wireguard or openvpn)")
+	generateCmd.Flags().StringVar(&vpnUser, "vpn-user", "", "VPN username (for OpenVPN)")
+	generateCmd.Flags().StringVar(&vpnPassword, "vpn-password", "", "VPN password or WireGuard private key")
 }
 
 func runGenerate(t *i18n.I18n) error {
 	var loadedProfile *profile.Profile
 	var err error
 
-	// Step 0: Load profile if specified
+	// Step 0a: Load from config file if specified
+	if configFile != "" {
+		fmt.Printf("📋 Loading configuration from: %s\n", configFile)
+		loadedProfile, err = loadConfigFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to load config file: %w", err)
+		}
+		fmt.Printf("✅ Configuration loaded\n\n")
+	}
+
+	// Step 0b: Load profile if specified (overrides config file)
 	if profileName != "" {
 		fmt.Printf("📋 Loading profile: %s\n", profileName)
 		loadedProfile, err = profile.LoadProfile(profileName)
@@ -79,6 +120,13 @@ func runGenerate(t *i18n.I18n) error {
 		fmt.Println()
 	}
 
+	// Step 0c: Validate non-interactive mode requirements
+	if noInteractive {
+		if err := validateNonInteractiveMode(loadedProfile); err != nil {
+			return err
+		}
+	}
+
 	// Step 1: Initialize service registry
 	registry, err := services.NewRegistry()
 	if err != nil {
@@ -90,7 +138,7 @@ func runGenerate(t *i18n.I18n) error {
 	if loadedProfile != nil {
 		vpnEnabled = loadedProfile.VPN.Enabled
 		fmt.Printf("🔒 VPN: %v (from profile)\n", vpnEnabled)
-	} else if !dryRun && useVPN == false {
+	} else if !noInteractive && !dryRun && useVPN == false {
 		vpnEnabled, err = prompts.AskVPN(t)
 		if err != nil {
 			return fmt.Errorf("VPN selection failed: %w", err)
@@ -102,15 +150,22 @@ func runGenerate(t *i18n.I18n) error {
 	if loadedProfile != nil && len(loadedProfile.Services) > 0 {
 		selectedIDs = loadedProfile.Services
 		fmt.Printf("📦 Services: %s (from profile)\n\n", strings.Join(selectedIDs, ", "))
-	} else {
+	} else if servicesList != "" {
+		// Non-interactive: parse services from flag
+		selectedIDs = strings.Split(servicesList, ",")
+		for i := range selectedIDs {
+			selectedIDs[i] = strings.TrimSpace(selectedIDs[i])
+		}
+		fmt.Printf("📦 Services: %s (from flags)\n\n", strings.Join(selectedIDs, ", "))
+	} else if !noInteractive {
+		// Interactive mode
 		fmt.Println()
 		selectedIDs, err = prompts.SelectServices(t, registry, vpnEnabled)
 		if err != nil {
 			return fmt.Errorf("service selection failed: %w", err)
 		}
-	}
-	if err != nil {
-		return fmt.Errorf("service selection failed: %w", err)
+	} else {
+		return fmt.Errorf("non-interactive mode requires --services flag or --profile")
 	}
 
 	if len(selectedIDs) == 0 {
@@ -146,6 +201,34 @@ func runGenerate(t *i18n.I18n) error {
 		}
 		
 		fmt.Println("⚙️  Using environment from profile")
+	} else if noInteractive {
+		// Non-interactive: use flags
+		envConfig = &generator.EnvConfig{
+			ComposeProjectName: projectName,
+			ARRPath:            arrPath,
+			Timezone:           timezone,
+			PUID:               puid,
+			PGID:               pgid,
+			UMASK:              umask,
+		}
+		
+		// VPN config from flags
+		if vpnEnabled {
+			if vpnProvider == "" {
+				return fmt.Errorf("non-interactive VPN mode requires --vpn-provider")
+			}
+			envConfig.VPNConfig = &generator.VPNConfig{
+				ServiceProvider:     vpnProvider,
+				Type:                vpnType,
+				WireguardPrivateKey: vpnPassword,
+				WireguardAddresses:  "",
+				WireguardPublicKey:  "",
+				PortForwarding:      "off",
+				DNSAddress:          "1.1.1.1",
+			}
+		}
+		
+		fmt.Println("⚙️  Using environment from flags")
 	} else {
 		envConfig, err = prompts.ConfigureEnvironment(t, vpnEnabled)
 		if err != nil {
@@ -367,4 +450,68 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	fmt.Println("   Use it with: corsarr generate --profile", name)
 
 	return nil
+}
+
+// validateNonInteractiveMode checks if all required flags are provided
+func validateNonInteractiveMode(loadedProfile *profile.Profile) error {
+	// If profile or config file is loaded, we have everything we need
+	if loadedProfile != nil {
+		return nil
+	}
+
+	// Check required flags
+	missing := []string{}
+	
+	if servicesList == "" {
+		missing = append(missing, "--services")
+	}
+	if arrPath == "" {
+		missing = append(missing, "--arr-path")
+	}
+	if timezone == "" {
+		missing = append(missing, "--timezone")
+	}
+	if puid == "" {
+		missing = append(missing, "--puid")
+	}
+	if pgid == "" {
+		missing = append(missing, "--pgid")
+	}
+	
+	if useVPN && vpnProvider == "" {
+		missing = append(missing, "--vpn-provider")
+	}
+	if useVPN && vpnPassword == "" {
+		missing = append(missing, "--vpn-password")
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("non-interactive mode requires the following flags: %s\n\nOr use --profile or --config to load configuration", strings.Join(missing, ", "))
+	}
+
+	return nil
+}
+
+// loadConfigFile loads configuration from a YAML or JSON file
+func loadConfigFile(path string) (*profile.Profile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	var p profile.Profile
+	
+	// Try YAML first
+	if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
+		if err := yaml.Unmarshal(data, &p); err != nil {
+			return nil, fmt.Errorf("failed to parse YAML config: %w", err)
+		}
+	} else {
+		// Try JSON
+		if err := json.Unmarshal(data, &p); err != nil {
+			return nil, fmt.Errorf("failed to parse JSON config: %w", err)
+		}
+	}
+
+	return &p, nil
 }
