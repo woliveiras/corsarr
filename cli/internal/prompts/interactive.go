@@ -9,13 +9,13 @@ import (
 )
 
 // AskVPN prompts the user if they want to use VPN
-func AskVPN(translator *i18n.I18n) (bool, error) {
+func AskVPN(t *i18n.I18n) (bool, error) {
 	var useVPN bool
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
-				Title(translator.T("prompts.vpn_question")).
+				Title(t.T("prompts.vpn_question")).
 				Value(&useVPN),
 		),
 	)
@@ -28,7 +28,7 @@ func AskVPN(translator *i18n.I18n) (bool, error) {
 }
 
 // SelectServices prompts the user to select which services to use
-func SelectServices(translator *i18n.I18n, registry *services.Registry, vpnEnabled bool) ([]string, error) {
+func SelectServices(t *i18n.I18n, registry *services.Registry, vpnEnabled bool) ([]string, error) {
 	// Filter services by VPN compatibility
 	availableServices := registry.FilterByVPNCompatibility(vpnEnabled)
 
@@ -52,10 +52,10 @@ func SelectServices(translator *i18n.I18n, registry *services.Registry, vpnEnabl
 		for _, service := range servicesInCategory {
 			displayName := service.Name
 			if service.RequiresVPN {
-				displayName += translator.T("prompts.requires_vpn_suffix")
+				displayName += t.T("prompts.requires_vpn_suffix")
 			}
 			if len(service.Dependencies) > 0 {
-				displayName += translator.T("prompts.has_dependencies_suffix")
+				displayName += t.T("prompts.has_dependencies_suffix")
 			}
 
 			options = append(options, huh.NewOption(displayName, service.ID))
@@ -67,7 +67,7 @@ func SelectServices(translator *i18n.I18n, registry *services.Registry, vpnEnabl
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
-				Title(translator.T("prompts.service_selection")).
+				Title(t.T("prompts.service_selection")).
 				Options(options...).
 				Value(&selectedIDs).
 				Height(15),
@@ -79,20 +79,20 @@ func SelectServices(translator *i18n.I18n, registry *services.Registry, vpnEnabl
 	}
 
 	if len(selectedIDs) == 0 {
-		return nil, fmt.Errorf("%s", translator.T("errors.no_services_selected"))
+		return nil, fmt.Errorf("%s", t.T("errors.no_services_selected"))
 	}
 
 	return selectedIDs, nil
 }
 
 // AskBasePath prompts for the base path (ARRPATH)
-func AskBasePath(translator *i18n.I18n, defaultPath string) (string, error) {
+func AskBasePath(t *i18n.I18n, defaultPath string) (string, error) {
 	var path string
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
-				Title(translator.T("prompts.base_path")).
+				Title(t.T("prompts.base_path")).
 				Value(&path).
 				Placeholder(defaultPath).
 				Validate(func(s string) error {
@@ -116,13 +116,13 @@ func AskBasePath(translator *i18n.I18n, defaultPath string) (string, error) {
 }
 
 // AskTimezone prompts for timezone
-func AskTimezone(translator *i18n.I18n, defaultTZ string) (string, error) {
+func AskTimezone(t *i18n.I18n, defaultTZ string) (string, error) {
 	var tz string
 
-	form := huh.NewForm(
+	form2 := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
-				Title(translator.T("prompts.timezone")).
+				Title(t.T("prompts.timezone")).
 				Value(&tz).
 				Placeholder(defaultTZ).
 				Validate(func(s string) error {
@@ -134,7 +134,7 @@ func AskTimezone(translator *i18n.I18n, defaultTZ string) (string, error) {
 		),
 	)
 
-	if err := form.Run(); err != nil {
+	if err := form2.Run(); err != nil {
 		return "", err
 	}
 
@@ -146,7 +146,7 @@ func AskTimezone(translator *i18n.I18n, defaultTZ string) (string, error) {
 }
 
 // AskUserIDs prompts for PUID, PGID, and UMASK
-func AskUserIDs(translator *i18n.I18n) (puid, pgid, umask string, err error) {
+func AskUserIDs(t *i18n.I18n) (puid, pgid, umask string, err error) {
 	puid = "1000"
 	pgid = "1000"
 	umask = "002"
@@ -154,15 +154,15 @@ func AskUserIDs(translator *i18n.I18n) (puid, pgid, umask string, err error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
-				Title(translator.T("prompts.puid")).
+				Title(t.T("prompts.puid")).
 				Value(&puid).
 				Placeholder("1000"),
 			huh.NewInput().
-				Title(translator.T("prompts.pgid")).
+				Title(t.T("prompts.pgid")).
 				Value(&pgid).
 				Placeholder("1000"),
 			huh.NewInput().
-				Title(translator.T("prompts.umask")).
+				Title(t.T("prompts.umask")).
 				Value(&umask).
 				Placeholder("002"),
 		),
@@ -176,13 +176,13 @@ func AskUserIDs(translator *i18n.I18n) (puid, pgid, umask string, err error) {
 }
 
 // ConfirmGeneration asks for final confirmation before generating files
-func ConfirmGeneration(translator *i18n.I18n) (bool, error) {
+func ConfirmGeneration(t *i18n.I18n) (bool, error) {
 	var confirm bool
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
-				Title(translator.T("prompts.confirm_generation")).
+				Title(t.T("prompts.confirm_generation")).
 				Value(&confirm).
 				Affirmative("Yes").
 				Negative("No"),

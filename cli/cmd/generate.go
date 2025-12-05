@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/woliveiras/corsarr/internal/generator"
 	"github.com/woliveiras/corsarr/internal/i18n"
+	"github.com/woliveiras/corsarr/internal/profile"
 	"github.com/woliveiras/corsarr/internal/prompts"
 	"github.com/woliveiras/corsarr/internal/services"
 	"github.com/woliveiras/corsarr/internal/validator"
@@ -19,6 +21,8 @@ var (
 	noInteractive   bool
 	useVPN          bool
 	dryRun          bool
+	saveProfile     bool
+	saveProfileName string
 )
 
 // generateCmd represents the generate command
@@ -53,22 +57,40 @@ func init() {
 	generateCmd.Flags().BoolVar(&noInteractive, "no-interactive", false, "Run in non-interactive mode (requires config file or profile)")
 	generateCmd.Flags().BoolVar(&useVPN, "vpn", false, "Enable VPN mode (Gluetun)")
 	generateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be generated without creating files")
+	generateCmd.Flags().BoolVar(&saveProfile, "save-profile", false, "Save configuration as a profile after generation")
+	generateCmd.Flags().StringVar(&saveProfileName, "save-as", "", "Profile name when using --save-profile")
 }
 
 func runGenerate(t *i18n.I18n) error {
-	// TODO: Handle profile loading if profileName is set
-	// TODO: Handle non-interactive mode if noInteractive is true
-	
+	var loadedProfile *profile.Profile
+	var err error
+
+	// Step 0: Load profile if specified
+	if profileName != "" {
+		fmt.Printf("📋 Loading profile: %s\n", profileName)
+		loadedProfile, err = profile.LoadProfile(profileName)
+		if err != nil {
+			return fmt.Errorf("failed to load profile: %w", err)
+		}
+		fmt.Printf("✅ Profile loaded: %s\n", loadedProfile.Name)
+		if loadedProfile.Description != "" {
+			fmt.Printf("   %s\n", loadedProfile.Description)
+		}
+		fmt.Println()
+	}
+
 	// Step 1: Initialize service registry
 	registry, err := services.NewRegistry()
 	if err != nil {
 		return fmt.Errorf("failed to create registry: %w", err)
 	}
 
-	// Step 2: Ask if user wants VPN (unless --vpn flag was used)
+	// Step 2: Determine VPN setting
 	vpnEnabled := useVPN
-	if !dryRun && useVPN == false { // Only prompt if not set by flag
-		var err error
+	if loadedProfile != nil {
+		vpnEnabled = loadedProfile.VPN.Enabled
+		fmt.Printf("🔒 VPN: %v (from profile)\n", vpnEnabled)
+	} else if !dryRun && useVPN == false {
 		vpnEnabled, err = prompts.AskVPN(t)
 		if err != nil {
 			return fmt.Errorf("VPN selection failed: %w", err)
@@ -76,8 +98,17 @@ func runGenerate(t *i18n.I18n) error {
 	}
 
 	// Step 3: Select services
-	fmt.Println()
-	selectedIDs, err := prompts.SelectServices(t, registry, vpnEnabled)
+	var selectedIDs []string
+	if loadedProfile != nil && len(loadedProfile.Services) > 0 {
+		selectedIDs = loadedProfile.Services
+		fmt.Printf("📦 Services: %s (from profile)\n\n", strings.Join(selectedIDs, ", "))
+	} else {
+		fmt.Println()
+		selectedIDs, err = prompts.SelectServices(t, registry, vpnEnabled)
+		if err != nil {
+			return fmt.Errorf("service selection failed: %w", err)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("service selection failed: %w", err)
 	}
@@ -89,9 +120,37 @@ func runGenerate(t *i18n.I18n) error {
 	fmt.Printf("\n✅ %d %s\n\n", len(selectedIDs), t.T("messages.services_selected"))
 
 	// Step 4: Configure environment
-	envConfig, err := prompts.ConfigureEnvironment(t, vpnEnabled)
-	if err != nil {
-		return fmt.Errorf("environment configuration failed: %w", err)
+	var envConfig *generator.EnvConfig
+	if loadedProfile != nil && len(loadedProfile.Environment) > 0 {
+		// Use environment from profile
+		envConfig = &generator.EnvConfig{
+			ComposeProjectName: loadedProfile.Environment["COMPOSE_PROJECT_NAME"],
+			ARRPath:            loadedProfile.Environment["ARRPATH"],
+			Timezone:           loadedProfile.Environment["TZ"],
+			PUID:               loadedProfile.Environment["PUID"],
+			PGID:               loadedProfile.Environment["PGID"],
+			UMASK:              loadedProfile.Environment["UMASK"],
+		}
+		
+		// Apply VPN config if present
+		if vpnEnabled && loadedProfile.VPN.Enabled {
+			envConfig.VPNConfig = &generator.VPNConfig{
+				ServiceProvider:      loadedProfile.VPN.Provider,
+				Type:                 "wireguard",
+				WireguardPrivateKey:  loadedProfile.VPN.Password,
+				WireguardAddresses:   "",
+				WireguardPublicKey:   "",
+				PortForwarding:       "off",
+				DNSAddress:           "1.1.1.1",
+			}
+		}
+		
+		fmt.Println("⚙️  Using environment from profile")
+	} else {
+		envConfig, err = prompts.ConfigureEnvironment(t, vpnEnabled)
+		if err != nil {
+			return fmt.Errorf("environment configuration failed: %w", err)
+		}
 	}
 
 	// Step 5: Validate configuration
@@ -135,7 +194,16 @@ func runGenerate(t *i18n.I18n) error {
 	}
 
 	// Step 8: Generate files
-	return generateFiles(t, registry, selectedIDs, envConfig, vpnEnabled)
+	if err := generateFiles(t, registry, selectedIDs, envConfig, vpnEnabled); err != nil {
+		return err
+	}
+
+	// Step 9: Save profile if requested
+	if saveProfile || saveProfileName != "" {
+		return saveGeneratedProfile(t, selectedIDs, envConfig, vpnEnabled)
+	}
+
+	return nil
 }
 
 // validateConfiguration runs all validators
@@ -227,6 +295,76 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 	fmt.Println("   2. Adjust environment variables in .env if needed")
 	fmt.Printf("   3. Run: cd %s && docker compose up -d\n", outputDir)
 	fmt.Println()
+
+	return nil
+}
+
+// saveGeneratedProfile saves the current configuration as a profile
+func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generator.EnvConfig, vpnEnabled bool) error {
+	var name string
+	
+	if saveProfileName != "" {
+		name = saveProfileName
+	} else {
+		// Prompt for profile name
+		fmt.Print("\n💾 Profile name: ")
+		fmt.Scanln(&name)
+	}
+
+	if name == "" {
+		fmt.Println("⚠️  Profile name is required. Skipping profile save.")
+		return nil
+	}
+
+	// Check if profile already exists
+	if profile.ProfileExists(name) {
+		fmt.Printf("⚠️  Profile '%s' already exists. Overwrite? (y/N): ", name)
+		var response string
+		fmt.Scanln(&response)
+		response = strings.ToLower(strings.TrimSpace(response))
+		if response != "y" && response != "yes" && response != "s" && response != "sim" {
+			fmt.Println("ℹ️  Profile save cancelled")
+			return nil
+		}
+	}
+
+	// Create profile
+	p := profile.NewProfile(name)
+	p.Services = selectedIDs
+	p.VPN.Enabled = vpnEnabled
+	
+	if vpnEnabled && envConfig.VPNConfig != nil {
+		p.VPN.Provider = envConfig.VPNConfig.ServiceProvider
+		p.VPN.Password = envConfig.VPNConfig.WireguardPrivateKey
+	}
+
+	// Save environment variables
+	p.Environment = map[string]string{
+		"COMPOSE_PROJECT_NAME": envConfig.ComposeProjectName,
+		"ARRPATH":              envConfig.ARRPath,
+		"TZ":                   envConfig.Timezone,
+		"PUID":                 envConfig.PUID,
+		"PGID":                 envConfig.PGID,
+		"UMASK":                envConfig.UMASK,
+	}
+	
+	p.OutputDir = outputDir
+
+	// Prompt for description
+	if saveProfileName == "" {
+		fmt.Print("📝 Description (optional): ")
+		var desc string
+		fmt.Scanln(&desc)
+		p.Description = desc
+	}
+
+	// Save profile
+	if err := profile.SaveProfile(p); err != nil {
+		return fmt.Errorf("failed to save profile: %w", err)
+	}
+
+	fmt.Printf("\n✅ %s: %s\n", t.T("profile.saved_successfully"), name)
+	fmt.Println("   Use it with: corsarr generate --profile", name)
 
 	return nil
 }

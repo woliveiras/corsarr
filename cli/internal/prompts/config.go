@@ -7,7 +7,7 @@ import (
 )
 
 // ConfigureVPN prompts for VPN configuration if VPN is enabled
-func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
+func ConfigureVPN(t *i18n.I18n) (*generator.VPNConfig, error) {
 	config := &generator.VPNConfig{
 		ServiceProvider: "custom",
 		Type:            "wireguard",
@@ -19,7 +19,7 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 	form1 := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title(translator.T("prompts.vpn_type")).
+				Title(t.T("prompts.vpn_type")).
 				Options(
 					huh.NewOption("WireGuard", "wireguard"),
 					huh.NewOption("OpenVPN", "openvpn"),
@@ -37,20 +37,20 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 		form2 := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title(translator.T("prompts.vpn_provider")).
+					Title(t.T("prompts.vpn_provider")).
 					Value(&config.ServiceProvider).
 					Placeholder("custom"),
 				huh.NewInput().
-					Title(translator.T("prompts.vpn_wireguard_private_key")).
+					Title(t.T("prompts.vpn_wireguard_private_key")).
 					Value(&config.WireguardPrivateKey).
 					Password(true).
 					EchoMode(huh.EchoModePassword),
 				huh.NewInput().
-					Title(translator.T("prompts.vpn_wireguard_addresses")).
+					Title(t.T("prompts.vpn_wireguard_addresses")).
 					Value(&config.WireguardAddresses).
 					Placeholder("10.0.0.2/32"),
 				huh.NewInput().
-					Title(translator.T("prompts.vpn_wireguard_public_key")).
+					Title(t.T("prompts.vpn_wireguard_public_key")).
 					Value(&config.WireguardPublicKey).
 					Placeholder("server public key"),
 			),
@@ -64,7 +64,7 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 		form2 := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title(translator.T("prompts.vpn_provider")).
+					Title(t.T("prompts.vpn_provider")).
 					Value(&config.ServiceProvider).
 					Placeholder("custom"),
 			),
@@ -80,10 +80,10 @@ func ConfigureVPN(translator *i18n.I18n) (*generator.VPNConfig, error) {
 	form3 := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
-				Title(translator.T("prompts.vpn_port_forwarding")).
+				Title(t.T("prompts.vpn_port_forwarding")).
 				Value(&enablePortForwarding),
 			huh.NewInput().
-				Title(translator.T("prompts.vpn_dns")).
+				Title(t.T("prompts.vpn_dns")).
 				Value(&config.DNSAddress).
 				Placeholder("1.1.1.1"),
 		),
@@ -149,13 +149,13 @@ func ConfigureEnvironment(translator *i18n.I18n, vpnEnabled bool) (*generator.En
 }
 
 // AskProjectName prompts for the compose project name
-func AskProjectName(translator *i18n.I18n, defaultName string) (string, error) {
+func AskProjectName(t *i18n.I18n, defaultName string) (string, error) {
 	var projectName string
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
-				Title(translator.T("prompts.project_name")).
+				Title(t.T("prompts.project_name")).
 				Value(&projectName).
 				Placeholder(defaultName).
 				Validate(func(s string) error {
