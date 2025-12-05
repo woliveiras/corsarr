@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AlecAivazis/survey/v2"
+	"github.com/charmbracelet/huh"
 )
 
 // Language represents a supported language
@@ -24,31 +24,27 @@ var SupportedLanguages = []Language{
 // SelectLanguage prompts the user to select a language
 func SelectLanguage() (string, error) {
 	// Build options with flags
-	options := make([]string, len(SupportedLanguages))
+	options := make([]huh.Option[string], len(SupportedLanguages))
 	for i, lang := range SupportedLanguages {
-		options[i] = fmt.Sprintf("%s %s", lang.Flag, lang.Name)
+		displayName := fmt.Sprintf("%s %s", lang.Flag, lang.Name)
+		options[i] = huh.NewOption(displayName, lang.Code)
 	}
 
 	var selected string
-	prompt := &survey.Select{
-		Message:  "Select your language / Selecione seu idioma / Seleccione su idioma:",
-		Options:  options,
-		Default:  options[0], // English as default
-		PageSize: 10,         // Show all options vertically
-	}
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Select your language / Selecione seu idioma / Seleccione su idioma:").
+				Options(options...).
+				Value(&selected),
+		),
+	)
 
-	if err := survey.AskOne(prompt, &selected); err != nil {
+	if err := form.Run(); err != nil {
 		return "", err
 	}
 
-	// Map selection back to language code
-	for i, option := range options {
-		if option == selected {
-			return SupportedLanguages[i].Code, nil
-		}
-	}
-
-	return "en", nil // Fallback to English
+	return selected, nil
 }
 
 // DetectSystemLanguage attempts to detect the system language
