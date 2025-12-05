@@ -1,6 +1,6 @@
-# Corsarr 🏴‍☠️
+# Corsarr 🏴
 
-> Navigate the high seas of media automation
+> 🏴‍☠️ Navigate the high seas of media automation
 
 The easiest way to set up and manage your complete media automation stack with Docker Compose.
 

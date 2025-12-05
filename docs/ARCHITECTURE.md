@@ -1,99 +1,78 @@
-# Corsarr CLI - Arquitetura e Planejamento
+# Corsarr CLI - Architecture and Planning
 
 > 🏴‍☠️ Navigate the high seas of media automation
 
-## 📋 Visão Geral
+## 📋 Overview
 
-CLI em Golang para simplificar a configuração e inicialização da stack *arr (Radarr, Sonarr, etc). O usuário poderá selecionar serviços desejados, configurar variáveis de ambiente interativamente, e o CLI gerará automaticamente os arquivos `docker-compose.yml` e `.env` corretos.
+Go CLI to simplify configuration and initialization of the *arr stack (Radarr, Sonarr, etc). Users can select desired services, configure environment variables interactively, and the CLI will automatically generate the correct `docker-compose.yml` and `.env` files.
 
-### Problema Atual
+### Current Problem
 
-- Múltiplos diretórios com `docker-compose.yml` diferentes (`vpn/`, `simple/`)
-- Dificuldade de manutenção ao adicionar novos serviços
-- Usuários precisam editar manualmente arquivos para escolher serviços
-- Configuração manual de variáveis de ambiente propensa a erros
+- Multiple directories with different `docker-compose.yml` files (`vpn/`, `simple/`)
+- Difficult to maintain when adding new services
+- Users need to manually edit files to choose services
+- Manual environment variable configuration prone to errors
 
-### Solução Proposta
+### Proposed Solution
 
-CLI interativo que:
+Interactive CLI that:
 
-1. Permite seleção visual de serviços (checkboxes)
-2. Configura variáveis de ambiente via prompts
-3. Gera arquivos automaticamente baseado nas escolhas
-4. Valida configurações antes de criar arquivos
-5. Suporta profiles para reutilização de configurações
+1. Allows visual service selection (checkboxes)
+2. Configures environment variables via prompts
+3. Generates files automatically based on choices
+4. Validates configurations before creating files
+5. Supports profiles for configuration reuse
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+## 🏗️ Project Architecture
 
 ```
-corsarr-cli/
+corsarr/
 ├── cmd/
-│   ├── root.go           # Comando principal e configuração do Cobra
-│   ├── generate.go       # Comando para gerar docker-compose e .env
-│   ├── preview.go        # Preview das configurações antes de gerar
-│   └── profile.go        # Gerenciar profiles salvos (save/load/list)
+│   ├── root.go           # Main command and Cobra setup
+│   ├── generate.go       # Command to generate docker-compose and .env
+│   ├── preview.go        # Preview configurations before generating
+│   ├── profile.go        # Manage saved profiles (save/load/list)
+│   ├── health.go         # Check container health status
+│   └── check_ports.go    # Check port conflicts
 │
 ├── internal/
-│   ├── i18n/
-│   │   ├── i18n.go       # Sistema de internacionalização
-│   │   ├── loader.go     # Carregamento de traduções
-│   │   └── language.go   # Detecção e seleção de idioma
-│   │
 │   ├── services/
-│   │   ├── services.go   # Definição de todos os serviços disponíveis
-│   │   ├── categories.go # Categorização dos serviços
-│   │   └── registry.go   # Registry pattern para gerenciar serviços
+│   │   ├── services.go   # Definition of all available services
+│   │   ├── categories.go # Service categorization
+│   │   └── registry.go   # Registry pattern to manage services
 │   │
 │   ├── generator/
-│   │   ├── compose.go    # Orquestrador de geração do docker-compose.yml
+│   │   ├── compose.go    # docker-compose.yml generation orchestrator
 │   │   ├── strategy.go   # Strategy Pattern (VPN/Bridge mode)
-│   │   ├── env.go        # Geração do arquivo .env
-│   │   └── network.go    # Configuração de redes Docker
+│   │   ├── env.go        # .env file generation
+│   │   └── network.go    # Docker network configuration
 │   │
 │   ├── validator/
-│   │   ├── validator.go  # Validações de configuração
-│   │   ├── ports.go      # Validação de conflitos de portas
-│   │   └── dependencies.go # Validação de dependências entre serviços
+│   │   ├── validator.go  # Configuration validations
+│   │   ├── ports.go      # Port conflict validation
+│   │   ├── dependencies.go # Service dependency validation
+│   │   ├── path.go       # Path validation
+│   │   ├── path_unix.go  # Unix-specific disk space checking
+│   │   ├── path_windows.go # Windows-specific disk space checking
+│   │   └── docker.go     # Docker installation validation
 │   │
 │   ├── prompts/
-│   │   ├── interactive.go # Prompts interativos (survey)
-│   │   └── config.go      # Prompts de configuração de variáveis
+│   │   ├── interactive.go # Interactive prompts (Huh/Bubble Tea)
+│   │   └── config.go      # Environment variable config prompts
 │   │
 │   └── profile/
-│       ├── profile.go     # Estrutura de profiles
-│       └── storage.go     # Persistência de profiles (YAML)
+│       ├── profile.go     # Profile structure
+│       └── storage.go     # Profile persistence (JSON/YAML)
 │
-├── templates/
-│   ├── docker-compose/
-│   │   ├── vpn-mode.tmpl        # Template específico para modo VPN
-│   │   └── bridge-mode.tmpl     # Template específico para modo network bridge
-│   │
-│   ├── services/                # Definições de cada serviço (localizadas em internal/services/templates/)
-│   │   ├── qbittorrent.yaml
-│   │   ├── prowlarr.yaml
-│   │   ├── flaresolverr.yaml
-│   │   ├── sonarr.yaml
-│   │   ├── radarr.yaml
-│   │   ├── lidarr.yaml
-│   │   ├── lazylibrarian.yaml
-│   │   ├── bazarr.yaml
-│   │   ├── jellyfin.yaml
-│   │   ├── jellyseerr.yaml
-│   │   ├── fileflows.yaml
-│   │   └── gluetun.yaml
-│   │
-│   └── env.tmpl                 # Template do arquivo .env
+├── locales/              # Translation files (i18n)
+│   ├── en.yaml          # English
+│   ├── pt-br.yaml       # Brazilian Portuguese
+│   └── es.yaml          # Spanish
 │
-├── locales/                     # Arquivos de tradução (i18n)
-│   ├── en.yaml                  # English
-│   ├── pt-br.yaml               # Português Brasileiro
-│   └── es.yaml                  # Español
-│
-├── configs/
-│   └── profiles/                # Diretório para profiles salvos
-│
+├── profiles/            # Directory for saved profiles
+├── .goreleaser.yml      # GoReleaser configuration
 ├── go.mod
 ├── go.sum
 ├── main.go
@@ -102,99 +81,74 @@ corsarr-cli/
 
 ---
 
-## 🔧 Serviços Identificados
+## 🔧 Identified Services
 
 ### Download Managers
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | qBittorrent | 8081 | lscr.io/linuxserver/qbittorrent:latest | VPN, Simple |
 
 ### Indexers
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | Prowlarr | 9696 | lscr.io/linuxserver/prowlarr:latest | VPN, Simple |
 | FlareSolverr | 8191 | ghcr.io/flaresolverr/flaresolverr:latest | VPN |
 
 ### Media Management
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | Sonarr (TV) | 8989 | lscr.io/linuxserver/sonarr:latest | VPN, Simple |
 | Radarr (Movies) | 7878 | lscr.io/linuxserver/radarr:latest | VPN, Simple |
 | Lidarr (Music) | 8686 | ghcr.io/hotio/lidarr:latest | Simple |
 | LazyLibrarian (Books) | 5299 | lscr.io/linuxserver/lazylibrarian:latest | Simple |
 
 ### Subtitles
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | Bazarr | 6767 | ghcr.io/hotio/bazarr:latest | VPN, Simple |
 
 ### Streaming
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | Jellyfin | 8096 | lscr.io/linuxserver/jellyfin:latest | VPN, Simple |
 
 ### Request Management
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | Jellyseerr | 5055 | fallenbagel/jellyseerr:latest | VPN, Simple |
 
 ### Transcoding
-| Serviço | Porta | Imagem | Presente em |
-|---------|-------|--------|-------------|
+| Service | Port | Image | Present in |
+|---------|------|-------|------------|
 | FileFlows | 19200 | revenz/fileflows:latest | VPN |
 
 ### VPN
-| Serviço | Portas | Imagem | Presente em |
-|---------|--------|--------|-------------|
-| Gluetun | Múltiplas | qmcgaw/gluetun:latest | VPN |
+| Service | Ports | Image | Present in |
+|---------|-------|-------|------------|
+| Gluetun | Multiple | qmcgaw/gluetun:latest | VPN |
 
 ---
 
-## 📊 Estruturas de Dados
+## 📊 Data Structures
 
 ### Service
 ```go
 type Service struct {
-    ID            string              // Identificador único
-    Name          string              // Nome amigável
-    Category      ServiceCategory     // Categoria do serviço
-    Image         string              // Imagem Docker
-    ContainerName string              // Nome do container
-    Hostname      string              // Hostname do container
-    Ports         []PortMapping       // Mapeamento de portas
-    Volumes       []VolumeMapping     // Mapeamento de volumes
-    Environment   map[string]string   // Variáveis de ambiente específicas
-    Devices       []string            // Dispositivos (ex: /dev/dri)
-    RequiresVPN   bool                // Se requer VPN obrigatoriamente
-    SupportsVPN   bool                // Se suporta VPN (opcional)
-    Dependencies  []string            // IDs de serviços dependentes
-    Optional      bool                // Se é opcional na configuração
-    Description   string              // Descrição para o usuário
-}
-
-type ServiceCategory string
-
-const (
-    CategoryDownload    ServiceCategory = "Download Managers"
-    CategoryIndexer     ServiceCategory = "Indexers"
-    CategoryMedia       ServiceCategory = "Media Management"
-    CategorySubtitles   ServiceCategory = "Subtitles"
-    CategoryStreaming   ServiceCategory = "Streaming"
-    CategoryRequest     ServiceCategory = "Request Management"
-    CategoryTranscode   ServiceCategory = "Transcoding"
-    CategoryVPN         ServiceCategory = "VPN"
-)
-
-type PortMapping struct {
-    Host      string
-    Container string
-    Protocol  string // tcp, udp
-}
-
-type VolumeMapping struct {
-    Host      string
-    Container string
-    ReadOnly  bool
+    ID            string              // Unique identifier
+    Name          string              // Friendly name
+    Category      ServiceCategory     // Service category
+    Image         string              // Docker image
+    ContainerName string              // Container name
+    Hostname      string              // Container hostname
+    Ports         []PortMapping       // Port mappings
+    Volumes       []VolumeMapping     // Volume mappings
+    Environment   map[string]string   // Service-specific environment variables
+    Devices       []string            // Devices (e.g., /dev/dri)
+    RequiresVPN   bool                // Whether VPN is required
+    SupportsVPN   bool                // Whether VPN is supported (optional)
+    Dependencies  []string            // IDs of dependent services
+    Optional      bool                // Whether it's optional in configuration
+    Description   string              // User-facing description
 }
 ```
 
@@ -202,12 +156,12 @@ type VolumeMapping struct {
 
 ```go
 type Configuration struct {
-    UseVPN       bool                // Se deve usar VPN
-    Services     []string            // IDs dos serviços selecionados
-    Environment  map[string]string   // Todas as variáveis de ambiente
+    UseVPN       bool                // Whether to use VPN
+    Services     []string            // IDs of selected services
+    Environment  map[string]string   // All environment variables
     BasePath     string              // ARRPATH
-    OutputDir    string              // Onde gerar os arquivos
-    BackupOld    bool                // Se deve fazer backup dos arquivos antigos
+    OutputDir    string              // Where to generate files
+    BackupOld    bool                // Whether to backup old files
 }
 
 type Profile struct {
@@ -219,324 +173,25 @@ type Profile struct {
 }
 ```
 
-### Environment Variables
-
-```go
-type EnvConfig struct {
-    // Global
-    ComposeProjectName string
-    ARRPath            string
-    Timezone           string
-    PUID               string
-    PGID               string
-    UMASK              string
-    
-    // VPN (opcional)
-    VPNServiceProvider  string
-    VPNType             string
-    WireguardPublicKey  string
-    WireguardPrivateKey string
-    WireguardAddresses  string
-    VPNPortForwarding   string
-    VPNDNSAddress       string
-}
-```
-
 ---
 
-## 🌍 Sistema de Internacionalização (i18n)
+## 🎨 Usage Flow
 
-### Idiomas Suportados
-- 🇺🇸 **English (en)** - Padrão
-- 🇧🇷 **Português Brasileiro (pt-br)**
-- 🇪🇸 **Español (es)**
-
-### Estrutura dos Arquivos de Tradução
-
-Cada arquivo de locale (`locales/*.yaml`) contém todas as strings da interface:
-
-```yaml
-# locales/en.yaml
-language:
-  name: "English"
-  code: "en"
-
-prompts:
-  language_select: "Select your language / Selecione seu idioma / Seleccione su idioma"
-  vpn_question: "Do you want to use VPN (Gluetun)?"
-  service_selection: "Select the services you want to use:"
-  base_path: "Base path (ARRPATH):"
-  timezone: "Timezone (TZ):"
-  confirm_generation: "Confirm file generation?"
-  save_profile: "Do you want to save this configuration as a profile?"
-  profile_name: "Profile name:"
-
-categories:
-  download: "Download Managers"
-  indexer: "Indexers"
-  media: "Media Management"
-  subtitles: "Subtitles"
-  streaming: "Streaming"
-  request: "Request Management"
-  transcode: "Transcoding"
-  vpn: "VPN"
-
-services:
-  qbittorrent:
-    name: "qBittorrent"
-    description: "BitTorrent client"
-  radarr:
-    name: "Radarr"
-    description: "Movie collection manager"
-  sonarr:
-    name: "Sonarr"
-    description: "TV show collection manager"
-  # ... mais serviços
-
-messages:
-  validation_success: "Configuration validated successfully!"
-  services_configured: "%d services will be configured"
-  mode_vpn: "Mode: WITH VPN"
-  mode_no_vpn: "Mode: WITHOUT VPN"
-  no_port_conflicts: "No port conflicts detected"
-  backup_created: "Backup created: %s"
-  file_created: "File created successfully: %s"
-  profile_saved: "Profile '%s' saved"
-
-errors:
-  invalid_path: "Invalid path: %s"
-  port_conflict: "Port conflict detected: %d"
-  missing_dependency: "Service '%s' requires '%s'"
-  vpn_credentials_missing: "VPN credentials are missing"
-```
-
-```yaml
-# locales/pt-br.yaml
-language:
-  name: "Português Brasileiro"
-  code: "pt-br"
-
-prompts:
-  language_select: "Select your language / Selecione seu idioma / Seleccione su idioma"
-  vpn_question: "Deseja usar VPN (Gluetun)?"
-  service_selection: "Selecione os serviços que deseja usar:"
-  base_path: "Caminho base (ARRPATH):"
-  timezone: "Fuso horário (TZ):"
-  confirm_generation: "Confirmar geração dos arquivos?"
-  save_profile: "Deseja salvar esta configuração como perfil?"
-  profile_name: "Nome do perfil:"
-
-categories:
-  download: "Gerenciadores de Download"
-  indexer: "Indexadores"
-  media: "Gerenciamento de Mídia"
-  subtitles: "Legendas"
-  streaming: "Streaming"
-  request: "Gerenciamento de Requisições"
-  transcode: "Transcodificação"
-  vpn: "VPN"
-
-# ... resto das traduções
-```
-
-```yaml
-# locales/es.yaml
-language:
-  name: "Español"
-  code: "es"
-
-prompts:
-  language_select: "Select your language / Selecione seu idioma / Seleccione su idioma"
-  vpn_question: "¿Desea usar VPN (Gluetun)?"
-  service_selection: "Seleccione los servicios que desea usar:"
-  base_path: "Ruta base (ARRPATH):"
-  timezone: "Zona horaria (TZ):"
-  confirm_generation: "¿Confirmar generación de archivos?"
-  save_profile: "¿Desea guardar esta configuración como perfil?"
-  profile_name: "Nombre del perfil:"
-
-categories:
-  download: "Gestores de Descarga"
-  indexer: "Indexadores"
-  media: "Gestión de Medios"
-  subtitles: "Subtítulos"
-  streaming: "Streaming"
-  request: "Gestión de Solicitudes"
-  transcode: "Transcodificación"
-  vpn: "VPN"
-
-# ... resto das traduções
-```
-
-### Implementação do Sistema i18n
-
-```go
-// internal/i18n/i18n.go
-package i18n
-
-import (
-    "embed"
-    "fmt"
-    
-    "github.com/nicksnyder/go-i18n/v2/i18n"
-    "golang.org/x/text/language"
-    "gopkg.in/yaml.v3"
-)
-
-//go:embed locales/*.yaml
-var localeFS embed.FS
-
-type I18n struct {
-    bundle    *i18n.Bundle
-    localizer *i18n.Localizer
-    language  string
-}
-
-func New(lang string) (*I18n, error) {
-    bundle := i18n.NewBundle(language.English)
-    bundle.RegisterUnmarshalFunc("yaml", yaml.Unmarshal)
-    
-    // Carregar todos os idiomas
-    for _, locale := range []string{"en", "pt-br", "es"} {
-        bundle.MustLoadMessageFile(fmt.Sprintf("locales/%s.yaml", locale))
-    }
-    
-    localizer := i18n.NewLocalizer(bundle, lang)
-    
-    return &I18n{
-        bundle:    bundle,
-        localizer: localizer,
-        language:  lang,
-    }, nil
-}
-
-func (i *I18n) T(key string, data ...interface{}) string {
-    msg, err := i.localizer.Localize(&i18n.LocalizeConfig{
-        MessageID: key,
-        TemplateData: data,
-    })
-    if err != nil {
-        return key // fallback para a chave se tradução não existir
-    }
-    return msg
-}
-
-func (i *I18n) GetLanguage() string {
-    return i.language
-}
-```
-
-```go
-// internal/i18n/language.go
-package i18n
-
-import (
-    "github.com/AlecAivazis/survey/v2"
-)
-
-type Language struct {
-    Name string
-    Code string
-}
-
-var SupportedLanguages = []Language{
-    {Name: "🇺🇸 English", Code: "en"},
-    {Name: "🇧🇷 Português Brasileiro", Code: "pt-br"},
-    {Name: "🇪🇸 Español", Code: "es"},
-}
-
-func SelectLanguage() (string, error) {
-    var selected string
-    prompt := &survey.Select{
-        Message: "Select your language / Selecione seu idioma / Seleccione su idioma:",
-        Options: []string{
-            SupportedLanguages[0].Name,
-            SupportedLanguages[1].Name,
-            SupportedLanguages[2].Name,
-        },
-        Default: SupportedLanguages[0].Name,
-    }
-    
-    if err := survey.AskOne(prompt, &selected); err != nil {
-        return "", err
-    }
-    
-    // Mapear seleção para código
-    for _, lang := range SupportedLanguages {
-        if lang.Name == selected {
-            return lang.Code, nil
-        }
-    }
-    
-    return "en", nil // fallback
-}
-```
-
-### Uso no CLI
-
-```go
-// cmd/generate.go
-package cmd
-
-import (
-    "github.com/spf13/cobra"
-    "github.com/woliveiras/corsarr/internal/i18n"
-    "github.com/woliveiras/corsarr/internal/prompts"
-)
-
-var generateCmd = &cobra.Command{
-    Use:   "generate",
-    Short: "Generate docker-compose.yml and .env",
-    Run: func(cmd *cobra.Command, args []string) {
-        // 1. Selecionar idioma PRIMEIRO
-        langCode, err := i18n.SelectLanguage()
-        if err != nil {
-            panic(err)
-        }
-        
-        // 2. Inicializar i18n com idioma selecionado
-        translator, err := i18n.New(langCode)
-        if err != nil {
-            panic(err)
-        }
-        
-        // 3. Usar tradutor em todo o fluxo
-        vpnEnabled := prompts.AskVPN(translator)
-        services := prompts.SelectServices(translator)
-        config := prompts.ConfigureEnvironment(translator)
-        
-        // ... resto da lógica
-    },
-}
-```
-
----
-
-## 🎨 Fluxo de Uso
-
-### 1. Modo Interativo Completo
+### 1. Complete Interactive Mode
 ```bash
 ./corsarr generate
 
-# Passo 0: Seleção de Idioma (NOVO!)
-? Select your language / Selecione seu idioma / Seleccione su idioma:
-  > 🇺🇸 English
-    🇧🇷 Português Brasileiro
-    🇪🇸 Español
+# Step 1: VPN Configuration
+? Do you want to use VPN (Gluetun)? (y/N) › No
 
-# === Se escolher Português Brasileiro ===
-
-# Passo 1: Configuração de VPN
-? Deseja usar VPN (Gluetun)? (s/N) › Não
-
-# Passo 2: Seleção de Serviços
-? Selecione os serviços que deseja usar:
+# Step 2: Service Selection
+? Select the services you want to use:
   Download Managers:
     ☑ qBittorrent
   
   Indexers:
     ☑ Prowlarr
-    ☐ FlareSolverr (requer VPN)
+    ☐ FlareSolverr (requires VPN)
   
   Media Management:
     ☑ Sonarr (TV Shows)
@@ -551,587 +206,219 @@ var generateCmd = &cobra.Command{
     ☑ Jellyfin
   
   Request Management:
-    ☐ Jellyseerr (requer Jellyfin)
+    ☐ Jellyseerr (requires Jellyfin)
   
   Transcoding:
     ☐ FileFlows
 
-# Passo 3: Configuração Básica
-? Caminho base (ARRPATH): › /home/chinelo/corsarr/
-? Timezone (TZ): › Europe/Madrid
+# Step 3: Basic Configuration
+? Base path (ARRPATH): › /home/user/media/
+? Timezone (TZ): › America/Sao_Paulo
 ? User ID (PUID): › 1000
 ? Group ID (PGID): › 1000
 ? UMASK: › 002
 
-# Passo 4: Validação
-✓ Configuração validada com sucesso!
-✓ 6 serviços serão configurados
-✓ Modo: SEM VPN
-✓ Nenhum conflito de portas detectado
+# Step 4: Validation
+✓ Configuration validated successfully!
+✓ 6 services will be configured
+✓ Mode: WITHOUT VPN
+✓ No port conflicts detected
 
-# Passo 5: Preview
-Preview dos arquivos que serão criados:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄 docker-compose.yml (98 linhas)
-📄 .env (8 variáveis)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Step 5: Confirmation
+? Confirm file generation? (Y/n) › Yes
 
-? Deseja salvar esta configuração como profile? (y/N) › Yes
-? Nome do profile: › basico-sem-vpn
+# Step 6: Generation
+✓ Backup created: docker-compose.yml.backup
+✓ Backup created: .env.backup
+✓ docker-compose.yml created successfully
+✓ .env created successfully
 
-? Confirma a geração dos arquivos? (Y/n) › Yes
+Files created in: /home/user/media/
 
-# Passo 6: Geração
-✓ Backup criado: docker-compose.yml.backup
-✓ Backup criado: .env.backup
-✓ docker-compose.yml criado com sucesso
-✓ .env criado com sucesso
-✓ Profile 'basico-sem-vpn' salvo
-
-Arquivos criados em: /home/chinelo/corsarr/
-
-Para iniciar os serviços, execute:
-  cd /home/chinelo/corsarr/
+To start services, run:
+  cd /home/user/media/
   docker compose up -d
 
-Para verificar os logs:
+To check logs:
   docker compose logs -f
 ```
 
-### 2. Usando Profile Existente
+### 2. Using Existing Profile
 ```bash
-./corsarr generate --profile basico-sem-vpn
+./corsarr generate --profile basic-no-vpn
 
-✓ Profile 'basico-sem-vpn' carregado
-✓ docker-compose.yml criado
-✓ .env criado
+✓ Profile 'basic-no-vpn' loaded
+✓ docker-compose.yml created
+✓ .env created
 ```
 
-### 3. Preview sem Gerar
+### 3. Preview Without Generating
 ```bash
 ./corsarr preview
 
-# Mostra o conteúdo dos arquivos que seriam gerados
+# Shows the content of files that would be generated
 ```
 
-### 4. Modo Não-Interativo (CI/CD)
+### 4. Non-Interactive Mode (CI/CD)
 ```bash
-./corsarr generate --config config.yaml --no-interactive
+./corsarr generate --no-interactive \
+  --services "prowlarr,radarr,sonarr,jellyfin,qbittorrent" \
+  --arr-path "/home/user/media" \
+  --timezone "America/Sao_Paulo" \
+  --puid "1000" \
+  --pgid "1000"
 ```
 
 ---
 
-## 🔍 Validações Implementadas
+## 🔍 Implemented Validations
 
-### 1. Conflitos de Portas
-- Verifica se há portas duplicadas entre serviços
-- Alerta sobre portas já em uso no sistema (opcional)
+### 1. Port Conflicts
+- Checks for duplicate ports between services
+- Warns about ports already in use on the system (optional)
 
-### 2. Dependências de Serviços
+### 2. Service Dependencies
 ```
-Jellyseerr → requer Jellyfin
-FlareSolverr → útil com Prowlarr
-Bazarr → requer Sonarr OU Radarr
-FileFlows → requer Jellyfin
+Jellyseerr → requires Jellyfin
+FlareSolverr → useful with Prowlarr
+Bazarr → requires Sonarr OR Radarr
+FileFlows → requires Jellyfin
 ```
 
-### 3. Validação de Paths
-- Verifica se ARRPATH existe ou pode ser criado
-- Valida permissões de escrita
-- Verifica espaço disponível (aviso se < 10GB)
+### 3. Path Validation
+- Verifies if ARRPATH exists or can be created
+- Validates write permissions
+- Checks available space (warning if < 10GB)
 
-### 4. Validação de VPN
-- Se VPN selecionado, valida credenciais obrigatórias
-- Verifica formato de chaves Wireguard
-- Valida provider suportado pelo Gluetun
+### 4. VPN Validation
+- If VPN selected, validates required credentials
+- Checks Wireguard key format
+- Validates provider supported by Gluetun
 
-### 5. Validação de Ambiente
-- Verifica se Docker está instalado
-- Verifica se Docker Compose está instalado
-- Valida versão mínima do Docker
+### 5. Environment Validation
+- Checks if Docker is installed
+- Checks if Docker Compose is installed
+- Validates minimum Docker version
 
 ---
 
-## 🎁 Features Adicionais
+## 🎁 Additional Features
 
-### 1. Sistema de Profiles
+### 1. Profile System
 ```bash
-# Salvar configuração atual
-./corsarr profile save completo
+# Save current configuration
+./corsarr profile save complete
 
-# Listar profiles
+# List profiles
 ./corsarr profile list
 
-# Carregar profile
-./corsarr generate --profile completo
+# Load profile
+./corsarr generate --profile complete
 
-# Remover profile
-./corsarr profile delete completo
+# Remove profile
+./corsarr profile delete complete
 
-# Exportar profile
-./corsarr profile export completo > completo.yaml
+# Export profile
+./corsarr profile export complete backup.json
 
-# Importar profile
-./corsarr profile import completo.yaml
+# Import profile
+./corsarr profile import backup.json --name restored
 ```
 
-### 2. Backup Automático
-- Antes de gerar novos arquivos, faz backup dos existentes
-- Formato: `docker-compose.yml.backup.TIMESTAMP`
-- Mantém últimos 5 backups (configurável)
+### 2. Automatic Backup
+- Before generating new files, backs up existing ones
+- Format: `docker-compose.yml.backup.TIMESTAMP`
+- Keeps last 5 backups (configurable)
 
-### 3. Modo Dry-Run
+### 3. Dry-Run Mode
 ```bash
 ./corsarr generate --dry-run
-# Apenas mostra o que seria feito, sem criar arquivos
+# Only shows what would be done, without creating files
 ```
 
-### 4. Update de Serviços
-```bash
-./corsarr update
-# Atualiza definições de serviços do repositório
-```
-
-### 5. Health Check
+### 4. Health Check
 ```bash
 ./corsarr health
-# Verifica se todos os serviços configurados estão rodando
-# Mostra status de cada container
+# Checks if all configured services are running
+# Shows status of each container
 ```
 
-### 6. Ports Check
+### 5. Ports Check
 ```bash
 ./corsarr check-ports
-# Verifica quais portas estão em uso no sistema
-# Sugere portas alternativas se houver conflito
+# Checks which ports are in use on the system
+# Suggests alternative ports if there's a conflict
 ```
 
 ---
 
-## 📦 Dependências Go
+## 📦 Go Dependencies
 
 ```go
 require (
     github.com/spf13/cobra v1.8.0        // CLI framework
-    github.com/spf13/viper v1.18.2       // Configuração
-    github.com/AlecAivazis/survey/v2 v2.3.7 // Prompts interativos
-    gopkg.in/yaml.v3 v3.0.1              // Parse YAML
-    github.com/fatih/color v1.16.0       // Cores no terminal
-    github.com/olekukonko/tablewriter v0.0.5 // Tabelas
-    github.com/nicksnyder/go-i18n/v2 v2.4.0  // Internacionalização
-    golang.org/x/text v0.14.0            // Suporte a linguagens
-    text/template                         // Templates Go nativos
+    github.com/spf13/viper v1.18.2       // Configuration
+    github.com/charmbracelet/huh v0.8.0  // Interactive prompts
+    github.com/charmbracelet/bubbletea v1.3.10 // TUI framework
+    gopkg.in/yaml.v3 v3.0.1              // YAML parsing
+    github.com/fatih/color v1.16.0       // Terminal colors
+    github.com/olekukonko/tablewriter v0.0.5 // Tables
+    text/template                         // Native Go templates
 )
 ```
 
 ---
 
-## 🚀 Roadmap de Implementação
+## 🔐 Security
 
-### Fase 1: Estrutura Base ✅
-- [x] Criar estrutura de diretórios
-- [x] Inicializar go.mod
-- [x] Configurar Cobra CLI
-- [x] Definir structs principais
+### Implementation Analysis ✅
 
-### Fase 2: Sistema de Internacionalização (i18n) ✅
-- [x] Criar estrutura de locales/
-- [x] Implementar sistema de i18n com go-i18n
-- [x] Criar arquivo de tradução en.yaml (English)
-- [x] Criar arquivo de tradução pt-br.yaml (Português Brasileiro)
-- [x] Criar arquivo de tradução es.yaml (Español)
-- [x] Implementar seleção de idioma no início do CLI
-- [x] Integrar traduções em todos os prompts e mensagens
+#### 1. Never log passwords or keys ✅
+- [x] **Implemented**: Passwords use `EchoMode(huh.EchoModePassword)` (internal/prompts/config.go:47)
+- [x] **Verified**: No `fmt.Print` of passwords/keys found in code
+- [x] **Profiles**: Passwords stored in profiles (JSON/YAML) with `omitempty` tag
+- [x] **Recommendation**: Consider encryption for profiles in future versions
 
-### Fase 3: Definição de Serviços ✅
-- [x] Mapear todos os serviços dos compose atuais
-- [x] Criar registry de serviços
-- [x] Definir categorias e dependências
-- [x] Documentar cada serviço em múltiplos idiomas
-- [x] Criar testes unitários para services package
+#### 2. .env file with appropriate permissions ✅
+- [x] **Implemented**: `.env` created with `0600` (internal/generator/env.go:68)
+- [x] **Backups**: Backup files also use `0600`
+- [x] **Test**: Automated test validates permissions
 
-### Fase 4: Templates ✅
-- [x] Criar templates separados para VPN e bridge mode
-- [x] Criar definições YAML de cada serviço
-- [x] Criar template de .env
-- [x] Implementar Strategy Pattern para geração de compose
-- [x] Implementar geradores (compose, env, network)
-- [x] Criar testes unitários para todos os geradores
-- [x] Testar geração com diferentes combinações
+#### 3. Validate user inputs ✅
+- [x] **Path Validation**: `internal/validator/path.go` validates:
+  - Empty paths
+  - Directory existence
+  - Write permissions
+  - Available disk space
+- [x] **Port Validation**: `internal/validator/ports.go` detects conflicts
+- [x] **Dependencies**: `internal/validator/dependencies.go` validates services
+- [x] **Docker**: `internal/validator/docker.go` checks installation
 
-### Fase 5: Interface Interativa ✅
-- [x] Implementar prompt de seleção de idioma (usa sistema i18n existente)
-- [x] Implementar prompt de seleção de VPN
-- [x] Implementar prompt de seleção de serviços (com categorias)
-- [x] Implementar prompt de configuração de variáveis (ARRPATH, TZ, PUID, PGID, UMASK)
-- [x] Implementar prompts de configuração VPN (se VPN habilitado)
-- [x] Implementar validações inline durante prompts
-- [x] Integrar com geradores criados na Fase 4
-- [x] Migração de Survey para Huh/Bubble Tea (framework moderno)
+#### 4. Sanitize paths ✅
+- [x] **filepath.Join**: Used everywhere for path construction
+- [x] **filepath.Clean**: Implicit in `filepath.Join` usage
+- [x] **MkdirAll**: Uses `0755` for secure directory permissions
+- [x] **Path traversal**: No insecure concatenation found
 
-### Fase 6: Geradores ✅
-- [x] Implementar gerador de docker-compose.yml com Strategy Pattern
-- [x] Implementar gerador de .env
-- [x] Implementar sistema de backup automático
-- [x] Implementar função Preview (sem salvar arquivos)
-- [x] Testar geração com diferentes combinações
+#### 5. Don't execute shell commands with user input ✅
+- [x] **exec.Command**: Always uses fixed arguments, never user input
+- [x] **Docker commands**: Paths passed as separate arguments
+- [x] **No shell injection**: No use of `bash -c` or command concatenation
 
-### Fase 7: Validações ✅
-- [x] Validação de portas (mensagens traduzidas)
-- [x] Validação de dependências (mensagens traduzidas)
-- [x] Validação de paths (mensagens traduzidas)
-- [x] Validação de ambiente Docker (mensagens traduzidas)
-- [x] Integração com comando generate
-- [x] Sistema de severidade (Warning/Error/Critical)
-- [x] Testes unitários para todos os validadores
+### Recommended Improvements (Post-v1.0.0)
 
-### Fase 8: Sistema de Profiles ✅
-- [x] Implementar save/load de profiles
-- [x] Implementar list profiles
-- [x] Implementar delete profile
-- [x] Implementar export/import (JSON/YAML)
-- [x] Integração com comando generate (--profile flag)
-- [x] Testes unitários para profile package
-- [x] Traduções em EN/PT-BR/ES
-- [x] Suporte a --save-profile flag no generate
+1. **Profile encryption** (MEDIUM PRIORITY):
+   - Encrypt passwords in saved profiles
+   - Use OS keyring
 
-### Fase 9: Features Extras
-- [x] Comando preview (traduzido)
-- [x] Modo dry-run (traduzido)
-- [x] Comando health (traduzido)
-- [x] Comando check-ports (traduzido)
-- [x] Modo não-interativo completo
-
-### Fase 9: Documentação
-- [x] README do CLI em EN (principal)
-- [x] Documentação de comandos (multilíngue)
-- [x] Exemplos de uso em múltiplos idiomas
-- [x] Modo não-interativo documentado
-- [x] Exemplos CI/CD (GitHub Actions, Ansible)
-- [x] Troubleshooting guide expandido (15+ problemas comuns)
-- [x] Atualizar README principal do repositório
-
-### Fase 10: Testes ✅
-- [x] Testes unitários para geradores (13 testes)
-- [x] Testes unitários para services (13 testes)
-- [x] Testes unitários para validadores (18 testes)
-- [x] Testes unitários para profiles (13 testes)
-- [x] Testes de i18n (todas as chaves traduzidas)
-- [ ] Testes de integração end-to-end
-- [ ] Testes com diferentes combinações de serviços
-
-**Total de Testes**: 57 testes unitários passando
+2. **Security audit** (LOW PRIORITY):
+   - Add automated security tests
+   - Dependency vulnerability scanning
+   - CodeQL analysis in GitHub Actions
 
 ---
 
-## 📝 Notas de Implementação
-
-### Sistema de Templates Modular
-
-A geração do `docker-compose.yml` funciona de forma modular:
-
-#### 1. Definições de Serviços (YAML)
-Cada serviço tem um arquivo YAML em `templates/services/` com todas as suas configurações:
-
-```yaml
-# templates/services/radarr.yaml
-id: radarr
-name: Radarr
-category: media
-description: Movie collection manager
-image: lscr.io/linuxserver/radarr:latest
-container_name: radarr
-
-ports:
-  - host: "7878"
-    container: "7878"
-    protocol: tcp
-
-volumes:
-  - host: "${ARRPATH}config/radarr"
-    container: "/config"
-  - host: "${ARRPATH}backup/radarr"
-    container: "/data/backup"
-  - host: "${ARRPATH}data/movies"
-    container: "/data/movies"
-  - host: "${ARRPATH}data/downloads"
-    container: "/downloads"
-
-environment:
-  - "TZ=${TZ}"
-  - "PUID=${PUID}"
-  - "PGID=${PGID}"
-  - "UMASK=${UMASK}"
-
-# Configurações específicas de rede
-network:
-  vpn_mode:
-    network_mode: "service:gluetun"
-  bridge_mode:
-    hostname: radarr
-    networks:
-      - media
-
-restart: unless-stopped
-supports_vpn: true
-dependencies: []
-optional: false
-```
-
-#### 2. Template Base (Go Template)
-O template base em `templates/docker-compose/base.tmpl` estrutura o compose:
-
-```yaml
-services:
-{{- range .Services }}
-  {{ .ContainerName }}:
-    image: {{ .Image }}
-    container_name: {{ .ContainerName }}
-    {{- if eq $.Mode "vpn" }}
-    network_mode: "{{ .Network.VPNMode.NetworkMode }}"
-    {{- else }}
-    hostname: {{ .Network.BridgeMode.Hostname }}
-    networks:
-      {{- range .Network.BridgeMode.Networks }}
-      - {{ . }}
-      {{- end }}
-    {{- end }}
-    restart: {{ .Restart }}
-    volumes:
-      {{- range .Volumes }}
-      - {{ .Host }}:{{ .Container }}{{ if .ReadOnly }}:ro{{ end }}
-      {{- end }}
-    {{- if and (ne $.Mode "vpn") (.Ports) }}
-    ports:
-      {{- range .Ports }}
-      - "{{ .Host }}:{{ .Container }}{{ if ne .Protocol "tcp" }}/{{ .Protocol }}{{ end }}"
-      {{- end }}
-    {{- end }}
-    {{- if .Environment }}
-    environment:
-      {{- range .Environment }}
-      - {{ . }}
-      {{- end }}
-    {{- end }}
-    {{- if .Devices }}
-    devices:
-      {{- range .Devices }}
-      - {{ . }}
-      {{- end }}
-    {{- end }}
-    env_file:
-      - ./.env
-{{- end }}
-
-{{- if ne .Mode "vpn" }}
-networks:
-  media:
-    driver: bridge
-{{- end }}
-```
-
-#### 3. Fluxo de Geração
-
-```go
-// Pseudocódigo do processo de geração
-
-func GenerateDockerCompose(selectedServices []string, useVPN bool) error {
-    // 1. Carregar definições de serviços selecionados
-    services := []Service{}
-    for _, serviceID := range selectedServices {
-        serviceConfig := LoadServiceDefinition(serviceID) // carrega YAML
-        services = append(services, serviceConfig)
-    }
-    
-    // 2. Adicionar Gluetun se VPN habilitado
-    if useVPN {
-        gluetun := LoadServiceDefinition("gluetun")
-        services = prepend(services, gluetun) // Gluetun primeiro
-    }
-    
-    // 3. Ajustar configurações baseado no modo
-    mode := "bridge"
-    if useVPN {
-        mode = "vpn"
-        // Remove portas dos serviços (ficam no Gluetun)
-        // Ajusta network_mode de cada serviço
-    }
-    
-    // 4. Gerar compose usando template
-    tmpl := template.Must(template.ParseFiles("templates/docker-compose/base.tmpl"))
-    data := struct {
-        Services []Service
-        Mode     string
-    }{
-        Services: services,
-        Mode:     mode,
-    }
-    
-    // 5. Executar template e salvar arquivo
-    output := executeTemplate(tmpl, data)
-    saveFile("docker-compose.yml", output)
-    
-    return nil
-}
-```
-
-#### 4. Vantagens dessa Abordagem
-
-✅ **Modularidade**: Cada serviço é independente e auto-contido  
-✅ **Fácil Manutenção**: Atualizar um serviço não afeta outros  
-✅ **Escalabilidade**: Adicionar novo serviço = criar 1 arquivo YAML  
-✅ **Reusabilidade**: Mesma definição funciona para VPN e network bridge  
-✅ **Validação**: YAML pode ser validado por schema  
-✅ **Documentação**: Definição do serviço é auto-documentada  
-
-#### 5. Exemplo de Uso
-
-```bash
-# CLI lê os arquivos YAML disponíveis
-services := LoadAllServiceDefinitions("templates/services/")
-
-# Mostra para o usuário escolher
-selected := PromptUserToSelectServices(services)
-
-# Gera compose baseado na seleção
-GenerateDockerCompose(selected, useVPN)
-```
-
-### Network Mode
-- **VPN Mode**: Todos os serviços usam `network_mode: "service:gluetun"`
-- **Simple Mode**: Todos os serviços usam rede bridge customizada `networks: [media]`
-
-### Volumes
-Padrão de volumes por categoria:
-- **Download**: `/downloads`
-- **Media**: `/data/movies`, `/data/tvshows`, `/data/music`, `/data/books`
-- **Config**: `/config`
-- **Backup**: `/data/backup`
-
-### Environment Variables
-Variáveis globais aplicadas a todos os serviços:
-- `TZ`, `PUID`, `PGID`, `UMASK`
-
-Variáveis específicas gerenciadas por serviço.
-
-### Restart Policy
-Todos os serviços usam `restart: unless-stopped`
-
----
-
-## 🔐 Segurança
-
-### Análise de Implementação ✅
-
-#### 1. Nunca logar senhas ou chaves ✅
-- [x] **Implementado**: Senhas usam `EchoMode(huh.EchoModePassword)` (internal/prompts/config.go:47)
-- [x] **Verificado**: Nenhum `fmt.Print` de passwords/keys encontrado no código
-- [x] **Profiles**: Senhas armazenadas em profiles (JSON/YAML) com `omitempty` tag
-- [x] **Recomendação**: Considerar criptografia para profiles em versões futuras
-
-**Arquivos verificados**:
-- `internal/prompts/config.go`: Input de WireGuard private key usa password mode
-- `cmd/generate.go`: Nenhum log de credenciais
-- `internal/profile/profile.go`: Password field com tag `omitempty`
-
-#### 2. Arquivo .env com permissões adequadas ⚠️
-- [x] **Implementado**: `.env` criado com `0644` (internal/generator/env.go:68)
-- [ ] **MELHORIA NECESSÁRIA**: Deveria usar `0600` para maior segurança
-- [x] **Backup**: Arquivos de backup também usam `0644`
-
-**Ação requerida**:
-```go
-// internal/generator/env.go:68
-- os.WriteFile(outputPath, []byte(content), 0644)
-+ os.WriteFile(outputPath, []byte(content), 0600)
-
-// internal/generator/env.go:119
-- os.WriteFile(backupPath, content, 0644)
-+ os.WriteFile(backupPath, content, 0600)
-```
-
-#### 3. Validar inputs do usuário ✅
-- [x] **Path Validation**: `internal/validator/path.go` valida:
-  - Paths vazios
-  - Existência de diretórios
-  - Permissões de escrita
-  - Espaço em disco disponível
-- [x] **Port Validation**: `internal/validator/ports.go` detecta conflitos
-- [x] **Dependencies**: `internal/validator/dependencies.go` valida serviços
-- [x] **Docker**: `internal/validator/docker.go` verifica instalação
-
-**Implementação completa** em:
-- `internal/validator/path.go:125-152`: Funções `ValidatePath()` e `EnsurePathExists()`
-- `internal/validator/validator.go`: Sistema de validação com severidade
-
-#### 4. Sanitizar paths ✅
-- [x] **filepath.Join**: Usado em todos os lugares para construção de paths
-- [x] **filepath.Clean**: Implícito no uso de `filepath.Join`
-- [x] **MkdirAll**: Usa `0755` para permissões seguras de diretórios
-- [x] **Path traversal**: Não encontrado uso de concatenação insegura
-
-**Arquivos verificados**:
-- `internal/generator/compose.go:62,122,131`: Usa `filepath.Join`
-- `internal/generator/env.go:68,101,110`: Usa `filepath.Join`
-- `internal/profile/profile.go:59,77`: Usa `filepath.Join`
-- `internal/validator/path.go:102`: Usa `filepath.Join` para teste de escrita
-
-#### 5. Não executar comandos shell com input do usuário ✅
-- [x] **exec.Command**: Sempre usa argumentos fixos, nunca input do usuário
-- [x] **Docker commands**: Paths passados como argumentos separados
-- [x] **Sem shell injection**: Nenhum uso de `bash -c` ou concatenação de comandos
-
-**Comandos seguros verificados**:
-```go
-// cmd/health.go:143
-exec.CommandContext(ctx, "docker", "info")
-
-// cmd/health.go:151
-exec.CommandContext(ctx, "docker", "compose", "-f", dir+"/docker-compose.yml", "ps", "--format", "json")
-
-// cmd/check_ports.go:226
-exec.Command("lsof", "-i", fmt.Sprintf(":%d", port), "-t")
-
-// internal/validator/docker.go:75,94,107,125
-exec.Command("docker", "--version")
-exec.Command("docker", "compose", "version")
-```
-
-**Nota**: Todos os comandos usam argumentos separados, não shell strings.
-
-### Checklist Final
-
-- [x] ✅ Senhas não são logadas
-- [x] ✅ `.env` criado com permissão `0600` (CORRIGIDO)
-- [x] ✅ Backups do `.env` também com `0600` (CORRIGIDO)
-- [x] ✅ Inputs validados
-- [x] ✅ Paths sanitizados com `filepath.Join`
-- [x] ✅ Comandos shell seguros (sem user input)
-- [x] ✅ Profiles com `omitempty` para senhas
-- [x] ✅ Password input mode em prompts
-- [x] ✅ Teste automatizado de permissões adicionado
-
-### Melhorias Implementadas
-
-1. **Permissões de arquivo** (✅ IMPLEMENTADO):
-   - ✅ Alterado `.env` de `0644` para `0600`
-   - ✅ Backups do `.env` também usam `0600`
-   - ✅ Teste automatizado criado para validar permissões
-   
-### Melhorias Recomendadas (Pós-v1.0.0)
-
-1. **Criptografia de profiles** (PRIORIDADE MÉDIA):
-   - Criptografar senhas em profiles salvos
-   - Usar keyring do sistema operacional
-   
-2. **Auditoria de segurança** (PRIORIDADE BAIXA):
-   - Adicionar testes de segurança automatizados
-   - Scan de dependências para vulnerabilidades
-   - CodeQL analysis no GitHub Actions
-
----
-
-## 📚 Referências
+## 📚 References
 
 - [Docker Compose Specification](https://docs.docker.com/compose/compose-file/)
 - [Gluetun Documentation](https://github.com/qdm12/gluetun-wiki)
@@ -1139,16 +426,14 @@ exec.Command("docker", "compose", "version")
 - [Cobra CLI](https://cobra.dev/)
 - [Huh Forms](https://github.com/charmbracelet/huh)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)
-- [go-i18n](https://github.com/nicksnyder/go-i18n)
 
 ---
 
-### 🛠️ Stack Tecnológica
+### 🛠️ Tech Stack
 
 - **Language**: Go 1.24.2
 - **CLI Framework**: Cobra v1.8.0
 - **TUI**: Huh v0.8.0 + Bubble Tea v1.3.10
-- **i18n**: go-i18n/v2 v2.4.0
 - **Testing**: Standard Go testing
 - **YAML**: gopkg.in/yaml.v3
 - **Docker Integration**: os/exec (health, check-ports)
