@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 )
 
 // PathValidator checks file system paths
@@ -107,21 +106,6 @@ func isWritable(path string) bool {
 	_ = file.Close()
 	_ = os.Remove(testFile)
 	return true
-}
-
-// getAvailableDiskSpaceGB returns available disk space in GB
-func getAvailableDiskSpaceGB(path string) float64 {
-	var stat syscall.Statfs_t
-	err := syscall.Statfs(path, &stat)
-	if err != nil {
-		return 0
-	}
-
-	// Available blocks * block size / GB
-	availableBytes := stat.Bavail * uint64(stat.Bsize)
-	availableGB := float64(availableBytes) / (1024 * 1024 * 1024)
-	
-	return availableGB
 }
 
 // ValidatePath performs a quick validation of a single path
