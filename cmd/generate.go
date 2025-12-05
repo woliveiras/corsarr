@@ -236,6 +236,21 @@ func runGenerate(t *i18n.I18n) error {
 		}
 	}
 
+	// Add Gluetun to services if VPN is enabled
+	if vpnEnabled {
+		hasGluetun := false
+		for _, id := range selectedIDs {
+			if id == "gluetun" {
+				hasGluetun = true
+				break
+			}
+		}
+		if !hasGluetun {
+			selectedIDs = append([]string{"gluetun"}, selectedIDs...)
+			fmt.Println("🔒 VPN enabled: Gluetun added automatically")
+		}
+	}
+
 	// Step 5: Validate configuration
 	fmt.Println("\n🔍 Validating configuration...")
 	validationResult := validateConfiguration(t, registry, selectedIDs, envConfig.ARRPath, outputDir, vpnEnabled)

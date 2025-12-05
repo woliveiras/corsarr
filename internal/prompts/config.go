@@ -51,6 +51,7 @@ func ConfigureVPN(t *i18n.I18n) (*generator.VPNConfig, error) {
 				huh.NewInput().
 					Title(t.T("prompts.vpn_wireguard_public_key")).
 					Value(&config.WireguardPublicKey).
+					EchoMode(huh.EchoModePassword).
 					Placeholder("server public key"),
 			),
 		)
