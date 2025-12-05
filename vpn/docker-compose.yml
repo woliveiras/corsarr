@@ -27,10 +27,6 @@ services:
       - "8989:8989"       # Web Interface
       # Radarr
       - "7878:7878"       # Web Interface
-      # Lidarr
-      - "8686:8686"       # Web Interface
-      # LazyLibrarian
-      - "5299:5299"       # Web Interface
       # Bazarr
       - "6767:6767"       # Web Interface
       # Jellyseerr
@@ -109,34 +105,6 @@ services:
       - ${ARRPATH}data/downloads:/downloads
     env_file:
       - ./.env
-  
-  # Music Management
-  lidarr:
-    image: ghcr.io/hotio/lidarr:latest
-    container_name: lidarr
-    network_mode: "service:gluetun"
-    restart: unless-stopped
-    volumes:
-      - ${ARRPATH}config/lidarr:/config
-      - ${ARRPATH}data/music:/data/music
-      - ${ARRPATH}data/downloads:/downloads
-    env_file:
-      - ./.env
-  
-  # Book Management
-  lazylibrarian:
-    image: lscr.io/linuxserver/lazylibrarian:latest
-    container_name: lazylibrarian
-    environment:
-      - DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg
-    network_mode: "service:gluetun"
-    restart: unless-stopped
-    volumes:
-      - ${ARRPATH}config/lazylibrarian/data:/config
-      - ${ARRPATH}data/downloads:/downloads
-      - ${ARRPATH}data/books:/books
-    env_file:
-      - ./.env
 
   # Subtitle Management
   bazarr:
@@ -175,5 +143,33 @@ services:
       - ${ARRPATH}data/movies:/data/movies
       - ${ARRPATH}data/tvshows:/data/tvshows
       - ${ARRPATH}data/downloads:/downloads
+    env_file:
+      - ./.env
+
+  # Media Transcoding and Compression
+  # FileFlows automatically transcodes media to save space and optimize files
+  fileflows:
+    image: revenz/fileflows:latest
+    container_name: fileflows
+    restart: unless-stopped
+    ports:
+      - "19200:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${ARRPATH}config/fileflows:/app/Data
+      - ${ARRPATH}config/fileflows/logs:/app/Logs
+      - ${ARRPATH}data/movies:/media/movies
+      - ${ARRPATH}data/tvshows:/media/tvshows
+      - ${ARRPATH}data/downloads:/media/downloads
+      - /tmp/fileflows_temp:/temp
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=${UMASK}
+      - BROWSER_START_DIRECTORY=/media
     env_file:
       - ./.env

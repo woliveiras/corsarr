@@ -1,0 +1,129 @@
+language:
+  name: "Português Brasileiro"
+  code: "pt-br"
+
+prompts:
+  language_select: "Select your language / Selecione seu idioma / Seleccione su idioma"
+  vpn_question: "Deseja usar VPN (Gluetun)?"
+  service_selection: "Selecione os serviços que deseja usar:"
+  base_path: "Caminho base (ARRPATH):"
+  base_path_help: "Caminho para sua biblioteca de mídia (mantenha a barra final)"
+  timezone: "Fuso horário (TZ):"
+  timezone_help: "Defina seu fuso horário (ex: America/Sao_Paulo, America/Fortaleza)"
+  user_id: "ID do Usuário (PUID):"
+  group_id: "ID do Grupo (PGID):"
+  umask: "UMASK:"
+  confirm_generation: "Confirmar geração dos arquivos?"
+  save_profile: "Deseja salvar esta configuração como perfil?"
+  profile_name: "Nome do perfil:"
+  output_directory: "Diretório de saída:"
+
+categories:
+  download: "Gerenciadores de Download"
+  indexer: "Indexadores"
+  media: "Gerenciamento de Mídia"
+  subtitles: "Legendas"
+  streaming: "Streaming"
+  request: "Gerenciamento de Requisições"
+  transcode: "Transcodificação"
+  vpn: "VPN"
+
+services:
+  qbittorrent:
+    name: "qBittorrent"
+    description: "Cliente BitTorrent para download de conteúdo"
+  prowlarr:
+    name: "Prowlarr"
+    description: "Gerenciador de indexadores para apps *arr"
+  flaresolverr:
+    name: "FlareSolverr"
+    description: "Servidor proxy para contornar proteção Cloudflare"
+  sonarr:
+    name: "Sonarr"
+    description: "Gerenciador de coleção de séries de TV"
+  radarr:
+    name: "Radarr"
+    description: "Gerenciador de coleção de filmes"
+  lidarr:
+    name: "Lidarr"
+    description: "Gerenciador de coleção de músicas"
+  lazylibrarian:
+    name: "LazyLibrarian"
+    description: "Gerenciador de coleção de livros"
+  bazarr:
+    name: "Bazarr"
+    description: "Download de legendas para filmes e séries"
+  jellyfin:
+    name: "Jellyfin"
+    description: "Servidor de streaming de mídia"
+  jellyseerr:
+    name: "Jellyseerr"
+    description: "Gerenciamento de requisições de filmes e séries"
+  fileflows:
+    name: "FileFlows"
+    description: "Transcodificação e otimização de mídia"
+  gluetun:
+    name: "Gluetun"
+    description: "Cliente VPN com suporte para múltiplos provedores"
+
+messages:
+  welcome: "🏴‍☠️ Bem-vindo ao Corsarr - Navegue pelos mares da automação de mídia"
+  validation_success: "✓ Configuração validada com sucesso!"
+  services_configured: "✓ %d serviços serão configurados"
+  mode_vpn: "✓ Modo: COM VPN"
+  mode_no_vpn: "✓ Modo: SEM VPN"
+  no_port_conflicts: "✓ Nenhum conflito de portas detectado"
+  backup_created: "✓ Backup criado: %s"
+  file_created: "✓ %s criado com sucesso"
+  profile_saved: "✓ Perfil '%s' salvo"
+  files_created_in: "Arquivos criados em: %s"
+  start_services: "Para iniciar os serviços, execute:"
+  view_logs: "Para visualizar os logs:"
+  preview_header: "Preview dos arquivos que serão criados:"
+  preview_compose: "📄 docker-compose.yml (%d linhas)"
+  preview_env: "📄 .env (%d variáveis)"
+
+errors:
+  invalid_path: "✗ Caminho inválido: %s"
+  path_not_writable: "✗ Caminho sem permissão de escrita: %s"
+  port_conflict: "✗ Conflito de porta detectado: %d"
+  missing_dependency: "✗ Serviço '%s' requer '%s'"
+  vpn_credentials_missing: "✗ Credenciais de VPN estão faltando"
+  docker_not_found: "✗ Docker não está instalado"
+  docker_compose_not_found: "✗ Docker Compose não está instalado"
+  profile_not_found: "✗ Perfil '%s' não encontrado"
+  profile_already_exists: "✗ Perfil '%s' já existe"
+  low_disk_space: "⚠ Aviso: Menos de %dGB de espaço livre em disco"
+
+vpn:
+  provider_question: "Provedor VPN:"
+  provider_help: "Provedores suportados: protonvpn, nordvpn, expressvpn, etc."
+  type_question: "Tipo de VPN:"
+  wireguard_public_key: "Chave Pública Wireguard:"
+  wireguard_private_key: "Chave Privada Wireguard:"
+  wireguard_addresses: "Endereços Wireguard:"
+  port_forwarding: "Habilitar encaminhamento de portas?"
+  dns_address: "Endereço DNS da VPN:"
+
+commands:
+  generate:
+    short: "Gerar arquivos docker-compose.yml e .env"
+    long: "Gerar arquivos docker-compose.yml e .env baseados na sua seleção de serviços"
+  preview:
+    short: "Visualizar configuração sem gerar arquivos"
+    long: "Mostrar uma prévia do docker-compose.yml e .env que seriam gerados"
+  profile:
+    short: "Gerenciar perfis de configuração"
+    long: "Salvar, carregar, listar, deletar, exportar e importar perfis de configuração"
+    save: "Salvar configuração atual como perfil"
+    load: "Carregar um perfil salvo"
+    list: "Listar todos os perfis salvos"
+    delete: "Deletar um perfil"
+    export: "Exportar um perfil para um arquivo"
+    import: "Importar um perfil de um arquivo"
+  health:
+    short: "Verificar saúde dos containers em execução"
+    long: "Verificar se todos os serviços configurados estão rodando e saudáveis"
+  check_ports:
+    short: "Verificar conflitos de portas"
+    long: "Verificar quais portas estão em uso e sugerir alternativas se houver conflitos"
