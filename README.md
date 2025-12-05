@@ -1,6 +1,8 @@
-# Stack*RR
+# Corsarr 🏴‍☠️
 
-> Fast way for running for Radarr, Lidarr, LazyLibrarian, and Bazarr
+> Navigate the high seas of media automation
+
+Fast and easy way to run your *arr stack: Radarr, Sonarr, Lidarr, Prowlarr, Bazarr and more!
 
 This repository contains a Docker Compose setup for managing various media applications, including Radarr, Lidarr, LazyLibrarian, and Bazarr. The setup is designed to run on a Linux server with Docker and Docker Compose installed.
 
@@ -24,17 +26,17 @@ All you need is my `docker-compose.yml` file and a few environment variables!
 1. **Clone the Repository**: Clone this repository to your server using the following command:
 
    ```bash
-   mkdir servarr && cd servarr
+   mkdir corsarr && cd corsarr
 
-   git clone git@github.com:woliveiras/stack-rr.git .
+   git clone git@github.com:woliveiras/corsarr.git .
    ```
 
    If you prefer using HTTPS, use this command instead:
 
    ```bash
-   mkdir servarr && cd servarr
+   mkdir corsarr && cd corsarr
 
-   git clone https://github.com/woliveiras/stack-rr.git .
+   git clone https://github.com/woliveiras/corsarr.git .
    ```
 
 1. **Navigate to the Directory**: we can use two settings here:
