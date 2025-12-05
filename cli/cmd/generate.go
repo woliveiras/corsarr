@@ -10,6 +10,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/prompts"
 	"github.com/woliveiras/corsarr/internal/services"
+	"github.com/woliveiras/corsarr/internal/validator"
 )
 
 var (
@@ -82,7 +83,7 @@ func runGenerate(t *i18n.I18n) error {
 	}
 
 	if len(selectedIDs) == 0 {
-		return fmt.Errorf(t.T("errors.no_services_selected"))
+		return fmt.Errorf("%s", t.T("errors.no_services_selected"))
 	}
 
 	fmt.Printf("\n✅ %d %s\n\n", len(selectedIDs), t.T("messages.services_selected"))
@@ -93,7 +94,30 @@ func runGenerate(t *i18n.I18n) error {
 		return fmt.Errorf("environment configuration failed: %w", err)
 	}
 
-	// Step 5: Confirm generation
+	// Step 5: Validate configuration
+	fmt.Println("\n🔍 Validating configuration...")
+	validationResult := validateConfiguration(t, registry, selectedIDs, envConfig.ARRPath, outputDir, vpnEnabled)
+	
+	// Show warnings
+	if validationResult.HasWarnings() {
+		fmt.Println("\n⚠️  Warnings:")
+		for _, warning := range validationResult.Warnings {
+			fmt.Printf("   • %s\n", warning.Message)
+		}
+	}
+
+	// Check for errors
+	if validationResult.HasErrors() {
+		fmt.Println("\n❌ Validation failed:")
+		for _, err := range validationResult.Errors {
+			fmt.Printf("   • [%s] %s\n", err.Severity, err.Message)
+		}
+		return fmt.Errorf("configuration validation failed")
+	}
+
+	fmt.Println("✅ Configuration validated")
+
+	// Step 6: Confirm generation
 	fmt.Println()
 	confirmed, err := prompts.ConfirmGeneration(t)
 	if err != nil {
@@ -105,13 +129,25 @@ func runGenerate(t *i18n.I18n) error {
 		return nil
 	}
 
-	// Step 6: Preview if dry-run
+	// Step 7: Preview if dry-run
 	if dryRun {
 		return previewGeneration(t, registry, selectedIDs, envConfig, vpnEnabled)
 	}
 
-	// Step 7: Generate files
+	// Step 8: Generate files
 	return generateFiles(t, registry, selectedIDs, envConfig, vpnEnabled)
+}
+
+// validateConfiguration runs all validators
+func validateConfiguration(t *i18n.I18n, registry *services.Registry, serviceIDs []string, basePath, outputDir string, vpnEnabled bool) *validator.ValidationResult {
+	config, err := validator.NewConfig(registry, serviceIDs, basePath, outputDir, vpnEnabled)
+	if err != nil {
+		result := &validator.ValidationResult{Valid: false}
+		result.AddError("config", fmt.Sprintf("Failed to create validation config: %v", err), validator.SeverityCritical)
+		return result
+	}
+
+	return validator.ValidateAll(config)
 }
 
 func previewGeneration(t *i18n.I18n, registry *services.Registry, selectedIDs []string, envConfig *generator.EnvConfig, vpnEnabled bool) error {

@@ -79,7 +79,7 @@ func SelectServices(translator *i18n.I18n, registry *services.Registry, vpnEnabl
 	}
 
 	if len(selectedIDs) == 0 {
-		return nil, fmt.Errorf(translator.T("errors.no_services_selected"))
+		return nil, fmt.Errorf("%s", translator.T("errors.no_services_selected"))
 	}
 
 	return selectedIDs, nil
