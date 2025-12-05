@@ -30,20 +30,64 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 ### Prerequisites
 
 - **Docker & Docker Compose v2+** - [Install here](https://docs.docker.com/compose/install/)
-- **Go 1.24.2+** - [Install here](https://go.dev/doc/install)
-- **Git** - [Install here](https://git-scm.com/install/)
-- Linux, macOS, or Windows with WSL2 for using the CLI
+- Linux, macOS, or Windows with WSL2
+
+### Installation
+
+**Download the latest release for your platform:**
+
+**Linux (AMD64):**
 
 ```bash
-# 1. Clone and build
-git clone https://github.com/woliveiras/corsarr.git
-cd corsarr/cli
-go build -o corsarr .
+wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_x86_64.tar.gz
+tar -xzf corsarr_Linux_x86_64.tar.gz
+sudo mv corsarr /usr/local/bin/
+```
 
-# 2. Generate your stack (interactive)
-./corsarr generate
+**Linux (ARM64):**
 
-# 3. Start everything
+```bash
+wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_arm64.tar.gz
+tar -xzf corsarr_Linux_arm64.tar.gz
+sudo mv corsarr /usr/local/bin/
+```
+
+**macOS (Intel):**
+
+```bash
+wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Darwin_x86_64.tar.gz
+tar -xzf corsarr_Darwin_x86_64.tar.gz
+sudo mv corsarr /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+
+```bash
+wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Darwin_arm64.tar.gz
+tar -xzf corsarr_Darwin_arm64.tar.gz
+sudo mv corsarr /usr/local/bin/
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Download and extract
+Invoke-WebRequest -Uri "https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Windows_x86_64.zip" -OutFile "corsarr.zip"
+Expand-Archive -Path "corsarr.zip" -DestinationPath "C:\Program Files\corsarr"
+
+# Add to PATH (permanent)
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Program Files\corsarr", [EnvironmentVariableTarget]::Machine)
+```
+
+Or download manually from [releases](https://github.com/woliveiras/corsarr/releases/latest) and extract to a folder in your PATH.
+
+### Usage
+
+```bash
+# 1. Generate your stack (interactive)
+corsarr generate
+
+# 2. Start everything
 docker compose up -d
 ```
 
@@ -551,10 +595,14 @@ docker compose up -d
 
 **Update Corsarr CLI**:
 
+Download the latest release from [GitHub Releases](https://github.com/woliveiras/corsarr/releases/latest) or use these commands:
+
 ```bash
-cd corsarr/cli
-git pull
-go build -o corsarr .
+# Linux/macOS - Download and replace
+cd /tmp
+wget https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_Linux_x86_64.tar.gz
+tar -xzf corsarr_Linux_x86_64.tar.gz
+sudo mv corsarr /usr/local/bin/
 ```
 
 **Update Docker containers**:

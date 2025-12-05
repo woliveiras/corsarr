@@ -19,24 +19,21 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.24.2'
-          cache-dependency-path: cli/go.sum
+          cache-dependency-path: go.sum
 
       - name: Verify dependencies
-        working-directory: ./cli
         run: go mod verify
 
       - name: Run go vet
-        working-directory: ./cli
         run: go vet ./...
 
       - name: Run tests
-        working-directory: ./cli
         run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./cli/coverage.out
+          files: ./coverage.out
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -63,10 +60,9 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.24.2'
-          cache-dependency-path: cli/go.sum
+          cache-dependency-path: go.sum
 
       - name: Build binary
-        working-directory: ./cli
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -82,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: corsarr-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: cli/corsarr-*
+          path: corsarr-*
           retention-days: 7
 
   lint:
@@ -97,11 +93,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.24.2'
-          cache-dependency-path: cli/go.sum
+          cache-dependency-path: go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
-          working-directory: ./cli
+          working-directory: ./
           args: --timeout=5m

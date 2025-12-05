@@ -1,5 +1,44 @@
+# Ignore compiled binaries
+corsarr
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Generated files
+docker-compose.yml
+.env
+*.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Saved profiles (user data)
+configs/profiles/*.yaml
+!configs/profiles/.gitkeep
+
+# Ignore media folders
 blackhole
 downloads
+config
 jackett
 jellyfin
 movies
@@ -18,10 +57,3 @@ download-client-downloads
 music
 tv
 jellyseerr
-.env
-.DS_Store
-gluetun
-config
-data
-torrent
-torrents

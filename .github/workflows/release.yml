@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: cli/go.mod
+          go-version-file: go.mod
 
       - name: Unshallow
         run: git fetch --prune --unshallow
@@ -27,8 +27,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: "v2.13.0"
+          version: "~> v2"
           args: release --clean
-          workdir: cli
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
