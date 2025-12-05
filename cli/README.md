@@ -143,6 +143,54 @@ corsarr preview
 corsarr preview --profile my-setup
 ```
 
+### Health Command
+
+**Check container health status**:
+```bash
+corsarr health
+```
+
+**Check with detailed CPU/memory stats**:
+```bash
+corsarr health --detailed
+```
+
+**Check specific directory**:
+```bash
+corsarr health --output /path/to/compose
+```
+
+This command will:
+
+- Verify Docker is available
+- Check all containers managed by your docker-compose.yml
+- Show status (running/stopped/unhealthy)
+- Display CPU and memory usage (with --detailed flag)
+- Suggest actions for issues
+
+### Check Ports Command
+
+**Check for port conflicts**:
+```bash
+corsarr check-ports
+```
+
+**Get alternative port suggestions**:
+```bash
+corsarr check-ports --suggest
+```
+
+**Check specific directory**:
+```bash
+corsarr check-ports --output /path/to/compose
+```
+
+This command will:
+- List all ports used by configured services
+- Check if ports are available on your system
+- Show which process is using conflicting ports
+- Suggest alternative ports when conflicts are found
+
 ## 🎮 Available Services
 
 ### Download Managers
@@ -279,23 +327,134 @@ Or set via prompt on first run.
 
 ### Port Already in Use
 
-If you see port conflict warnings:
-1. Check running containers: `docker ps`
+If you encounter port conflicts:
+
+```bash
+# Check which ports are in use
+corsarr check-ports
+
+# Get alternative port suggestions
+corsarr check-ports --suggest
+
+# Manually check running containers
+docker ps
+```
+
+**Solutions**:
+1. Stop conflicting containers: `docker compose down`
 2. Modify ports in `docker-compose.yml`
-3. Or stop conflicting services
+3. Use suggested alternative ports from `check-ports`
+
+### Container Not Starting
+
+Use the health check command:
+
+```bash
+# Check all containers
+corsarr health
+
+# Get detailed info with CPU/memory
+corsarr health --detailed
+```
+
+**Common issues**:
+- **Unhealthy container**: Check logs with `docker compose logs [service]`
+- **Stopped container**: Start with `docker compose up -d`
+- **Missing dependencies**: Verify service dependencies are configured
 
 ### Permission Errors
 
-Ensure `PUID` and `PGID` match your user:
+**Problem**: Containers can't access files or create directories
+
+**Solution**: Ensure `PUID` and `PGID` match your user:
+
 ```bash
-id $(whoami)  # Check your UID and GID
+# Check your user/group IDs
+id $(whoami)
+
+# Example output: uid=1000(user) gid=1000(user)
+# Use these values for PUID and PGID
+```
+
+Then regenerate with correct IDs:
+```bash
+corsarr generate  # Enter correct PUID/PGID when prompted
 ```
 
 ### VPN Not Working
 
-1. Verify VPN credentials in `.env`
-2. Check Gluetun logs: `docker logs gluetun`
-3. Ensure port forwarding is configured correctly
+**Problem**: Services can't connect through VPN
+
+**Troubleshooting steps**:
+
+1. **Check Gluetun logs**:
+   ```bash
+   docker compose logs gluetun
+   ```
+
+2. **Verify VPN credentials** in `.env`:
+   - `VPN_SERVICE_PROVIDER`
+   - `WIREGUARD_PRIVATE_KEY` or `OPENVPN_USER`/`OPENVPN_PASSWORD`
+
+3. **Test VPN connection**:
+   ```bash
+   docker exec gluetun curl ifconfig.me
+   ```
+
+4. **Common fixes**:
+   - Regenerate WireGuard keys from your VPN provider
+   - Enable port forwarding in `.env` if needed
+   - Check firewall rules on your system
+
+### Docker Compose Not Found
+
+**Problem**: `docker compose` command not available
+
+**Solution**:
+
+```bash
+# Check Docker Compose version
+docker compose version
+
+# If not installed, install Docker Compose v2
+# Linux:
+sudo apt-get update && sudo apt-get install docker-compose-plugin
+
+# Or use docker-compose (v1) if available
+docker-compose version
+```
+
+### Files Not Generated
+
+**Problem**: `corsarr generate` completes but no files created
+
+**Troubleshooting**:
+
+1. **Check output directory permissions**:
+   ```bash
+   ls -la /path/to/output
+   ```
+
+2. **Use dry-run to see what would be generated**:
+   ```bash
+   corsarr generate --dry-run
+   ```
+
+3. **Verify there are no validation errors** in the output
+
+4. **Try with explicit output path**:
+   ```bash
+   corsarr generate --output ~/corsarr-test
+   ```
+
+### Need More Help?
+
+- **Check health status**: `corsarr health --detailed`
+- **Validate configuration**: `corsarr preview`
+- **Check ports**: `corsarr check-ports --suggest`
+- **Review logs**: `docker compose logs -f`
+- **Technical docs**: See [ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+- **Report issues**: [GitHub Issues](https://github.com/woliveiras/corsarr/issues)
 
 ## 🤝 Contributing
 
@@ -310,12 +469,3 @@ See [LICENSE](../LICENSE) in the main repository.
 - [Main Repository](https://github.com/woliveiras/corsarr)
 - [Technical Documentation](../docs/ARCHITECTURE.md)
 - [Issue Tracker](https://github.com/woliveiras/corsarr/issues)
-
-## License
-
-See LICENSE file in the main repository.
-
-## Links
-
-- [Main Repository](https://github.com/woliveiras/corsarr)
-- [Documentation](https://github.com/woliveiras/corsarr/tree/main/docs)

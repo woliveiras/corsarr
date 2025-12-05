@@ -798,8 +798,8 @@ require (
 ### Fase 9: Features Extras
 - [x] Comando preview (traduzido)
 - [x] Modo dry-run (traduzido)
-- [ ] Comando health (traduzido)
-- [ ] Comando check-ports (traduzido)
+- [x] Comando health (traduzido)
+- [x] Comando check-ports (traduzido)
 - [ ] Modo não-interativo
 
 ### Fase 9: Documentação
@@ -1043,7 +1043,7 @@ Todos os serviços usam `restart: unless-stopped`
 
 **Última atualização**: 2025-12-05
 
-**Status**: ✅ **Fase 8 Completa** - Sistema de Perfis totalmente implementado
+**Status**: 🔄 **Fase 9 Em Progresso** - Features Extras (health e check-ports implementados)
 
 ### ✅ Completado
 
@@ -1059,6 +1059,8 @@ Todos os serviços usam `restart: unless-stopped`
 - ✅ Sistema de perfis (save/load/list/delete/export/import)
 - ✅ Integração perfis + generate command
 - ✅ Preview e dry-run modes
+- ✅ Comando health (status dos containers)
+- ✅ Comando check-ports (verificação de conflitos de portas)
 - ✅ 57 testes unitários (100% passing)
 
 **Cobertura de Testes**:
@@ -1070,19 +1072,16 @@ Todos os serviços usam `restart: unless-stopped`
 ### 🔄 Em Progresso
 
 **Fase 9**: Features extras e documentação
-- Comando health check
-- Comando check-ports standalone
-- Modo não-interativo completo
-- Troubleshooting guide
+- ⏳ Modo não-interativo completo
+- ⏳ Troubleshooting guide
 
 ### 📝 Próximos Passos
 
-1. Implementar comando `health` para verificar containers
-2. Implementar comando `check-ports` standalone
-3. Melhorar modo não-interativo
-4. Criar guia de troubleshooting
-5. Testes de integração end-to-end
-6. Release v1.0.0
+1. Completar modo não-interativo
+2. Criar guia de troubleshooting multilíngue
+3. Atualizar README principal do repositório
+4. Testes de integração end-to-end
+5. Release v1.0.0
 
 ### 🛠️ Stack Tecnológica
 
@@ -1092,3 +1091,4 @@ Todos os serviços usam `restart: unless-stopped`
 - **i18n**: go-i18n/v2 v2.4.0
 - **Testing**: Standard Go testing
 - **YAML**: gopkg.in/yaml.v3
+- **Docker Integration**: os/exec (health, check-ports)
