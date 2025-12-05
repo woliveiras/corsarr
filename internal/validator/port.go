@@ -3,6 +3,7 @@ package validator
 import (
 	"fmt"
 	"net"
+	"strings"
 )
 
 // PortValidator checks for port conflicts
@@ -20,11 +21,16 @@ func (pv *PortValidator) Validate() *ValidationResult {
 	result := &ValidationResult{Valid: true}
 
 	// Collect all ports from selected services
-	portMap := make(map[string][]string) // port -> service names
+	portMap := make(map[string][]string) // "port/protocol" -> service names
 
 	for _, service := range pv.config.Services {
 		// Get ports based on VPN mode
-		var ports []string
+		var portsWithOwner []struct {
+			port     string
+			protocol string
+			owner    string
+		}
+		
 		if pv.config.VPNEnabled {
 			// In VPN mode, only Gluetun exposes ports
 			if service.ID == "gluetun" {
@@ -32,7 +38,11 @@ func (pv *PortValidator) Validate() *ValidationResult {
 				for _, s := range pv.config.Services {
 					if s.ID != "gluetun" && len(s.Ports) > 0 {
 						for _, portMapping := range s.Ports {
-							ports = append(ports, portMapping.Host)
+							portsWithOwner = append(portsWithOwner, struct {
+								port     string
+								protocol string
+								owner    string
+							}{portMapping.Host, portMapping.Protocol, s.Name})
 						}
 					}
 				}
@@ -40,31 +50,41 @@ func (pv *PortValidator) Validate() *ValidationResult {
 		} else {
 			// Bridge mode - each service exposes its own ports
 			for _, portMapping := range service.Ports {
-				ports = append(ports, portMapping.Host)
+				portsWithOwner = append(portsWithOwner, struct {
+					port     string
+					protocol string
+					owner    string
+				}{portMapping.Host, portMapping.Protocol, service.Name})
 			}
 		}
 
 		// Check each port
-		for _, port := range ports {
-			portMap[port] = append(portMap[port], service.Name)
+		for _, item := range portsWithOwner {
+			// Use "port/protocol" as key to differentiate TCP and UDP on same port
+			key := fmt.Sprintf("%s/%s", item.port, item.protocol)
+			portMap[key] = append(portMap[key], item.owner)
 		}
 	}
 
-	// Check for conflicts (same port used by multiple services)
-	for port, serviceNames := range portMap {
+	// Check for conflicts (same port+protocol used by multiple services)
+	for portKey, serviceNames := range portMap {
 		if len(serviceNames) > 1 {
 			result.AddError(
 				"ports",
-				fmt.Sprintf("Port %s is used by multiple services: %v", port, serviceNames),
+				fmt.Sprintf("Port %s is used by multiple services: %v", portKey, serviceNames),
 				SeverityError,
 			)
 		}
 
+		// Extract port number from "port/protocol" key for system check
+		parts := strings.Split(portKey, "/")
+		portNum := parts[0]
+
 		// Check if port is already in use on the system
-		if pv.isPortInUse(port) {
+		if pv.isPortInUse(portNum) {
 			result.AddError(
 				"ports",
-				fmt.Sprintf("Port %s is already in use on the system", port),
+				fmt.Sprintf("Port %s is already in use on the system", portNum),
 				SeverityWarning,
 			)
 		}

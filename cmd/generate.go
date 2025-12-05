@@ -103,6 +103,13 @@ func runGenerate(t *i18n.I18n) error {
 		if err != nil {
 			return fmt.Errorf("failed to load config file: %w", err)
 		}
+		
+		// Use outputDir from config file if flag wasn't explicitly set
+		if outputDir == "." && loadedProfile.OutputDir != "" {
+			outputDir = loadedProfile.OutputDir
+			fmt.Printf("📂 Output directory: %s (from config)\n", outputDir)
+		}
+		
 		fmt.Printf("✅ Configuration loaded\n\n")
 	}
 
@@ -117,6 +124,13 @@ func runGenerate(t *i18n.I18n) error {
 		if loadedProfile.Description != "" {
 			fmt.Printf("   %s\n", loadedProfile.Description)
 		}
+		
+		// Use outputDir from profile if flag wasn't explicitly set
+		if outputDir == "." && loadedProfile.OutputDir != "" {
+			outputDir = loadedProfile.OutputDir
+			fmt.Printf("📂 Output directory: %s (from profile)\n", outputDir)
+		}
+		
 		fmt.Println()
 	}
 
@@ -233,6 +247,28 @@ func runGenerate(t *i18n.I18n) error {
 		envConfig, err = prompts.ConfigureEnvironment(t, vpnEnabled)
 		if err != nil {
 			return fmt.Errorf("environment configuration failed: %w", err)
+		}
+	}
+
+	// Step 4.5: Ask for output directory if not set via flag and in interactive mode
+	if outputDir == "." && !noInteractive && loadedProfile == nil {
+		fmt.Print("\n📂 Output directory (default: current directory): ")
+		var userOutputDir string
+		fmt.Scanln(&userOutputDir)
+		if userOutputDir != "" {
+			outputDir = userOutputDir
+			
+			// Ask if user wants to use the same path for volumes
+			fmt.Print("📦 Use the same directory for service volumes? (Y/n): ")
+			var useForVolumes string
+			fmt.Scanln(&useForVolumes)
+			if useForVolumes == "" || strings.ToLower(useForVolumes) == "y" {
+				// Ensure path ends with /
+				if !strings.HasSuffix(outputDir, "/") {
+					outputDir += "/"
+				}
+				envConfig.ARRPath = outputDir
+			}
 		}
 	}
 
@@ -354,6 +390,11 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 	// Ensure output directory exists
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	// Create necessary directories for volumes
+	if err := createServiceDirectories(registry, selectedIDs, envConfig.ARRPath); err != nil {
+		return fmt.Errorf("failed to create service directories: %w", err)
 	}
 
 	fmt.Println("\n" + "═══════════════════════════════════════════════════════")
@@ -529,4 +570,44 @@ func loadConfigFile(path string) (*profile.Profile, error) {
 	}
 
 	return &p, nil
+}
+
+// createServiceDirectories creates all necessary directories for service volumes
+func createServiceDirectories(registry *services.Registry, serviceIDs []string, arrPath string) error {
+	dirSet := make(map[string]bool)
+	
+	// Collect all unique directories from service volumes
+	for _, serviceID := range serviceIDs {
+		service, err := registry.GetService(serviceID)
+		if err != nil || service == nil {
+			continue
+		}
+		
+		for _, volume := range service.Volumes {
+			// Replace ${ARRPATH} with actual path
+			hostPath := strings.ReplaceAll(volume.Host, "${ARRPATH}", arrPath)
+			
+			// Skip if it's a file path (has extension) or absolute path that doesn't start with arrPath
+			if !strings.HasPrefix(hostPath, arrPath) {
+				continue
+			}
+			
+			dirSet[hostPath] = true
+		}
+	}
+	
+	// Create directories
+	createdDirs := []string{}
+	for dir := range dirSet {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+		createdDirs = append(createdDirs, dir)
+	}
+	
+	if len(createdDirs) > 0 {
+		fmt.Printf("📁 Created %d directories for service volumes\n", len(createdDirs))
+	}
+	
+	return nil
 }

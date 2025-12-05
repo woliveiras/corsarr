@@ -1,5 +1,6 @@
 # Ignore compiled binaries
 corsarr
+corsarr-*
 *.exe
 *.exe~
 *.dll
