@@ -598,7 +598,15 @@ func createServiceDirectories(registry *services.Registry, serviceIDs []string, 
 	
 	// Create directories
 	createdDirs := []string{}
+	existingDirs := []string{}
+	
 	for dir := range dirSet {
+		// Check if directory already exists
+		if _, err := os.Stat(dir); err == nil {
+			existingDirs = append(existingDirs, dir)
+			continue
+		}
+		
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
@@ -607,6 +615,9 @@ func createServiceDirectories(registry *services.Registry, serviceIDs []string, 
 	
 	if len(createdDirs) > 0 {
 		fmt.Printf("📁 Created %d directories for service volumes\n", len(createdDirs))
+	}
+	if len(existingDirs) > 0 {
+		fmt.Printf("✓ Found %d existing directories\n", len(existingDirs))
 	}
 	
 	return nil
