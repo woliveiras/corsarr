@@ -42,43 +42,30 @@ categories:
   transcode: "Transcodificação"
   vpn: "VPN"
 
-services:
-  qbittorrent:
-    name: "qBittorrent"
-    description: "Cliente BitTorrent para download de conteúdo"
-  prowlarr:
-    name: "Prowlarr"
-    description: "Gerenciador de indexadores para apps *arr"
-  flaresolverr:
-    name: "FlareSolverr"
-    description: "Servidor proxy para contornar proteção Cloudflare"
-  sonarr:
-    name: "Sonarr"
-    description: "Gerenciador de coleção de séries de TV"
-  radarr:
-    name: "Radarr"
-    description: "Gerenciador de coleção de filmes"
-  lidarr:
-    name: "Lidarr"
-    description: "Gerenciador de coleção de músicas"
-  lazylibrarian:
-    name: "LazyLibrarian"
-    description: "Gerenciador de coleção de livros"
-  bazarr:
-    name: "Bazarr"
-    description: "Download de legendas para filmes e séries"
-  jellyfin:
-    name: "Jellyfin"
-    description: "Servidor de streaming de mídia"
-  jellyseerr:
-    name: "Jellyseerr"
-    description: "Gerenciamento de requisições de filmes e séries"
-  fileflows:
-    name: "FileFlows"
-    description: "Transcodificação e otimização de mídia"
-  gluetun:
-    name: "Gluetun"
-    description: "Cliente VPN com suporte para múltiplos provedores"
+services_qbittorrent_name: "qBittorrent"
+services_qbittorrent_description: "downloads de arquivos via torrent"
+services_prowlarr_name: "Prowlarr"
+services_prowlarr_description: "agregador de indexadores para buscar seus filmes, músicas, etc na internet"
+services_flaresolverr_name: "FlareSolverr"
+services_flaresolverr_description: "contorna proteções Cloudflare em sites de indexadores"
+services_sonarr_name: "Sonarr"
+services_sonarr_description: "buscador e gerenciador de séries de TV"
+services_radarr_name: "Radarr"
+services_radarr_description: "buscador e gerenciador de filmes"
+services_lidarr_name: "Lidarr"
+services_lidarr_description: "buscador e gerenciador de músicas"
+services_lazylibrarian_name: "LazyLibrarian"
+services_lazylibrarian_description: "buscador e gerenciador de livros e audiobooks"
+services_bazarr_name: "Bazarr"
+services_bazarr_description: "baixa legendas automaticamente para seus filmes e séries"
+services_jellyfin_name: "Jellyfin"
+services_jellyfin_description: "servidor de streaming para assistir sua mídia (como Netflix pessoal)"
+services_jellyseerr_name: "Jellyseerr"
+services_jellyseerr_description: "interface para você e sua família solicitarem filmes e séries"
+services_fileflows_name: "FileFlows"
+services_fileflows_description: "processa e otimiza seus arquivos de mídia automaticamente"
+services_gluetun_name: "Gluetun"
+services_gluetun_description: "cliente VPN para proteger seus downloads"
 
 messages:
   welcome: "🏴‍☠️ Bem-vindo ao Corsarr - Navegue pelos altos mares da automação de mídia"
@@ -114,6 +101,11 @@ errors:
   profile_not_found: "✗ Perfil '%s' não encontrado"
   profile_already_exists: "✗ Perfil '%s' já existe"
   low_disk_space: "⚠ Aviso: Menos de %dGB de espaço livre em disco"
+  health_check_failed: "Falha na verificação de saúde"
+  compose_not_found: "Arquivo docker-compose.yml não encontrado"
+  failed_to_get_status: "Falha ao obter status dos containers"
+  port_check_failed: "Falha na verificação de portas"
+  failed_to_parse_compose: "Falha ao analisar docker-compose.yml"
 
 vpn:
   provider_question: "Provedor VPN:"
@@ -147,3 +139,19 @@ commands:
   check_ports:
     short: "Verificar conflitos de portas"
     long: "Verificar quais portas estão em uso e sugerir alternativas se houver conflitos"
+
+profile:
+  name: "Nome"
+  description: "Descrição"
+  created_at: "Criado em"
+  updated_at: "Atualizado em"
+  version: "Versão"
+  services: "Serviços"
+  services_count: "Serviços"
+  vpn_enabled: "VPN habilitada"
+  details: "Detalhes"
+  saved_profiles: "Perfis salvos"
+  no_profiles: "Nenhum perfil encontrado"
+  already_exists: "Perfil já existe. Use --force para sobrescrever"
+  save_failed: "Falha ao salvar perfil"
+  load_failed: "Falha ao carregar perfil"

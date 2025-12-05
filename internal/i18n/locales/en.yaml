@@ -42,43 +42,30 @@ categories:
   transcode: "Transcoding"
   vpn: "VPN"
 
-services:
-  qbittorrent:
-    name: "qBittorrent"
-    description: "BitTorrent client for downloading content"
-  prowlarr:
-    name: "Prowlarr"
-    description: "Indexer manager for *arr apps"
-  flaresolverr:
-    name: "FlareSolverr"
-    description: "Proxy server to bypass Cloudflare protection"
-  sonarr:
-    name: "Sonarr"
-    description: "TV show collection manager"
-  radarr:
-    name: "Radarr"
-    description: "Movie collection manager"
-  lidarr:
-    name: "Lidarr"
-    description: "Music collection manager"
-  lazylibrarian:
-    name: "LazyLibrarian"
-    description: "Book collection manager"
-  bazarr:
-    name: "Bazarr"
-    description: "Subtitle downloader for movies and TV shows"
-  jellyfin:
-    name: "Jellyfin"
-    description: "Media streaming server"
-  jellyseerr:
-    name: "Jellyseerr"
-    description: "Request management for movies and TV shows"
-  fileflows:
-    name: "FileFlows"
-    description: "Media transcoding and optimization"
-  gluetun:
-    name: "Gluetun"
-    description: "VPN client with support for multiple providers"
+services_qbittorrent_name: "qBittorrent"
+services_qbittorrent_description: "torrent downloader for your files"
+services_prowlarr_name: "Prowlarr"
+services_prowlarr_description: "indexer aggregator to search for your movies, music, etc. on the internet"
+services_flaresolverr_name: "FlareSolverr"
+services_flaresolverr_description: "bypasses Cloudflare protection on indexer sites"
+services_sonarr_name: "Sonarr"
+services_sonarr_description: "TV show finder and manager"
+services_radarr_name: "Radarr"
+services_radarr_description: "movie finder and manager"
+services_lidarr_name: "Lidarr"
+services_lidarr_description: "music finder and manager"
+services_lazylibrarian_name: "LazyLibrarian"
+services_lazylibrarian_description: "book and audiobook finder and manager"
+services_bazarr_name: "Bazarr"
+services_bazarr_description: "automatically downloads subtitles for your movies and TV shows"
+services_jellyfin_name: "Jellyfin"
+services_jellyfin_description: "streaming server to watch your media (like your personal Netflix)"
+services_jellyseerr_name: "Jellyseerr"
+services_jellyseerr_description: "interface for you and your family to request movies and TV shows"
+services_fileflows_name: "FileFlows"
+services_fileflows_description: "processes and optimizes your media files automatically"
+services_gluetun_name: "Gluetun"
+services_gluetun_description: "VPN client to protect your downloads"
 
 messages:
   welcome: "🏴‍☠️ Welcome to Corsarr - Navigate the high seas of media automation"
@@ -114,6 +101,11 @@ errors:
   profile_not_found: "✗ Profile '%s' not found"
   profile_already_exists: "✗ Profile '%s' already exists"
   low_disk_space: "⚠ Warning: Less than %dGB of free disk space"
+  health_check_failed: "Health check failed"
+  compose_not_found: "docker-compose.yml file not found"
+  failed_to_get_status: "Failed to get container status"
+  port_check_failed: "Port check failed"
+  failed_to_parse_compose: "Failed to parse docker-compose.yml"
 
 vpn:
   provider_question: "VPN Provider:"
@@ -147,3 +139,19 @@ commands:
   check_ports:
     short: "Check for port conflicts"
     long: "Verify which ports are in use and suggest alternatives if conflicts exist"
+
+profile:
+  name: "Name"
+  description: "Description"
+  created_at: "Created at"
+  updated_at: "Updated at"
+  version: "Version"
+  services: "Services"
+  services_count: "Services"
+  vpn_enabled: "VPN enabled"
+  details: "Details"
+  saved_profiles: "Saved profiles"
+  no_profiles: "No profiles found"
+  already_exists: "Profile already exists. Use --force to overwrite"
+  save_failed: "Failed to save profile"
+  load_failed: "Failed to load profile"

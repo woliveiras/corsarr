@@ -62,14 +62,16 @@ corsarr/
 │   │   ├── interactive.go # Interactive prompts (Huh/Bubble Tea)
 │   │   └── config.go      # Environment variable config prompts
 │   │
-│   └── profile/
-│       ├── profile.go     # Profile structure
-│       └── storage.go     # Profile persistence (JSON/YAML)
-│
-├── locales/              # Translation files (i18n)
-│   ├── en.yaml          # English
-│   ├── pt-br.yaml       # Brazilian Portuguese
-│   └── es.yaml          # Spanish
+│   ├── profile/
+│   │   ├── profile.go     # Profile structure
+│   │   └── storage.go     # Profile persistence (JSON/YAML)
+│   │
+│   └── i18n/
+│       ├── i18n.go        # Internationalization
+│       └── locales/       # Translation files
+│           ├── en.yaml    # English
+│           ├── pt-br.yaml # Brazilian Portuguese
+│           └── es.yaml    # Spanish
 │
 ├── profiles/            # Directory for saved profiles
 ├── .goreleaser.yml      # GoReleaser configuration

@@ -64,7 +64,7 @@ func (s *Service) GetNameKey() string {
 
 // GetDescriptionKey returns the i18n key for the service description
 func (s *Service) GetDescriptionKey() string {
-	return s.GetTranslationKey() + ".description"
+	return "services_" + s.ID + "_description"
 }
 
 // IsCompatibleWithVPN checks if service can run with VPN

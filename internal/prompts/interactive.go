@@ -50,7 +50,10 @@ func SelectServices(t *i18n.I18n, registry *services.Registry, vpnEnabled bool) 
 
 		// Add services in this category
 		for _, service := range servicesInCategory {
-			displayName := service.Name
+			// Get translated description
+			description := t.T(service.GetDescriptionKey())
+			displayName := fmt.Sprintf("%s (%s)", service.Name, description)
+			
 			if service.RequiresVPN {
 				displayName += t.T("prompts.requires_vpn_suffix")
 			}

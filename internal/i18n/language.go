@@ -31,9 +31,10 @@ func SelectLanguage() (string, error) {
 
 	var selected string
 	prompt := &survey.Select{
-		Message: "Select your language / Selecione seu idioma / Seleccione su idioma:",
-		Options: options,
-		Default: options[0], // English as default
+		Message:  "Select your language / Selecione seu idioma / Seleccione su idioma:",
+		Options:  options,
+		Default:  options[0], // English as default
+		PageSize: 10,         // Show all options vertically
 	}
 
 	if err := survey.AskOne(prompt, &selected); err != nil {

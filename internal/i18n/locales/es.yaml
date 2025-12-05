@@ -42,43 +42,30 @@ categories:
   transcode: "Transcodificación"
   vpn: "VPN"
 
-services:
-  qbittorrent:
-    name: "qBittorrent"
-    description: "Cliente BitTorrent para descargar contenido"
-  prowlarr:
-    name: "Prowlarr"
-    description: "Gestor de indexadores para apps *arr"
-  flaresolverr:
-    name: "FlareSolverr"
-    description: "Servidor proxy para evitar la protección Cloudflare"
-  sonarr:
-    name: "Sonarr"
-    description: "Gestor de colección de series de TV"
-  radarr:
-    name: "Radarr"
-    description: "Gestor de colección de películas"
-  lidarr:
-    name: "Lidarr"
-    description: "Gestor de colección de música"
-  lazylibrarian:
-    name: "LazyLibrarian"
-    description: "Gestor de colección de libros"
-  bazarr:
-    name: "Bazarr"
-    description: "Descargador de subtítulos para películas y series"
-  jellyfin:
-    name: "Jellyfin"
-    description: "Servidor de streaming de medios"
-  jellyseerr:
-    name: "Jellyseerr"
-    description: "Gestión de solicitudes de películas y series"
-  fileflows:
-    name: "FileFlows"
-    description: "Transcodificación y optimización de medios"
-  gluetun:
-    name: "Gluetun"
-    description: "Cliente VPN con soporte para múltiples proveedores"
+services_qbittorrent_name: "qBittorrent"
+services_qbittorrent_description: "descarga de archivos vía torrent"
+services_prowlarr_name: "Prowlarr"
+services_prowlarr_description: "agregador de indexadores para buscar tus películas, música, etc. en internet"
+services_flaresolverr_name: "FlareSolverr"
+services_flaresolverr_description: "evita protecciones Cloudflare en sitios de indexadores"
+services_sonarr_name: "Sonarr"
+services_sonarr_description: "buscador y gestor de series de TV"
+services_radarr_name: "Radarr"
+services_radarr_description: "buscador y gestor de películas"
+services_lidarr_name: "Lidarr"
+services_lidarr_description: "buscador y gestor de música"
+services_lazylibrarian_name: "LazyLibrarian"
+services_lazylibrarian_description: "buscador y gestor de libros y audiolibros"
+services_bazarr_name: "Bazarr"
+services_bazarr_description: "descarga subtítulos automáticamente para tus películas y series"
+services_jellyfin_name: "Jellyfin"
+services_jellyfin_description: "servidor de streaming para ver tu media (como tu Netflix personal)"
+services_jellyseerr_name: "Jellyseerr"
+services_jellyseerr_description: "interfaz para que tú y tu familia soliciten películas y series"
+services_fileflows_name: "FileFlows"
+services_fileflows_description: "procesa y optimiza tus archivos multimedia automáticamente"
+services_gluetun_name: "Gluetun"
+services_gluetun_description: "cliente VPN para proteger tus descargas"
 
 messages:
   welcome: "🏴‍☠️ Bienvenido a Corsarr - Navegue por los altos mares de la automatización de medios"
@@ -102,18 +89,23 @@ messages:
 
 errors:
   invalid_path: "✗ Ruta inválida: %s"
-  path_not_writable: "✗ Ruta sin permiso de escritura: %s"
+  path_not_writable: "✗ Ruta sin permisos de escritura: %s"
   port_conflict: "✗ Conflicto de puerto detectado: %d"
   missing_dependency: "✗ El servicio '%s' requiere '%s'"
-  vpn_credentials_missing: "✗ Faltan credenciales VPN"
+  vpn_credentials_missing: "✗ Faltan las credenciales de VPN"
   docker_not_found: "✗ Docker no está instalado"
   docker_compose_not_found: "✗ Docker Compose no está instalado"
-  no_services_selected: "✗ No hay servicios seleccionados"
+  no_services_selected: "✗ No se seleccionaron servicios"
   generation_failed: "✗ Error al generar archivos: %s"
   validation_failed: "✗ Validación fallida: %s"
   profile_not_found: "✗ Perfil '%s' no encontrado"
   profile_already_exists: "✗ El perfil '%s' ya existe"
   low_disk_space: "⚠ Advertencia: Menos de %dGB de espacio libre en disco"
+  health_check_failed: "Error en verificación de salud"
+  compose_not_found: "Archivo docker-compose.yml no encontrado"
+  failed_to_get_status: "Error al obtener estado de contenedores"
+  port_check_failed: "Error en verificación de puertos"
+  failed_to_parse_compose: "Error al analizar docker-compose.yml"
 
 vpn:
   provider_question: "Proveedor VPN:"
@@ -147,3 +139,19 @@ commands:
   check_ports:
     short: "Verificar conflictos de puertos"
     long: "Verificar qué puertos están en uso y sugerir alternativas si existen conflictos"
+
+profile:
+  name: "Nombre"
+  description: "Descripción"
+  created_at: "Creado el"
+  updated_at: "Actualizado el"
+  version: "Versión"
+  services: "Servicios"
+  services_count: "Servicios"
+  vpn_enabled: "VPN habilitada"
+  details: "Detalles"
+  saved_profiles: "Perfiles guardados"
+  no_profiles: "No se encontraron perfiles"
+  already_exists: "El perfil ya existe. Use --force para sobrescribir"
+  save_failed: "Error al guardar perfil"
+  load_failed: "Error al cargar perfil"
