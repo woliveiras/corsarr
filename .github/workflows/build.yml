@@ -31,7 +31,7 @@ jobs:
         run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.out
           flags: unittests
@@ -75,7 +75,7 @@ jobs:
           ls -lh "$BINARY_NAME"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: corsarr-${{ matrix.goos }}-${{ matrix.goarch }}
           path: corsarr-*
@@ -96,7 +96,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           working-directory: ./
