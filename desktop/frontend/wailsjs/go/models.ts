@@ -324,6 +324,20 @@ export namespace main {
 	        this.path = source["path"];
 	    }
 	}
+	export class JellyfinNetworkStatus {
+	    enabled: boolean;
+	    urls: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new JellyfinNetworkStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.urls = source["urls"];
+	    }
+	}
 
 }
 

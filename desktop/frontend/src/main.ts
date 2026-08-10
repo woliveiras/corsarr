@@ -3,6 +3,7 @@ import {
   AcceptCurrentTerms,
   ArchiveApplicationData,
   ChooseStorageLocation,
+  CopyJellyfinNetworkURL,
   CopyJellyfinPassword,
   CopyQBittorrentPassword,
   ExportDiagnostics,
@@ -10,6 +11,7 @@ import {
   GetApplicationStatuses,
   GetEnvironmentStatus,
   GetJellyfinAccessStatus,
+  GetJellyfinNetworkStatus,
   GetQBittorrentAccessStatus,
   GetSetupStatus,
   InstallSelectedApplications,
@@ -29,7 +31,7 @@ import {
   StopApplication,
   UpdateApplication,
 } from '../wailsjs/go/main/App';
-import type { application, legal, storage } from '../wailsjs/go/models';
+import type { application, legal, main, storage } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
 type Application = application.ApplicationSummary;
@@ -177,6 +179,7 @@ let managedStatuses = new Map<string, ManagedStatus>();
 let dataStatuses = new Map<string, DataStatus>();
 let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 let jellyfinAccess: application.ServiceAccessStatus | undefined;
+let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let currentRuntimeState = 'checking';
 
@@ -259,6 +262,19 @@ function createApplicationCard(application: Application): HTMLElement {
   metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}${managedStatus?.updateAvailable ? ' · Atualização disponível' : ''}`;
 
   information.append(title, description, metadata);
+
+  if (
+    application.id === 'jellyfin' &&
+    managedStatus?.state === 'running' &&
+    jellyfinNetwork?.enabled &&
+    jellyfinNetwork.urls.length > 0
+  ) {
+    const networkAddress = document.createElement('p');
+    networkAddress.className = 'network-address';
+    networkAddress.textContent = `TV e celular: ${jellyfinNetwork.urls[0]}`;
+    networkAddress.title = jellyfinNetwork.urls.join('\n');
+    information.append(networkAddress);
+  }
 
   const actions = document.createElement('div');
   actions.className = 'application-actions';
@@ -361,6 +377,14 @@ function createApplicationCard(application: Application): HTMLElement {
     (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
   ) {
     actions.append(jellyfinCredentialButton());
+  }
+  if (
+    application.id === 'jellyfin' &&
+    managedStatus?.state === 'running' &&
+    jellyfinNetwork?.enabled &&
+    jellyfinNetwork.urls.length > 0
+  ) {
+    actions.append(jellyfinNetworkButton(jellyfinNetwork.urls[0]));
   }
   card.append(icon, information, actions);
   return card;
@@ -527,6 +551,33 @@ function jellyfinCredentialButton(): HTMLButtonElement {
   return button;
 }
 
+function jellyfinNetworkButton(url: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'network-button';
+  button.type = 'button';
+  button.textContent = 'Copiar endereço';
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await CopyJellyfinNetworkURL(url);
+      if (messageElement) {
+        messageElement.textContent =
+          'Endereço copiado. Abra-o em um aparelho conectado à mesma rede local.';
+        messageElement.classList.remove('error');
+      }
+    } catch {
+      if (messageElement) {
+        messageElement.textContent =
+          'Não foi possível copiar o endereço. Verifique se o acesso pela rede continua ativado.';
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
 function renderApplications(): void {
   applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
 }
@@ -654,6 +705,15 @@ async function loadJellyfinAccess(): Promise<void> {
     renderApplications();
   } catch {
     jellyfinAccess = undefined;
+  }
+}
+
+async function loadJellyfinNetwork(): Promise<void> {
+  try {
+    jellyfinNetwork = await GetJellyfinNetworkStatus();
+    renderApplications();
+  } catch {
+    jellyfinNetwork = undefined;
   }
 }
 
@@ -1080,6 +1140,7 @@ async function installApplications(): Promise<void> {
         loadApplicationStatuses(),
         loadApplicationDataStatuses(),
         loadJellyfinAccess(),
+        loadJellyfinNetwork(),
         loadQBittorrentAccess(),
       ]);
     } else {
@@ -1113,6 +1174,7 @@ async function loadInitialState(): Promise<void> {
     loadApplicationStatuses(),
     loadApplicationDataStatuses(),
     loadJellyfinAccess(),
+    loadJellyfinNetwork(),
     loadQBittorrentAccess(),
   ]);
 }
@@ -1122,6 +1184,7 @@ EventsOn('corsarr:background-recovery-complete', () => {
     loadEnvironment(),
     loadApplicationStatuses(),
     loadJellyfinAccess(),
+    loadJellyfinNetwork(),
     loadQBittorrentAccess(),
   ]);
 });

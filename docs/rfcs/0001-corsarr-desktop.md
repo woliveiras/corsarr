@@ -713,6 +713,10 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Added explicit local-network access for Jellyfin TCP 8096 only;
   all administrative ports remain loopback-bound and the setting cannot change
   an existing container implicitly.
+- 2026-08-10: Added private IPv4 discovery for Jellyfin clients. The desktop
+  shows a usable same-network URL only after LAN access is enabled, filters
+  virtual/tunnel interfaces, and copies only a backend-rediscovered allowlisted
+  address.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

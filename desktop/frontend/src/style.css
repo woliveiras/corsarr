@@ -777,6 +777,13 @@ nav {
   letter-spacing: 0.06em;
 }
 
+.application-info .network-address {
+  margin-top: 7px;
+  color: #9fc9c4;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 9px;
+}
+
 .application-actions {
   display: grid;
   gap: 6px;
@@ -786,6 +793,7 @@ nav {
 .open-button,
 .select-button,
 .lifecycle-button,
+.network-button,
 .update-button {
   padding: 7px 11px;
   color: #7acbc1;
@@ -799,6 +807,7 @@ nav {
 .open-button:hover,
 .select-button:hover,
 .lifecycle-button:hover,
+.network-button:hover,
 .update-button:hover {
   color: #b9f1e9;
   background: rgba(78, 175, 165, 0.14);
@@ -806,6 +815,7 @@ nav {
 .open-button:disabled,
 .select-button:disabled,
 .lifecycle-button:disabled,
+.network-button:disabled,
 .update-button:disabled {
   opacity: 0.45;
   cursor: wait;
@@ -862,6 +872,14 @@ nav {
 .credential-button:disabled {
   opacity: 0.45;
   cursor: wait;
+}
+
+.network-button {
+  padding-block: 6px;
+  color: #9fc9c4;
+  background: rgba(95, 179, 169, 0.08);
+  border-color: rgba(95, 179, 169, 0.22);
+  font-size: 9px;
 }
 
 .select-button[aria-pressed="true"] {

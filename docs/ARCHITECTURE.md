@@ -129,6 +129,14 @@ exists; changing it later requires removing only the container and reinstalling
 with the preserved configuration/media. The frontend asks for confirmation
 before enabling it.
 
+`internal/localnetwork.Discoverer` enumerates active, non-loopback host
+interfaces and returns only private IPv4 URLs for Jellyfin TCP 8096. Known
+container, VM, tunnel, and macOS peer-to-peer interface prefixes are excluded;
+failure to enumerate produces no address rather than a guessed public URL. The
+Wails boundary exposes these URLs only while the persisted Jellyfin LAN choice
+is enabled, and its clipboard intent accepts only an exact address rediscovered
+by the Go backend.
+
 `internal/hostprofile.Profiler` derives the shared runtime identity and
 timezone once when the desktop backend starts. Native Linux uses the current
 positive UID/GID so bind-mounted files remain owned by the desktop user.

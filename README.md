@@ -64,9 +64,10 @@ those three apps using their internal network URLs and generated API keys.
 Bazarr requires Radarr and Sonarr, reads their generated keys only in Go, and
 connects to both through Bazarr's authenticated settings API. On macOS, the
 desktop can install or start its pinned, verified runtime after explicit
-consent; Windows and Linux onboarding remain pending. Jellyfin's first-run wizard is automated with a
-generated `corsarr` administrator stored in the macOS Keychain, remote access
-disabled by default, and reserved movie, TV, and music libraries. Installed
+consent; Windows and Linux onboarding remain pending. Jellyfin's first-run
+wizard is automated with a generated `corsarr` administrator stored in the
+macOS Keychain, remote access disabled by default, and reserved movie, TV, and
+music libraries. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and
@@ -83,7 +84,10 @@ runtime and existing owned containers without installing new applications;
 pending approval remains visible in both Corsarr and System Settings.
 When Jellyfin is selected, a separate pre-install choice can expose only its
 HTTP service to the local network for TVs and mobile clients. All administrative
-applications remain bound to this computer by default.
+applications remain bound to this computer by default. While Jellyfin is
+running, the desktop lists a private IPv4 address that can be copied for a TV
+or mobile device on the same network; known virtual runtime and tunnel
+interfaces are not advertised.
 
 Seerr signs in through that local Jellyfin administrator, enables the discovered
 Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles

@@ -18,6 +18,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/hostprofile"
 	"github.com/woliveiras/corsarr/internal/legal"
+	"github.com/woliveiras/corsarr/internal/localnetwork"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
 	"github.com/woliveiras/corsarr/internal/provisioning"
@@ -82,6 +83,15 @@ type serviceAccessManager interface {
 	JellyfinPassword(ctx context.Context) (credentials.Secret, error)
 	QBittorrentStatus(ctx context.Context) (application.ServiceAccessStatus, error)
 	QBittorrentPassword(ctx context.Context) (credentials.Secret, error)
+}
+
+type localNetworkURLProvider interface {
+	HTTPURLs(port int) []string
+}
+
+type JellyfinNetworkStatus struct {
+	Enabled bool     `json:"enabled"`
+	URLs    []string `json:"urls"`
 }
 
 type clipboardWriter interface {
@@ -153,6 +163,7 @@ type App struct {
 	backgroundRecovery backgroundRecoveryManager
 	events             eventPublisher
 	runtimeDefaults    runtimecatalog.RuntimeOptions
+	localNetwork       localNetworkURLProvider
 }
 
 func NewApp() (*App, error) {
@@ -286,6 +297,7 @@ func NewApp() (*App, error) {
 		diagnosticWriter:   diagnostics.NewFileWriter(),
 		backgroundRecovery: backgroundRecovery,
 		events:             wailsEventPublisher{},
+		localNetwork:       localnetwork.NewDiscoverer(),
 		runtimeDefaults: runtimecatalog.RuntimeOptions{
 			Timezone: hostProfile.Timezone, PUID: hostProfile.PUID, PGID: hostProfile.PGID,
 		},
@@ -526,6 +538,34 @@ func (a *App) CopyQBittorrentPassword() error {
 
 func (a *App) GetJellyfinAccessStatus() (application.ServiceAccessStatus, error) {
 	return a.serviceAccess.JellyfinStatus(a.appContext())
+}
+
+// GetJellyfinNetworkStatus exposes only private local IPv4 URLs and only after
+// the user has explicitly enabled Jellyfin LAN access.
+func (a *App) GetJellyfinNetworkStatus() (JellyfinNetworkStatus, error) {
+	setup, err := a.setup.Load()
+	if err != nil {
+		return JellyfinNetworkStatus{}, err
+	}
+	if !setup.JellyfinLANEnabled {
+		return JellyfinNetworkStatus{}, nil
+	}
+	return JellyfinNetworkStatus{Enabled: true, URLs: a.localNetwork.HTTPURLs(8096)}, nil
+}
+
+// CopyJellyfinNetworkURL copies only a currently discovered, reviewed local
+// address. Arbitrary frontend-provided text never reaches the native clipboard.
+func (a *App) CopyJellyfinNetworkURL(candidate string) error {
+	status, err := a.GetJellyfinNetworkStatus()
+	if err != nil {
+		return err
+	}
+	for _, allowed := range status.URLs {
+		if candidate == allowed {
+			return a.clipboard.SetText(a.appContext(), allowed)
+		}
+	}
+	return fmt.Errorf("Jellyfin network URL is not currently available")
 }
 
 // CopyJellyfinPassword reveals the secret only to the native clipboard after

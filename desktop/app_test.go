@@ -242,6 +242,51 @@ func TestRuntimeOptionsPreserveHostProfileAndApplyReviewedNetworkChoice(t *testi
 	}
 }
 
+func TestGetJellyfinNetworkStatusRequiresReviewedLANChoice(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{JellyfinLANEnabled: false}}
+	provider := &desktopLocalNetwork{urls: []string{"http://192.168.1.42:8096"}}
+	app := &App{setup: setup, localNetwork: provider}
+
+	status, err := app.GetJellyfinNetworkStatus()
+	if err != nil {
+		t.Fatalf("get disabled Jellyfin network status: %v", err)
+	}
+	if status.Enabled || len(status.URLs) != 0 || provider.calls != 0 {
+		t.Fatalf("unexpected disabled status %#v, calls=%d", status, provider.calls)
+	}
+
+	setup.status.JellyfinLANEnabled = true
+	status, err = app.GetJellyfinNetworkStatus()
+	if err != nil {
+		t.Fatalf("get enabled Jellyfin network status: %v", err)
+	}
+	if !status.Enabled || len(status.URLs) != 1 || provider.calls != 1 {
+		t.Fatalf("unexpected enabled status %#v, calls=%d", status, provider.calls)
+	}
+}
+
+func TestCopyJellyfinNetworkURLAllowsOnlyCurrentDiscoveredAddress(t *testing.T) {
+	clipboard := &desktopClipboard{}
+	app := &App{
+		setup:        &desktopSetupManager{status: application.SetupStatus{JellyfinLANEnabled: true}},
+		localNetwork: &desktopLocalNetwork{urls: []string{"http://192.168.1.42:8096"}},
+		clipboard:    clipboard,
+	}
+
+	if err := app.CopyJellyfinNetworkURL("https://attacker.example"); err == nil {
+		t.Fatal("expected arbitrary network URL to be rejected")
+	}
+	if clipboard.calls != 0 {
+		t.Fatal("clipboard received an untrusted URL")
+	}
+	if err := app.CopyJellyfinNetworkURL("http://192.168.1.42:8096"); err != nil {
+		t.Fatalf("copy discovered URL: %v", err)
+	}
+	if clipboard.value != "http://192.168.1.42:8096" || clipboard.calls != 1 {
+		t.Fatalf("unexpected clipboard state %#v", clipboard)
+	}
+}
+
 func TestCopyQBittorrentPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
 	clipboard := &desktopClipboard{}
@@ -611,6 +656,16 @@ func (m *desktopUpdateManager) Update(
 
 type desktopServiceAccess struct {
 	password credentials.Secret
+}
+
+type desktopLocalNetwork struct {
+	urls  []string
+	calls int
+}
+
+func (n *desktopLocalNetwork) HTTPURLs(int) []string {
+	n.calls++
+	return n.urls
 }
 
 func (a *desktopServiceAccess) QBittorrentStatus(context.Context) (application.ServiceAccessStatus, error) {
