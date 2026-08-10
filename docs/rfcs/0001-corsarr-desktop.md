@@ -671,6 +671,11 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: labeled Docker and Podman containers with a deterministic SHA-256
+  fingerprint of the image-independent runtime contract. Automatic update now
+  rejects contract drift before backup, pull, or container mutation, and the
+  behavior passed the real Docker install/update/rollback contracts on the
+  first Mac.
 - 2026-08-11: serialized desktop setup, runtime, storage, update, lifecycle, and
   data-archive mutations behind one backend gate. Concurrent requests fail
   before reaching their adapters, and automatic login recovery participates in

@@ -63,6 +63,10 @@ func (u *Updater) Update(
 	if err := approvedSpec.Validate(); err != nil {
 		return result, fmt.Errorf("validate approved application manifest: %w", err)
 	}
+	approvedContract, err := approvedSpec.ContractFingerprint()
+	if err != nil {
+		return result, fmt.Errorf("fingerprint approved application manifest: %w", err)
+	}
 	result.ApprovedImage = approvedSpec.Image
 
 	if err := u.runtime.EnsureNetwork(ctx); err != nil {
@@ -76,6 +80,11 @@ func (u *Updater) Update(
 	result.Status = previousStatus
 	if previousStatus.Image == approvedSpec.Image {
 		return result, nil
+	}
+	if previousStatus.ContractFingerprint != approvedContract {
+		return result, fmt.Errorf(
+			"installed container contract differs from the approved image-only update contract",
+		)
 	}
 	if previousStatus.State != containerruntime.ContainerStateRunning &&
 		previousStatus.State != containerruntime.ContainerStateStopped &&

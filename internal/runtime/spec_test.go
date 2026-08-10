@@ -29,6 +29,49 @@ func TestContainerSpecAcceptsPinnedLocalOnlyApplication(t *testing.T) {
 	}
 }
 
+func TestContainerContractFingerprintIsOrderStableAndExcludesImage(t *testing.T) {
+	first := ContainerSpec{
+		ApplicationID: "radarr",
+		Image:         "example.invalid/app@" + testImageDigest,
+		Ports: []PortBinding{
+			{HostPort: 7878, ContainerPort: 7878, Protocol: ProtocolTCP, Exposure: ExposureLoopback},
+			{HostPort: 9898, ContainerPort: 9898, Protocol: ProtocolUDP, Exposure: ExposureLAN},
+		},
+		Mounts: []BindMount{
+			{HostPath: "/tmp/Corsarr/media", ContainerPath: "/data"},
+			{HostPath: "/tmp/Corsarr/config/radarr", ContainerPath: "/config"},
+		},
+		Environment: map[string]string{"TZ": "Europe/Madrid", "UMASK": "002"},
+	}
+	second := first
+	second.Image = "example.invalid/app@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	second.Ports = []PortBinding{first.Ports[1], first.Ports[0]}
+	second.Mounts = []BindMount{first.Mounts[1], first.Mounts[0]}
+
+	firstFingerprint, err := first.ContractFingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint first contract: %v", err)
+	}
+	secondFingerprint, err := second.ContractFingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint reordered contract: %v", err)
+	}
+	if firstFingerprint != secondFingerprint || len(firstFingerprint) != 64 {
+		t.Fatalf("expected stable SHA-256 fingerprint, got %q and %q", firstFingerprint, secondFingerprint)
+	}
+
+	changed := second
+	changed.Ports = append([]PortBinding(nil), second.Ports...)
+	changed.Ports[0].Exposure = ExposureLoopback
+	changedFingerprint, err := changed.ContractFingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint changed contract: %v", err)
+	}
+	if firstFingerprint == changedFingerprint {
+		t.Fatal("port exposure change did not change container contract fingerprint")
+	}
+}
+
 func TestContainerSpecRejectsMutableImageReference(t *testing.T) {
 	spec := ContainerSpec{
 		ApplicationID: "radarr",

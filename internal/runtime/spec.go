@@ -1,10 +1,14 @@
 package runtime
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -74,6 +78,56 @@ func (s ContainerSpec) Validate() error {
 		}
 	}
 	return nil
+}
+
+// ContractFingerprint identifies the runtime contract that must remain stable
+// across an image-only update. The image itself is deliberately excluded.
+func (s ContainerSpec) ContractFingerprint() (string, error) {
+	if err := s.Validate(); err != nil {
+		return "", err
+	}
+	ports := append([]PortBinding(nil), s.Ports...)
+	sort.Slice(ports, func(i, j int) bool {
+		if ports[i].HostPort != ports[j].HostPort {
+			return ports[i].HostPort < ports[j].HostPort
+		}
+		if ports[i].ContainerPort != ports[j].ContainerPort {
+			return ports[i].ContainerPort < ports[j].ContainerPort
+		}
+		if ports[i].Protocol != ports[j].Protocol {
+			return ports[i].Protocol < ports[j].Protocol
+		}
+		return ports[i].Exposure < ports[j].Exposure
+	})
+	mounts := append([]BindMount(nil), s.Mounts...)
+	for index := range mounts {
+		mounts[index].HostPath = filepath.Clean(mounts[index].HostPath)
+		mounts[index].ContainerPath = path.Clean(mounts[index].ContainerPath)
+	}
+	sort.Slice(mounts, func(i, j int) bool {
+		if mounts[i].ContainerPath != mounts[j].ContainerPath {
+			return mounts[i].ContainerPath < mounts[j].ContainerPath
+		}
+		return mounts[i].HostPath < mounts[j].HostPath
+	})
+	payload, err := json.Marshal(struct {
+		ApplicationID string            `json:"applicationId"`
+		Init          bool              `json:"init"`
+		Ports         []PortBinding     `json:"ports"`
+		Mounts        []BindMount       `json:"mounts"`
+		Environment   map[string]string `json:"environment"`
+	}{
+		ApplicationID: s.ApplicationID,
+		Init:          s.Init,
+		Ports:         ports,
+		Mounts:        mounts,
+		Environment:   s.Environment,
+	})
+	if err != nil {
+		return "", fmt.Errorf("encode container contract: %w", err)
+	}
+	digest := sha256.Sum256(payload)
+	return hex.EncodeToString(digest[:]), nil
 }
 
 func validateImageReference(reference string) error {

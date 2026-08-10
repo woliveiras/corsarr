@@ -205,6 +205,10 @@ an existing container is never removed by this check.
 
 `internal/orchestrator.Updater` owns container replacement. It first verifies
 that the current owned container uses an immutable image that can be restored,
+and that its recorded SHA-256 contract fingerprint matches the approved spec
+after excluding only the image reference. Port, mount, init, application, or
+environment drift therefore fails before backup, pull, stop, or removal instead
+of pretending that an old image plus a new runtime contract is a rollback. It
 creates the private configuration backup, pulls the approved digest, and only
 then replaces the container. It starts the replacement for bounded readiness
 verification and preserves whether the prior container was running or stopped.

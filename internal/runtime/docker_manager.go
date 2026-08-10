@@ -17,6 +17,7 @@ const (
 	CorsarrNetworkName       = "corsarr"
 	managedLabelName         = "io.corsarr.managed"
 	applicationLabelName     = "io.corsarr.application"
+	contractLabelName        = "io.corsarr.contract-fingerprint"
 	managedLabelValue        = "true"
 	containerNamePrefix      = "corsarr-"
 	containerOwnershipFormat = `{{index .Config.Labels "io.corsarr.managed"}}`
@@ -52,10 +53,11 @@ const (
 )
 
 type ContainerStatus struct {
-	ApplicationID string         `json:"applicationId"`
-	State         ContainerState `json:"state"`
-	Health        string         `json:"health,omitempty"`
-	Image         string         `json:"image,omitempty"`
+	ApplicationID       string         `json:"applicationId"`
+	State               ContainerState `json:"state"`
+	Health              string         `json:"health,omitempty"`
+	Image               string         `json:"image,omitempty"`
+	ContractFingerprint string         `json:"-"`
 }
 
 type DockerManager struct {
@@ -106,12 +108,17 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 	if err := spec.Validate(); err != nil {
 		return err
 	}
+	contractFingerprint, err := spec.ContractFingerprint()
+	if err != nil {
+		return fmt.Errorf("fingerprint container contract: %w", err)
+	}
 
 	arguments := []string{
 		"create",
 		"--name", containerName(spec.ApplicationID),
 		"--label", managedLabelName + "=" + managedLabelValue,
 		"--label", applicationLabelName + "=" + spec.ApplicationID,
+		"--label", contractLabelName + "=" + contractFingerprint,
 		"--network", CorsarrNetworkName,
 		"--network-alias", spec.ApplicationID,
 		"--restart", "unless-stopped",
@@ -218,9 +225,10 @@ func (m *DockerManager) Inspect(
 	}
 
 	status := ContainerStatus{
-		ApplicationID: applicationID,
-		State:         normalizedContainerState(container.State.Status),
-		Image:         container.Config.Image,
+		ApplicationID:       applicationID,
+		State:               normalizedContainerState(container.State.Status),
+		Image:               container.Config.Image,
+		ContractFingerprint: container.Config.Labels[contractLabelName],
 	}
 	if container.State.Health != nil {
 		status.Health = container.State.Health.Status

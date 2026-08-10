@@ -69,12 +69,17 @@ func (m *PodmanManager) Create(ctx context.Context, spec ContainerSpec) error {
 	if err := spec.Validate(); err != nil {
 		return err
 	}
+	contractFingerprint, err := spec.ContractFingerprint()
+	if err != nil {
+		return fmt.Errorf("fingerprint container contract: %w", err)
+	}
 
 	arguments := []string{
 		"create",
 		"--name", containerName(spec.ApplicationID),
 		"--label", managedLabelName + "=" + managedLabelValue,
 		"--label", applicationLabelName + "=" + spec.ApplicationID,
+		"--label", contractLabelName + "=" + contractFingerprint,
 		"--network", CorsarrNetworkName,
 		"--network-alias", spec.ApplicationID,
 		"--restart", "unless-stopped",
@@ -180,9 +185,10 @@ func (m *PodmanManager) Inspect(
 	}
 
 	status := ContainerStatus{
-		ApplicationID: applicationID,
-		State:         normalizedContainerState(container.State.Status),
-		Image:         container.Config.Image,
+		ApplicationID:       applicationID,
+		State:               normalizedContainerState(container.State.Status),
+		Image:               container.Config.Image,
+		ContractFingerprint: container.Config.Labels[contractLabelName],
 	}
 	if container.State.Health != nil {
 		status.Health = container.State.Health.Status

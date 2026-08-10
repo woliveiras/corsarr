@@ -148,6 +148,10 @@ CORSARR_DOCKER_CONTRACT_IMAGE='repository/name@sha256:<digest>' \
 To include real update and rollback replacement, also provide a different
 immutable local image through `CORSARR_DOCKER_ROLLBACK_IMAGE`. Both references
 are inspected locally and never pulled by the contract.
+Managed containers carry a SHA-256 fingerprint of their image-independent
+runtime contract. Automatic updates stop before backup, pull, or replacement
+when the installed ports, mounts, init flag, or environment no longer match the
+approved contract; such changes require a separately reviewed migration.
 
 This development build is self-signed and is not a published Corsarr release.
 Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,

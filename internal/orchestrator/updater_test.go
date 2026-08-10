@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/catalog"
@@ -14,7 +15,7 @@ import (
 func TestUpdaterBacksUpAndReplacesRunningApplication(t *testing.T) {
 	approved := validInstallerSpec("radarr")
 	previousImage := "example.invalid/app@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-	runtime := newUpdaterRuntime(previousImage)
+	runtime := newUpdaterRuntime(previousImage, approved)
 	backup := &fakeBackupCreator{result: storage.BackupResult{ApplicationID: "radarr", Path: "/tmp/backup.tar.gz", SHA256: "sum"}}
 	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, &fakeReadiness{}, backup)
 
@@ -37,7 +38,7 @@ func TestUpdaterBacksUpAndReplacesRunningApplication(t *testing.T) {
 func TestUpdaterRestoresPreviousImageWhenReadinessFails(t *testing.T) {
 	approved := validInstallerSpec("sonarr")
 	previousImage := "example.invalid/app@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-	runtime := newUpdaterRuntime(previousImage)
+	runtime := newUpdaterRuntime(previousImage, approved)
 	readiness := &sequenceReadiness{errors: []error{errors.New("new image not ready"), nil}}
 	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, readiness, &fakeBackupCreator{})
 
@@ -59,7 +60,7 @@ func TestUpdaterRestoresPreviousImageWhenReadinessFails(t *testing.T) {
 
 func TestUpdaterDoesNothingWhenApprovedImageIsAlreadyInstalled(t *testing.T) {
 	approved := validInstallerSpec("lidarr")
-	runtime := newUpdaterRuntime(approved.Image)
+	runtime := newUpdaterRuntime(approved.Image, approved)
 	backup := &fakeBackupCreator{}
 	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, &fakeReadiness{}, backup)
 
@@ -77,7 +78,7 @@ func TestUpdaterDoesNothingWhenApprovedImageIsAlreadyInstalled(t *testing.T) {
 
 func TestUpdaterDoesNotMutateContainerWhenBackupFails(t *testing.T) {
 	approved := validInstallerSpec("radarr")
-	runtime := newUpdaterRuntime("example.invalid/app@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+	runtime := newUpdaterRuntime("example.invalid/app@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", approved)
 	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, &fakeReadiness{}, &fakeBackupCreator{
 		err: errors.New("disk full"),
 	})
@@ -90,9 +91,31 @@ func TestUpdaterDoesNotMutateContainerWhenBackupFails(t *testing.T) {
 	}
 }
 
+func TestUpdaterRejectsChangedContainerContractBeforeBackupOrPull(t *testing.T) {
+	approved := validInstallerSpec("radarr")
+	runtime := newUpdaterRuntime(
+		"example.invalid/app@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+		approved,
+	)
+	runtime.status.ContractFingerprint = strings.Repeat("f", 64)
+	backup := &fakeBackupCreator{}
+	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, &fakeReadiness{}, backup)
+
+	_, err := updater.Update(context.Background(), "radarr", "/tmp/Corsarr", catalog.RuntimeOptions{})
+	if err == nil || !strings.Contains(err.Error(), "container contract differs") {
+		t.Fatalf("expected changed contract rejection, got %v", err)
+	}
+	if len(backup.calls) != 0 {
+		t.Fatalf("changed contract created backup: %v", backup.calls)
+	}
+	if !reflect.DeepEqual(runtime.operations, []string{"network", "inspect"}) {
+		t.Fatalf("changed contract mutated runtime: %v", runtime.operations)
+	}
+}
+
 func TestUpdaterPreservesStoppedStateAfterVerification(t *testing.T) {
 	approved := validInstallerSpec("radarr")
-	runtime := newUpdaterRuntime("example.invalid/app@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+	runtime := newUpdaterRuntime("example.invalid/app@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", approved)
 	runtime.status.State = containerruntime.ContainerStateStopped
 	updater := NewUpdater(runtime, &fakeSpecResolver{spec: approved}, &fakeReadiness{}, &fakeBackupCreator{})
 
@@ -138,9 +161,14 @@ type updaterRuntime struct {
 	status     containerruntime.ContainerStatus
 }
 
-func newUpdaterRuntime(image string) *updaterRuntime {
+func newUpdaterRuntime(image string, spec containerruntime.ContainerSpec) *updaterRuntime {
+	fingerprint, err := spec.ContractFingerprint()
+	if err != nil {
+		panic(err)
+	}
 	return &updaterRuntime{status: containerruntime.ContainerStatus{
-		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning, Image: image,
+		ApplicationID: spec.ApplicationID, State: containerruntime.ContainerStateRunning,
+		Image: image, ContractFingerprint: fingerprint,
 	}}
 }
 
@@ -156,6 +184,7 @@ func (r *updaterRuntime) Create(_ context.Context, spec containerruntime.Contain
 	r.operations = append(r.operations, "create:"+spec.Image)
 	r.status.ApplicationID = spec.ApplicationID
 	r.status.Image = spec.Image
+	r.status.ContractFingerprint, _ = spec.ContractFingerprint()
 	r.status.State = containerruntime.ContainerStateCreated
 	return nil
 }

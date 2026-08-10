@@ -32,6 +32,10 @@ func TestDockerManagerCreatesValidatedOwnedContainer(t *testing.T) {
 	if err := manager.Create(context.Background(), spec); err != nil {
 		t.Fatalf("create container: %v", err)
 	}
+	fingerprint, err := spec.ContractFingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint container spec: %v", err)
+	}
 	want := commandCall{
 		name: "/usr/local/bin/docker",
 		args: []string{
@@ -39,6 +43,7 @@ func TestDockerManagerCreatesValidatedOwnedContainer(t *testing.T) {
 			"--name", "corsarr-radarr",
 			"--label", "io.corsarr.managed=true",
 			"--label", "io.corsarr.application=radarr",
+			"--label", "io.corsarr.contract-fingerprint=" + fingerprint,
 			"--network", "corsarr",
 			"--network-alias", "radarr",
 			"--restart", "unless-stopped",
@@ -173,7 +178,7 @@ func TestDockerManagerInspectsOwnedContainerState(t *testing.T) {
   {
     "Config": {
       "Image": "lscr.io/linuxserver/radarr@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "Labels": {"io.corsarr.managed": "true", "io.corsarr.application": "radarr"}
+      "Labels": {"io.corsarr.managed": "true", "io.corsarr.application": "radarr", "io.corsarr.contract-fingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
     },
     "State": {"Status": "running", "Health": {"Status": "healthy"}}
   }
@@ -186,10 +191,11 @@ func TestDockerManagerInspectsOwnedContainerState(t *testing.T) {
 		t.Fatalf("inspect owned container: %v", err)
 	}
 	want := ContainerStatus{
-		ApplicationID: "radarr",
-		State:         ContainerStateRunning,
-		Health:        "healthy",
-		Image:         "lscr.io/linuxserver/radarr@" + testImageDigest,
+		ApplicationID:       "radarr",
+		State:               ContainerStateRunning,
+		Health:              "healthy",
+		Image:               "lscr.io/linuxserver/radarr@" + testImageDigest,
+		ContractFingerprint: strings.Repeat("b", 64),
 	}
 	if !reflect.DeepEqual(status, want) {
 		t.Fatalf("unexpected container status\nwant: %#v\n got: %#v", want, status)
