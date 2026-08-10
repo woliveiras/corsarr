@@ -320,6 +320,17 @@ function createApplicationCard(application: Application): HTMLElement {
 
   information.append(title, description, metadata);
 
+  if (managedStatus?.issue) {
+    const details = document.createElement('details');
+    details.className = 'application-status-details';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Ver detalhes';
+    const diagnostic = document.createElement('code');
+    diagnostic.textContent = `${managedStatus.issue.summary}\n${managedStatus.issue.nextAction}\nCódigo: ${managedStatus.issue.code}`;
+    details.append(summary, diagnostic);
+    information.append(details);
+  }
+
   if (
     application.id === 'jellyfin' &&
     managedStatus?.state === 'running' &&

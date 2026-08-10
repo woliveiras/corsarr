@@ -58,6 +58,9 @@ func TestReporterBuildsBoundedRedactedSnapshot(t *testing.T) {
 	if strings.Contains(text, "super-secret") || strings.Contains(text, "abcdef123456") {
 		t.Fatalf("diagnostics leaked a credential: %s", text)
 	}
+	if !strings.Contains(text, `"technicalDetail":"api_key: \u003credacted\u003e"`) {
+		t.Fatalf("explicit diagnostic export omitted sanitized application detail: %s", text)
+	}
 	if !strings.Contains(report.Environment.Runtime.TechnicalDetail, RedactedValue) ||
 		!strings.Contains(report.Applications[0].TechnicalDetail, RedactedValue) {
 		t.Fatalf("expected redaction markers in %#v", report)

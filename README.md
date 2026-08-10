@@ -110,7 +110,9 @@ rollback, and attention flags; private backup/trash paths, checksums, raw runtim
 status, and backend error text remain in Go. Failed installation, provisioning,
 and update results include a stable diagnostic code plus a plain-language next
 action, available through expandable technical details without exposing the raw
-backend failure.
+backend failure. Application cards use the same bounded issue contract when
+their state cannot be inspected. Explicit diagnostic export still includes a
+separately redacted technical detail for support.
 The Go desktop boundary also permits only one setup, runtime, or application-data
 change at a time, so update, lifecycle, removal, onboarding, and login recovery
 cannot race each other even if separate interface controls are activated.

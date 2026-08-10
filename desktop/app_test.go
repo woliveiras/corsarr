@@ -57,6 +57,14 @@ func TestDesktopResultContractsExcludeBackendRecoveryDetails(t *testing.T) {
 			Status: applicationContainerStatus("updated-image"),
 			Error:  "update backend detail",
 		},
+		application.ManagedApplicationStatus{
+			ApplicationID: "radarr", State: application.ManagedStateAttention,
+			TechnicalDetail: "runtime socket /private/managed.sock failed",
+			Issue: &application.OperationIssue{
+				Code: "application_status_unavailable", Summary: "Não foi possível verificar.",
+				NextAction: "Verifique o ambiente.",
+			},
+		},
 		storage.ArchivedApplicationData{
 			ApplicationID: "radarr", Archived: true,
 			ArchivePath: "/Users/test/Media/Corsarr/trash/config/radarr/private",
@@ -70,7 +78,7 @@ func TestDesktopResultContractsExcludeBackendRecoveryDetails(t *testing.T) {
 		for _, forbidden := range []string{
 			"runtime.sock", "installed-image", "previous-image", "approved-image",
 			"private.tar.gz", "private-checksum", "updated-image", "backend detail",
-			"trash/config",
+			"trash/config", "managed.sock", "technicalDetail",
 		} {
 			if strings.Contains(string(payload), forbidden) {
 				t.Fatalf("desktop payload exposed %q: %s", forbidden, payload)

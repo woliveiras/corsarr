@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: removed raw application inspection failures from the Wails
+  status model and replaced them with bounded issues rendered on each affected
+  card. Explicit diagnostic export uses a separate projection so its sanitized
+  technical detail remains available for support.
 - 2026-08-11: added bounded user-facing operation issues for installation,
   provisioning, update rollback, and update failure. The desktop now shows a
   stable code and next action in expandable details while raw backend errors

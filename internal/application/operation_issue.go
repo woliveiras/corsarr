@@ -39,3 +39,11 @@ func updateFailureIssue() *OperationIssue {
 		NextAction: "Não remova os dados. Exporte um diagnóstico antes de tentar novamente.",
 	}
 }
+
+func statusUnavailableIssue() *OperationIssue {
+	return &OperationIssue{
+		Code:       "application_status_unavailable",
+		Summary:    "Não foi possível verificar o estado deste aplicativo.",
+		NextAction: "Verifique o ambiente e tente novamente. Os outros aplicativos não serão alterados.",
+	}
+}

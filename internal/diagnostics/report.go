@@ -50,15 +50,30 @@ type SetupReport struct {
 	JellyfinLANEnabled           bool     `json:"jellyfinLanEnabled"`
 }
 
+// ApplicationStatus is an explicit diagnostic-file projection. The desktop
+// status payload omits raw technical detail; an export includes only this
+// separately sanitized copy after the user selects a destination.
+type ApplicationStatus struct {
+	ApplicationID    string                      `json:"applicationId"`
+	State            application.ManagedState    `json:"state"`
+	Health           string                      `json:"health,omitempty"`
+	Image            string                      `json:"image,omitempty"`
+	ApprovedImage    string                      `json:"approvedImage,omitempty"`
+	UpdateAvailable  bool                        `json:"updateAvailable"`
+	TechnicalDetail  string                      `json:"technicalDetail,omitempty"`
+	Issue            *application.OperationIssue `json:"issue,omitempty"`
+	RemovalBlockedBy []string                    `json:"removalBlockedBy,omitempty"`
+}
+
 type Report struct {
-	SchemaVersion     int                                    `json:"schemaVersion"`
-	GeneratedAt       string                                 `json:"generatedAt"`
-	CorsarrVersion    string                                 `json:"corsarrVersion"`
-	CatalogVerifiedAt string                                 `json:"catalogVerifiedAt"`
-	Environment       application.EnvironmentStatus          `json:"environment"`
-	Setup             SetupReport                            `json:"setup"`
-	Storage           *storage.Status                        `json:"storage,omitempty"`
-	Applications      []application.ManagedApplicationStatus `json:"applications"`
+	SchemaVersion     int                           `json:"schemaVersion"`
+	GeneratedAt       string                        `json:"generatedAt"`
+	CorsarrVersion    string                        `json:"corsarrVersion"`
+	CatalogVerifiedAt string                        `json:"catalogVerifiedAt"`
+	Environment       application.EnvironmentStatus `json:"environment"`
+	Setup             SetupReport                   `json:"setup"`
+	Storage           *storage.Status               `json:"storage,omitempty"`
+	Applications      []ApplicationStatus           `json:"applications"`
 }
 
 // Reporter captures only bounded diagnostic state. It deliberately excludes
@@ -98,14 +113,20 @@ func (r *Reporter) Build(ctx context.Context) (Report, error) {
 		environmentStatus.Runtime.TechnicalDetail,
 	)
 
-	applicationStatuses := append(
-		[]application.ManagedApplicationStatus(nil),
-		r.applications.ListStatuses(ctx)...,
-	)
-	for index := range applicationStatuses {
-		applicationStatuses[index].TechnicalDetail = sanitizedDetail(
-			applicationStatuses[index].TechnicalDetail,
-		)
+	managedStatuses := r.applications.ListStatuses(ctx)
+	applicationStatuses := make([]ApplicationStatus, 0, len(managedStatuses))
+	for _, status := range managedStatuses {
+		applicationStatuses = append(applicationStatuses, ApplicationStatus{
+			ApplicationID:    status.ApplicationID,
+			State:            status.State,
+			Health:           status.Health,
+			Image:            status.Image,
+			ApprovedImage:    status.ApprovedImage,
+			UpdateAvailable:  status.UpdateAvailable,
+			TechnicalDetail:  sanitizedDetail(status.TechnicalDetail),
+			Issue:            status.Issue,
+			RemovalBlockedBy: append([]string(nil), status.RemovalBlockedBy...),
+		})
 	}
 
 	report := Report{

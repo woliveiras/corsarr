@@ -22,14 +22,15 @@ const (
 )
 
 type ManagedApplicationStatus struct {
-	ApplicationID    string       `json:"applicationId"`
-	State            ManagedState `json:"state"`
-	Health           string       `json:"health,omitempty"`
-	Image            string       `json:"image,omitempty"`
-	ApprovedImage    string       `json:"approvedImage,omitempty"`
-	UpdateAvailable  bool         `json:"updateAvailable"`
-	TechnicalDetail  string       `json:"technicalDetail,omitempty"`
-	RemovalBlockedBy []string     `json:"removalBlockedBy,omitempty"`
+	ApplicationID    string          `json:"applicationId"`
+	State            ManagedState    `json:"state"`
+	Health           string          `json:"health,omitempty"`
+	Image            string          `json:"image,omitempty"`
+	ApprovedImage    string          `json:"approvedImage,omitempty"`
+	UpdateAvailable  bool            `json:"updateAvailable"`
+	TechnicalDetail  string          `json:"-"`
+	Issue            *OperationIssue `json:"issue,omitempty"`
+	RemovalBlockedBy []string        `json:"removalBlockedBy,omitempty"`
 }
 
 type ApprovedImageResolver interface {
@@ -71,6 +72,7 @@ func (s *ManagementService) ListStatuses(ctx context.Context) []ManagedApplicati
 				ApplicationID:   application.ID,
 				State:           ManagedStateAttention,
 				TechnicalDetail: err.Error(),
+				Issue:           statusUnavailableIssue(),
 			})
 			continue
 		}
@@ -85,6 +87,7 @@ func (s *ManagementService) ListStatuses(ctx context.Context) []ManagedApplicati
 			if resolveErr != nil {
 				status.State = ManagedStateAttention
 				status.TechnicalDetail = resolveErr.Error()
+				status.Issue = statusUnavailableIssue()
 			} else {
 				status.ApprovedImage = approvedImage
 				status.UpdateAvailable = container.Image != approvedImage

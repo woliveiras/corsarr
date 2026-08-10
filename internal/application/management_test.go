@@ -2,8 +2,10 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
@@ -61,6 +63,35 @@ func TestManagementServiceReportsApprovedImageUpdate(t *testing.T) {
 	}
 }
 
+func TestManagementServiceKeepsRuntimeFailureOutOfDesktopPayload(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	runtime := &managementRuntime{errors: map[string]error{
+		"radarr": errors.New("private socket /Users/test/runtime.sock failed"),
+	}}
+	service := NewManagementService(NewCatalog(registry), runtime)
+
+	status := findManagedStatus(service.ListStatuses(context.Background()), "radarr")
+	if status.State != ManagedStateAttention || status.TechnicalDetail == "" {
+		t.Fatalf("expected internal runtime detail, got %#v", status)
+	}
+	if status.Issue == nil || status.Issue.Code != "application_status_unavailable" {
+		t.Fatalf("expected actionable status issue, got %#v", status.Issue)
+	}
+	payload, err := json.Marshal(status)
+	if err != nil {
+		t.Fatalf("encode status: %v", err)
+	}
+	if strings.Contains(string(payload), "runtime.sock") || strings.Contains(string(payload), "technicalDetail") {
+		t.Fatalf("desktop status exposed raw runtime detail: %s", payload)
+	}
+	if !strings.Contains(string(payload), "application_status_unavailable") {
+		t.Fatalf("desktop status omitted bounded issue: %s", payload)
+	}
+}
+
 func TestManagementServiceBlocksRemovalRequiredByInstalledApplications(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {
@@ -105,12 +136,16 @@ func TestManagementServiceAllowsLeafApplicationRemoval(t *testing.T) {
 	}
 }
 
-type approvedImageStub struct{ image string }
+type approvedImageStub struct {
+	image string
+	err   error
+}
 
-func (s approvedImageStub) ApprovedImage(string) (string, error) { return s.image, nil }
+func (s approvedImageStub) ApprovedImage(string) (string, error) { return s.image, s.err }
 
 type managementRuntime struct {
 	statuses      map[string]containerruntime.ContainerStatus
+	errors        map[string]error
 	lastOperation string
 }
 
@@ -120,6 +155,9 @@ func (m *managementRuntime) Create(context.Context, containerruntime.ContainerSp
 	return nil
 }
 func (m *managementRuntime) Inspect(_ context.Context, id string) (containerruntime.ContainerStatus, error) {
+	if err := m.errors[id]; err != nil {
+		return containerruntime.ContainerStatus{}, err
+	}
 	status, exists := m.statuses[id]
 	if !exists {
 		return containerruntime.ContainerStatus{}, containerruntime.ErrResourceNotFound

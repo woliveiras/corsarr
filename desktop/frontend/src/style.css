@@ -796,6 +796,31 @@ nav {
   letter-spacing: 0.06em;
 }
 
+.application-status-details {
+  margin-top: 7px;
+  color: #c48e85;
+  font-size: 9px;
+}
+
+.application-status-details summary {
+  width: max-content;
+  cursor: pointer;
+}
+
+.application-status-details code {
+  display: block;
+  max-width: 420px;
+  margin-top: 6px;
+  padding: 7px 8px;
+  overflow: auto;
+  color: #bda5a1;
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 6px;
+  font-size: 8px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .application-info .network-address {
   margin-top: 7px;
   color: #9fc9c4;
