@@ -63,3 +63,25 @@ func TestRuntimeCatalogRejectsUnknownApplication(t *testing.T) {
 		t.Fatal("expected unknown application to be rejected")
 	}
 }
+
+func TestRuntimeCatalogUsesOfficialSeerrImageWithInit(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create service registry: %v", err)
+	}
+	catalog, err := NewRuntimeCatalog(registry)
+	if err != nil {
+		t.Fatalf("create runtime catalog: %v", err)
+	}
+
+	spec, err := catalog.Resolve("jellyseerr", filepath.Join(t.TempDir(), "Corsarr"), RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("resolve Seerr runtime spec: %v", err)
+	}
+	if !spec.Init {
+		t.Fatal("expected official Seerr image to run with init")
+	}
+	if !strings.HasPrefix(spec.Image, "ghcr.io/seerr-team/seerr@sha256:") {
+		t.Fatalf("expected official Seerr image, got %q", spec.Image)
+	}
+}

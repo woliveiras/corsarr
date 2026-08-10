@@ -40,6 +40,7 @@ type BindMount struct {
 type ContainerSpec struct {
 	ApplicationID string
 	Image         string
+	Init          bool
 	Ports         []PortBinding
 	Mounts        []BindMount
 	Environment   map[string]string

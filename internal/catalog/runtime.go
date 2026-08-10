@@ -25,6 +25,7 @@ type RuntimeManifest struct {
 	ConfigTarget        string
 	MediaTarget         string
 	SupportsUserMapping bool
+	RequiresInit        bool
 	SourceURL           string
 }
 
@@ -39,6 +40,7 @@ type approvedImage struct {
 	mediaTarget         string
 	containerPort       int
 	supportsUserMapping bool
+	requiresInit        bool
 	sourceURL           string
 }
 
@@ -74,9 +76,9 @@ var approvedImages = map[string]approvedImage{
 		sourceURL: "https://docs.linuxserver.io/images/docker-sonarr/",
 	},
 	"jellyseerr": {
-		repository: "fallenbagel/jellyseerr", digest: "sha256:4538137bc5af902dece165f2bf73776d9cf4eafb6dd714670724af8f3eb77764",
+		repository: "ghcr.io/seerr-team/seerr", digest: "sha256:f4768de5f616248d723e05891f3345a1402123775d03bf0890dbfedc0831bda1",
 		configTarget: "/app/config", mediaTarget: "/data",
-		sourceURL: "https://docs.jellyseerr.dev/getting-started/docker",
+		requiresInit: true, sourceURL: "https://docs.seerr.dev/getting-started/docker",
 	},
 	"jellyfin": {
 		repository: "lscr.io/linuxserver/jellyfin", digest: "sha256:b8dcc7b71d0ea872b74314da4b995c0cf282b1778438c295996e7be88c70fdda",
@@ -118,6 +120,7 @@ func NewRuntimeCatalog(registry *services.Registry) (*RuntimeCatalog, error) {
 			HostPort: hostPort, ContainerPort: containerPort,
 			ConfigTarget: approved.configTarget, MediaTarget: approved.mediaTarget,
 			SupportsUserMapping: approved.supportsUserMapping, SourceURL: approved.sourceURL,
+			RequiresInit: approved.requiresInit,
 		}
 	}
 	return &RuntimeCatalog{manifests: manifests}, nil
@@ -151,6 +154,7 @@ func (c *RuntimeCatalog) Resolve(
 	return containerruntime.ContainerSpec{
 		ApplicationID: applicationID,
 		Image:         manifest.Image,
+		Init:          manifest.RequiresInit,
 		Ports: []containerruntime.PortBinding{{
 			HostPort: manifest.HostPort, ContainerPort: manifest.ContainerPort,
 			Protocol: containerruntime.ProtocolTCP, Exposure: containerruntime.ExposureLoopback,

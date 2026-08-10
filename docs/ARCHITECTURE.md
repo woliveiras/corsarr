@@ -312,7 +312,7 @@ corsarr/
 ### Request Management
 | Service | Port | Image | Present in |
 |---------|------|-------|------------|
-| Jellyseerr | 5055 | fallenbagel/jellyseerr:latest | VPN, Simple |
+| Seerr | 5055 | ghcr.io/seerr-team/seerr:v3.4.1 | VPN, Simple |
 
 ### Transcoding
 | Service | Port | Image | Present in |
@@ -400,7 +400,7 @@ type Profile struct {
     ☑ Jellyfin
 
   Request Management:
-    ☐ Jellyseerr (requires Jellyfin)
+    ☐ Seerr (requires Jellyfin)
 
   Transcoding:
     ☐ FileFlows
@@ -473,7 +473,7 @@ To check logs:
 
 ### 2. Service Dependencies
 ```
-Jellyseerr → requires Jellyfin
+Seerr → requires Jellyfin
 FlareSolverr → useful with Prowlarr
 Bazarr → requires Sonarr OR Radarr
 FileFlows → requires Jellyfin

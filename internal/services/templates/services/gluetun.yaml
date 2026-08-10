@@ -46,7 +46,7 @@ ports:
   - host: "6767"
     container: "6767"
     protocol: tcp
-  # Jellyseerr
+  # Seerr
   - host: "5055"
     container: "5055"
     protocol: tcp

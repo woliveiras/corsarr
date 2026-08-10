@@ -116,6 +116,9 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 		"--network-alias", spec.ApplicationID,
 		"--restart", "unless-stopped",
 	}
+	if spec.Init {
+		arguments = append(arguments, "--init")
+	}
 
 	ports := append([]PortBinding(nil), spec.Ports...)
 	sort.Slice(ports, func(i, j int) bool {

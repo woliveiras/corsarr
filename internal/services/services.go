@@ -44,6 +44,7 @@ type Service struct {
 	Description   string          `yaml:"description"`
 	Image         string          `yaml:"image"`
 	ContainerName string          `yaml:"container_name"`
+	Init          bool            `yaml:"init,omitempty"`
 	Ports         []PortMapping   `yaml:"ports,omitempty"`
 	Volumes       []VolumeMapping `yaml:"volumes"`
 	Environment   []string        `yaml:"environment,omitempty"`

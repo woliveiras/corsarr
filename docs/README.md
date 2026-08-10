@@ -26,7 +26,7 @@ selection in the operating system's user configuration directory and creates
 the Corsarr-owned storage layout on explicit request. The latest development
 slice additionally accepts versioned runtime consent and can install selected
 digest-pinned containers when Docker is already healthy. Runtime onboarding and
-Jellyseerr provisioning are not yet implemented. Current application
+Seerr provisioning is not yet implemented. Current application
 provisioning covers Arr root folders, qBittorrent credentials, paths and
 categories, Arr download clients, Prowlarr connections, and Bazarr's Radarr and
 Sonarr connections. Jellyfin provisioning covers its local administrator,

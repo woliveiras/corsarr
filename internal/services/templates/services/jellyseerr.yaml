@@ -1,9 +1,10 @@
 id: jellyseerr
-name: Jellyseerr
+name: Seerr
 category: request
 description: Request management for movies and TV shows
-image: fallenbagel/jellyseerr:latest
+image: ghcr.io/seerr-team/seerr:v3.4.1
 container_name: jellyseerr
+init: true
 
 ports:
   - host: "5055"

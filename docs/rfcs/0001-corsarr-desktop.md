@@ -632,6 +632,9 @@ claims must be rechecked during implementation and release validation.
 - [Jellyfin library structure API controller](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/LibraryStructureController.cs)
 - [Jellyfin user authentication API controller](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/UserController.cs)
 - [Jellyfin official container image](https://jellyfin.org/docs/general/installation/container/)
+- [Seerr official Docker image](https://docs.seerr.dev/getting-started/docker)
+- [Seerr migration from Jellyseerr](https://docs.seerr.dev/migration-guide)
+- [Seerr v3.4.1 release](https://github.com/seerr-team/seerr/releases/tag/v3.4.1)
 - [Bazarr supported container images](https://wiki.bazarr.media/Getting-Started/Installation/Docker/docker/)
 - [Bazarr API-key authentication contract](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/utils.py)
 - [Bazarr system settings API](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/system/settings.py)
@@ -698,3 +701,6 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Automated Jellyfin's local administrator, safe remote-access
   default, reserved movie/TV/music libraries, wizard completion, and explicit
   native clipboard access to its Keychain password.
+- 2026-08-10: Replaced the retired Jellyseerr image with the signed official
+  Seerr 3.4.1 multi-architecture image while preserving the internal
+  `jellyseerr` ID/config path for automatic data migration and compatibility.

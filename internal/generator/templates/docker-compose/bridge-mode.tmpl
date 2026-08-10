@@ -3,6 +3,9 @@ services:
   {{ .ContainerName }}:
     image: {{ .Image }}
     container_name: {{ .ContainerName }}
+    {{- if .Init }}
+    init: true
+    {{- end }}
     {{- if .Network.BridgeMode.Hostname }}
     hostname: {{ .Network.BridgeMode.Hostname }}
     {{- end }}

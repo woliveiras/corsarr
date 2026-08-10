@@ -40,6 +40,9 @@ services:
   {{ .ContainerName }}:
     image: {{ .Image }}
     container_name: {{ .ContainerName }}
+    {{- if .Init }}
+    init: true
+    {{- end }}
     network_mode: "{{ .Network.VPNMode.NetworkMode }}"
     depends_on:
       - gluetun

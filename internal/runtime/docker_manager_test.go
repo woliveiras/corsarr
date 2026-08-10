@@ -15,6 +15,7 @@ func TestDockerManagerCreatesValidatedOwnedContainer(t *testing.T) {
 	spec := ContainerSpec{
 		ApplicationID: "radarr",
 		Image:         "lscr.io/linuxserver/radarr@" + testImageDigest,
+		Init:          true,
 		Ports: []PortBinding{{
 			HostPort:      7878,
 			ContainerPort: 7878,
@@ -41,6 +42,7 @@ func TestDockerManagerCreatesValidatedOwnedContainer(t *testing.T) {
 			"--network", "corsarr",
 			"--network-alias", "radarr",
 			"--restart", "unless-stopped",
+			"--init",
 			"--publish", "127.0.0.1:7878:7878/tcp",
 			"--mount", "type=bind,src=/Users/test/Media/Corsarr/config/radarr,dst=/config",
 			"--mount", "type=bind,src=/Users/test/Media/Corsarr/media,dst=/data",

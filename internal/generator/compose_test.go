@@ -60,6 +60,16 @@ func TestComposeGenerator_Preview(t *testing.T) {
 			checkFor:    []string{"services:", "gluetun:", "qbittorrent:", "network_mode:"},
 		},
 		{
+			name:        "Seerr uses official image init requirement",
+			serviceIDs:  []string{"jellyfin", "jellyseerr"},
+			vpnMode:     false,
+			expectError: false,
+			checkFor: []string{
+				"image: ghcr.io/seerr-team/seerr:v3.4.1",
+				"init: true",
+			},
+		},
+		{
 			name:        "Invalid service",
 			serviceIDs:  []string{"nonexistent"},
 			vpnMode:     false,
@@ -71,7 +81,7 @@ func TestComposeGenerator_Preview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			content, err := generator.Preview(tt.serviceIDs, tt.vpnMode)
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Error("Expected error but got none")

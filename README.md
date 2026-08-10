@@ -22,7 +22,7 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 - 💬 **Bazarr** - Automatic subtitle downloads
 - ⬇️ **qBittorrent** - Torrent client for downloads
 - 🎭 **Jellyfin** - Stream your media library
-- 🎫 **Jellyseerr** - Request management interface
+- 🎫 **Seerr** - Request management interface
 - 🔓 **FlareSolverr** - Bypass Cloudflare restrictions
 - 📹 **FileFlows** - Transcode and optimize media
 - 🔒 **Gluetun** - VPN client (optional)
@@ -196,7 +196,7 @@ docker compose up -d
 Access your services:
 
 - **Jellyfin** (Watch movies/TV): http://localhost:8096
-- **Jellyseerr** (Request content): http://localhost:5055
+- **Seerr** (Request content): http://localhost:5055
 - **Radarr** (Movies): http://localhost:7878
 - **Sonarr** (TV Shows): http://localhost:8989
 - **Prowlarr** (Search): http://localhost:9696
@@ -532,7 +532,7 @@ Access `http://localhost:8096`
    - Music: `/data/music`
 3. **Install Jellyfin apps** on your devices
 
-### 6. Jellyseerr (Requests)
+### 6. Seerr (Requests)
 
 Access `http://localhost:5055`
 

@@ -149,7 +149,7 @@ const symbols: Record<string, string> = {
   bazarr: 'Bz',
   fileflows: 'Ff',
   jellyfin: 'Jf',
-  jellyseerr: 'Js',
+  jellyseerr: 'Sr',
   lazylibrarian: 'Ll',
   lidarr: 'Li',
   prowlarr: 'Pr',
