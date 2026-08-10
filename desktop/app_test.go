@@ -435,6 +435,25 @@ func TestUpdateApplicationUsesBoundedApplicationService(t *testing.T) {
 	}
 }
 
+func TestUpdateApplicationRechecksStorageBeforeBackupOrRuntimeMutation(t *testing.T) {
+	updates := &desktopUpdateManager{}
+	inspector := &desktopStorageInspector{status: storage.Status{
+		Path: "/Users/test/Media", State: storage.StateInvalid, TechnicalDetail: "disk is full",
+	}}
+	app := &App{
+		setup:            &desktopSetupManager{status: application.SetupStatus{StoragePath: "/Users/test/Media"}},
+		storageInspector: inspector,
+		updates:          updates,
+	}
+
+	if _, err := app.UpdateApplication("radarr"); err == nil {
+		t.Fatal("expected stale storage rejection before update")
+	}
+	if inspector.calls != 1 || updates.calls != 0 {
+		t.Fatalf("expected storage recheck before update, inspector=%d updates=%d", inspector.calls, updates.calls)
+	}
+}
+
 func TestSetJellyfinLANRejectsInstalledContainer(t *testing.T) {
 	setup := &desktopSetupManager{}
 	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{{

@@ -381,6 +381,9 @@ and at least 10 GiB; hardlink failure remains a visible efficiency warning.
 Both folder preparation and installation repeat this inspection before mutation
 so a disconnected external disk, permission change, or newly full filesystem
 cannot pass on stale setup state.
+The desktop update intent repeats the same inspection before entering
+`UpdateService`, so no backup, image pull, stop, or container replacement begins
+from stale storage approval.
 
 The state schema also records the accepted runtime-terms version and UTC
 timestamp. Schema 1 setup files migrate to schema 2 without inventing consent.

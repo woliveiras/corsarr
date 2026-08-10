@@ -671,6 +671,9 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: extended fresh storage validation to application update. A
+  disconnected, non-writable, unmeasurable, or below-10-GiB selected filesystem
+  now blocks before backup, pull, or runtime mutation.
 - 2026-08-11: minimized completed-operation DTOs at the Wails boundary. Backup
   and trash paths, checksums, internal image/status fields, and raw backend errors
   remain in Go; TypeScript receives only catalog IDs and bounded failure,

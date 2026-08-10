@@ -101,8 +101,8 @@ interfaces are not advertised.
 The selected storage filesystem must be writable, measurable, and have at
 least 10 GiB free. Hardlink support is reported as an efficiency warning rather
 than a compatibility failure. Corsarr repeats this check immediately before
-folder preparation and installation. During installation, the UI reports the
-current application and whether it is being started or configured without
+folder preparation, installation, and application update. During installation,
+the UI reports the current application and whether it is being started or configured without
 exposing runtime logs or credentials.
 Completed-operation payloads likewise expose only bounded success, failure,
 rollback, and attention flags; private backup/trash paths, checksums, raw runtime

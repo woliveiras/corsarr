@@ -670,6 +670,9 @@ func (a *App) UpdateApplication(id string) (application.ApplicationUpdateResult,
 	if err != nil {
 		return application.ApplicationUpdateResult{}, err
 	}
+	if err := a.ensureStorageReady(setup.StoragePath); err != nil {
+		return application.ApplicationUpdateResult{}, err
+	}
 	return a.updates.Update(
 		a.appContext(),
 		id,
