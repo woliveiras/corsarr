@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	goruntime "runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -17,6 +18,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/hostprofile"
+	"github.com/woliveiras/corsarr/internal/hostreadiness"
 	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/legal"
 	"github.com/woliveiras/corsarr/internal/localnetwork"
@@ -165,6 +167,7 @@ type App struct {
 	events             eventPublisher
 	runtimeDefaults    runtimecatalog.RuntimeOptions
 	localNetwork       localNetworkURLProvider
+	hostReadiness      hostreadiness.Checker
 }
 
 func NewApp() (*App, error) {
@@ -178,11 +181,17 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("create desktop translations: %w", err)
 	}
 	catalog := application.NewLocalizedCatalog(registry, translator)
+	cacheRoot, err := os.UserCacheDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolve user cache: %w", err)
+	}
 	dockerDetector := runtimeenv.NewDockerDetector(runtimeenv.OSCommandRunner{}, 5*time.Second)
+	hostReadiness := hostreadiness.NewChecker(goruntime.GOOS, goruntime.GOARCH, cacheRoot)
 	environment := application.NewEnvironmentService(
 		dockerDetector,
 		goruntime.GOOS,
 		goruntime.GOARCH,
+		hostReadiness,
 	)
 	statePath, err := statefile.DefaultPath()
 	if err != nil {
@@ -303,6 +312,7 @@ func NewApp() (*App, error) {
 		backgroundRecovery: backgroundRecovery,
 		events:             wailsEventPublisher{},
 		localNetwork:       localnetwork.NewDiscoverer(),
+		hostReadiness:      hostReadiness,
 		runtimeDefaults: runtimecatalog.RuntimeOptions{
 			Timezone: hostProfile.Timezone, PUID: hostProfile.PUID, PGID: hostProfile.PGID,
 		},
@@ -375,7 +385,21 @@ func (a *App) PrepareRuntime() (onboarding.PreparationResult, error) {
 	if !setup.TermsAccepted {
 		return onboarding.PreparationResult{}, application.ErrTermsNotAccepted
 	}
+	if err := a.ensureHostReady(); err != nil {
+		return onboarding.PreparationResult{}, err
+	}
 	return a.runtimeOnboarding.Prepare(a.appContext())
+}
+
+func (a *App) ensureHostReady() error {
+	if a.hostReadiness == nil {
+		return nil
+	}
+	status := a.hostReadiness.Check(a.appContext())
+	if status.Ready {
+		return nil
+	}
+	return fmt.Errorf("computer requirements are not met: %s", strings.Join(status.Issues, "; "))
 }
 
 // ExportDiagnostics writes a redacted, log-free snapshot only to the path
@@ -465,6 +489,9 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	}
 	if !setup.TermsAccepted {
 		return application.InstallationResult{}, application.ErrTermsNotAccepted
+	}
+	if err := a.ensureHostReady(); err != nil {
+		return application.InstallationResult{}, err
 	}
 	prepared, err := a.runtimeOnboarding.Prepare(a.appContext())
 	if err != nil {

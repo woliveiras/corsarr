@@ -174,6 +174,15 @@ delegates to `InstallationService`. When the runtime is absent, the frontend
 also asks for a final explicit confirmation before the pinned installer is
 downloaded. A preparation failure never reaches container installation.
 
+`internal/hostreadiness` owns the read-only first-Mac preflight. It measures
+the macOS version, physical memory, architecture, and free bytes on the
+runtime-cache filesystem under a three-second deadline. The gate requires
+macOS 14+, `arm64` or `amd64`, Docker's documented minimum 4 GiB RAM, and a
+Corsarr operational margin of 4 GiB free (twice the installer's 2 GiB download
+limit). Missing measurements fail closed. `EnvironmentService` exposes the
+facts for explanation, while `PrepareRuntime` and the combined install intent
+recheck the same backend gate immediately before mutation.
+
 Installation is reconciliatory: a matching running container is reused, and a
 matching stopped container is started. A differently pinned image is never
 replaced implicitly; that case is routed to the future update/rollback flow.

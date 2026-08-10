@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: added a read-only first-Mac preflight for supported architecture,
+  macOS 14+, Docker's official 4 GiB memory minimum, and a 4 GiB Corsarr free
+  disk margin. The measured facts are visible in technical details and both
+  runtime preparation entrypoints fail closed before mutation.
 - 2026-08-11: the existing tag-triggered CLI release began installing pinned
   Syft 1.50.0 and asking GoReleaser for SPDX JSON SBOMs of every archive and the
   source artifact. Runtime-downloaded application images remain separately

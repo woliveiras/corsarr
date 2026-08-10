@@ -71,6 +71,7 @@ export namespace application {
 	export class EnvironmentStatus {
 	    platform: string;
 	    architecture: string;
+	    host: hostreadiness.Status;
 	    runtime: runtime.Status;
 
 	    static createFrom(source: any = {}) {
@@ -81,6 +82,7 @@ export namespace application {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.platform = source["platform"];
 	        this.architecture = source["architecture"];
+	        this.host = this.convertValues(source["host"], hostreadiness.Status);
 	        this.runtime = this.convertValues(source["runtime"], runtime.Status);
 	    }
 
@@ -236,6 +238,31 @@ export namespace application {
 	        this.startAtLoginSupported = source["startAtLoginSupported"];
 	        this.startAtLoginRequiresApproval = source["startAtLoginRequiresApproval"];
 	        this.jellyfinLanEnabled = source["jellyfinLanEnabled"];
+	    }
+	}
+
+}
+
+export namespace hostreadiness {
+
+	export class Status {
+	    ready: boolean;
+	    osVersion?: string;
+	    memoryBytes?: number;
+	    freeDiskBytes?: number;
+	    issues: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new Status(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ready = source["ready"];
+	        this.osVersion = source["osVersion"];
+	        this.memoryBytes = source["memoryBytes"];
+	        this.freeDiskBytes = source["freeDiskBytes"];
+	        this.issues = source["issues"];
 	    }
 	}
 

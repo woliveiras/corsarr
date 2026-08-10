@@ -182,6 +182,7 @@ let jellyfinAccess: application.ServiceAccessStatus | undefined;
 let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let currentRuntimeState = 'checking';
+let currentHostReady = true;
 
 function showView(view: 'home' | 'licenses'): void {
   const showHome = view === 'home';
@@ -781,7 +782,8 @@ function updateJellyfinLANControl(): void {
 
 function updateInstallAuthority(): void {
   if (!installApplicationsButton) return;
-  installApplicationsButton.disabled = !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked;
+  installApplicationsButton.disabled =
+    !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked || !currentHostReady;
 }
 
 async function loadSetup(): Promise<void> {
@@ -837,6 +839,7 @@ async function loadEnvironment(): Promise<void> {
   try {
     const environment = await GetEnvironmentStatus();
     currentRuntimeState = environment.runtime.state;
+    currentHostReady = environment.host.ready;
     const runtimeMessage = runtimeMessages[environment.runtime.state] ?? runtimeMessages.error;
 
     if (platformElement) {
@@ -846,13 +849,19 @@ async function loadEnvironment(): Promise<void> {
       architectureElement.textContent =
         architectureNames[environment.architecture] ?? environment.architecture;
     }
-    if (environmentTitleElement) environmentTitleElement.textContent = runtimeMessage.title;
+    if (environmentTitleElement) {
+      environmentTitleElement.textContent = currentHostReady
+        ? runtimeMessage.title
+        : 'Este computador precisa de atenção';
+    }
     if (environmentDescriptionElement) {
-      environmentDescriptionElement.textContent = runtimeMessage.description;
+      environmentDescriptionElement.textContent = currentHostReady
+        ? runtimeMessage.description
+        : environment.host.issues.join(' ');
     }
     if (environmentBadgeElement) {
-      environmentBadgeElement.textContent = runtimeMessage.badge;
-      environmentBadgeElement.className = `runtime-badge ${environment.runtime.state}`;
+      environmentBadgeElement.textContent = currentHostReady ? runtimeMessage.badge : 'Requisitos';
+      environmentBadgeElement.className = `runtime-badge ${currentHostReady ? environment.runtime.state : 'error'}`;
     }
     if (environmentTechnicalElement) {
       const details = [
@@ -863,15 +872,27 @@ async function loadEnvironment(): Promise<void> {
       if (environment.runtime.technicalDetail) {
         details.push(`Diagnóstico: ${environment.runtime.technicalDetail}`);
       }
+      if (environment.host.osVersion) details.push(`macOS: ${environment.host.osVersion}`);
+      if (environment.host.memoryBytes) {
+        details.push(`Memória: ${(environment.host.memoryBytes / 1024 ** 3).toFixed(1)} GiB`);
+      }
+      if (environment.host.freeDiskBytes) {
+        details.push(
+          `Espaço livre: ${(environment.host.freeDiskBytes / 1024 ** 3).toFixed(1)} GiB`,
+        );
+      }
       environmentTechnicalElement.textContent = details.join('\n');
     }
     if (prepareRuntimeButton) {
       prepareRuntimeButton.hidden = environment.runtime.state === 'ready';
+      prepareRuntimeButton.disabled = !currentHostReady;
       prepareRuntimeButton.textContent =
         environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
     }
+    updateInstallAuthority();
   } catch {
     currentRuntimeState = 'error';
+    currentHostReady = false;
     if (environmentTitleElement) environmentTitleElement.textContent = 'Não foi possível verificar';
     if (environmentDescriptionElement) {
       environmentDescriptionElement.textContent = 'Tente novamente em alguns instantes.';
@@ -889,6 +910,14 @@ refreshEnvironmentButton?.addEventListener('click', () => void loadEnvironment()
 
 async function prepareRuntime(): Promise<void> {
   if (!prepareRuntimeButton) return;
+  if (!currentHostReady) {
+    if (installationResultElement) {
+      installationResultElement.textContent =
+        'Resolva os requisitos indicados neste computador antes de preparar o ambiente.';
+      installationResultElement.classList.add('error');
+    }
+    return;
+  }
   if (!acceptTermsCheckbox?.checked) {
     if (installationResultElement) {
       installationResultElement.textContent =

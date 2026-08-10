@@ -9,6 +9,7 @@ import (
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
+	"github.com/woliveiras/corsarr/internal/hostreadiness"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
@@ -320,7 +321,7 @@ func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 		Version:  "28.3.2",
 	}}
 	app := &App{
-		environment: application.NewEnvironmentService(probe, "darwin", "arm64"),
+		environment: application.NewEnvironmentService(probe, "darwin", "arm64", nil),
 	}
 
 	status := app.GetEnvironmentStatus()
@@ -342,6 +343,24 @@ func TestPrepareRuntimeRequiresCurrentConsent(t *testing.T) {
 	}
 	if preparer.calls != 0 {
 		t.Fatalf("expected no preparation, got %d calls", preparer.calls)
+	}
+}
+
+func TestPrepareRuntimeRejectsUnsupportedHostBeforeMutation(t *testing.T) {
+	preparer := &desktopRuntimePreparer{}
+	app := &App{
+		setup:             &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		runtimeOnboarding: preparer,
+		hostReadiness: &desktopHostReadiness{status: hostreadiness.Status{
+			Ready: false, Issues: []string{"são necessários pelo menos 4 GiB de memória"},
+		}},
+	}
+
+	if _, err := app.PrepareRuntime(); err == nil {
+		t.Fatal("expected unsupported host to be rejected")
+	}
+	if preparer.calls != 0 {
+		t.Fatalf("runtime preparation mutated an unsupported host, calls=%d", preparer.calls)
 	}
 }
 
@@ -460,6 +479,16 @@ func TestExportDiagnosticsCancelDoesNotCollectOrWrite(t *testing.T) {
 type desktopRuntimeProbe struct {
 	status runtimeenv.Status
 	calls  int
+}
+
+type desktopHostReadiness struct {
+	status hostreadiness.Status
+	calls  int
+}
+
+func (h *desktopHostReadiness) Check(context.Context) hostreadiness.Status {
+	h.calls++
+	return h.status
 }
 
 type desktopRuntimePreparer struct {

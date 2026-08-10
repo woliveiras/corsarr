@@ -82,6 +82,11 @@ On macOS 13+, an explicit optional setting registers Corsarr through Apple's
 Service Management framework. At login, Corsarr can start an already installed
 runtime and existing owned containers without installing new applications;
 pending approval remains visible in both Corsarr and System Settings.
+Before preparing the runtime, the desktop performs a read-only Mac preflight:
+supported Intel/Apple Silicon architecture, macOS 14 or newer, at least 4 GiB
+of RAM, and at least 4 GiB free on the runtime-cache volume. All measured facts
+remain visible under technical details, and a failed requirement blocks the
+mutating preparation intent in both the UI and Go backend.
 When Jellyfin is selected, a separate pre-install choice can expose only its
 HTTP service to the local network for TVs and mobile clients. All administrative
 applications remain bound to this computer by default. While Jellyfin is
