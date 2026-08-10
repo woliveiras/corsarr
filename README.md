@@ -101,7 +101,8 @@ interfaces are not advertised.
 The selected storage filesystem must be writable, measurable, and have at
 least 10 GiB free. Hardlink support is reported as an efficiency warning rather
 than a compatibility failure. Corsarr repeats this check immediately before
-folder preparation, installation, and application update. During installation,
+folder preparation, installation, and application update; update also repeats
+the Mac runtime-cache free-space preflight. During installation,
 the UI reports the current application and whether it is being started or configured without
 exposing runtime logs or credentials.
 Completed-operation payloads likewise expose only bounded success, failure,

@@ -454,6 +454,34 @@ func TestUpdateApplicationRechecksStorageBeforeBackupOrRuntimeMutation(t *testin
 	}
 }
 
+func TestUpdateApplicationRechecksRuntimeDiskBeforeBackupOrPull(t *testing.T) {
+	updates := &desktopUpdateManager{}
+	inspector := &desktopStorageInspector{status: storage.Status{
+		Path: "/Users/test/Media", State: storage.StateReady,
+	}}
+	host := &desktopHostReadiness{status: hostreadiness.Status{
+		Ready: false, Issues: []string{"runtime cache disk has less than 4 GiB free"},
+	}}
+	app := &App{
+		setup:            &desktopSetupManager{status: application.SetupStatus{StoragePath: "/Users/test/Media"}},
+		storageInspector: inspector,
+		hostReadiness:    host,
+		updates:          updates,
+	}
+
+	if _, err := app.UpdateApplication("radarr"); err == nil {
+		t.Fatal("expected runtime disk rejection before update")
+	}
+	if inspector.calls != 1 || host.calls != 1 || updates.calls != 0 {
+		t.Fatalf(
+			"expected host recheck before update, storage=%d host=%d updates=%d",
+			inspector.calls,
+			host.calls,
+			updates.calls,
+		)
+	}
+}
+
 func TestSetJellyfinLANRejectsInstalledContainer(t *testing.T) {
 	setup := &desktopSetupManager{}
 	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{{

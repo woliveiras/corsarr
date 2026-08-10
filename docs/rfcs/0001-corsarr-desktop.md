@@ -671,6 +671,9 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: made update repeat the Mac host preflight after the selected
+  storage check, covering free space on the runtime-cache filesystem before an
+  image pull when media/configuration live on a different disk.
 - 2026-08-11: extended fresh storage validation to application update. A
   disconnected, non-writable, unmeasurable, or below-10-GiB selected filesystem
   now blocks before backup, pull, or runtime mutation.
