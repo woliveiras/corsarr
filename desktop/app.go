@@ -7,12 +7,14 @@ import (
 	"os/user"
 	"path/filepath"
 	goruntime "runtime"
+	"runtime/debug"
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
+	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/legal"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
@@ -85,6 +87,23 @@ type runtimePreparer interface {
 	Prepare(ctx context.Context) (onboarding.PreparationResult, error)
 }
 
+type diagnosticFilePicker interface {
+	Choose(ctx context.Context, suggestedName string) (string, error)
+}
+
+type diagnosticReporter interface {
+	Build(ctx context.Context) (diagnostics.Report, error)
+}
+
+type diagnosticWriter interface {
+	Write(path string, report diagnostics.Report) error
+}
+
+type DiagnosticExportResult struct {
+	Exported bool   `json:"exported"`
+	Path     string `json:"path,omitempty"`
+}
+
 type wailsClipboard struct{}
 
 func (wailsClipboard) SetText(ctx context.Context, value string) error {
@@ -93,21 +112,24 @@ func (wailsClipboard) SetText(ctx context.Context, value string) error {
 
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
-	ctx               context.Context
-	catalog           *application.Catalog
-	legal             *legal.Catalog
-	environment       *application.EnvironmentService
-	directoryPicker   directoryPicker
-	storageInspector  storageInspector
-	setup             setupManager
-	layoutPreparer    storageLayoutPreparer
-	installation      installationManager
-	management        applicationManager
-	updates           applicationUpdateManager
-	runtimeOnboarding runtimePreparer
-	applicationData   applicationDataManager
-	serviceAccess     serviceAccessManager
-	clipboard         clipboardWriter
+	ctx                context.Context
+	catalog            *application.Catalog
+	legal              *legal.Catalog
+	environment        *application.EnvironmentService
+	directoryPicker    directoryPicker
+	storageInspector   storageInspector
+	setup              setupManager
+	layoutPreparer     storageLayoutPreparer
+	installation       installationManager
+	management         applicationManager
+	updates            applicationUpdateManager
+	runtimeOnboarding  runtimePreparer
+	applicationData    applicationDataManager
+	serviceAccess      serviceAccessManager
+	clipboard          clipboardWriter
+	diagnosticPicker   diagnosticFilePicker
+	diagnosticReporter diagnosticReporter
+	diagnosticWriter   diagnosticWriter
 }
 
 func NewApp() (*App, error) {
@@ -205,22 +227,34 @@ func NewApp() (*App, error) {
 		dockerManager,
 		storage.NewApplicationDataManager(),
 	)
+	storageInspector := storage.NewInspector()
+	diagnosticReporter := diagnostics.NewReporter(
+		environment,
+		setup,
+		management,
+		storageInspector,
+		corsarrBuildVersion(),
+		runtimecatalog.RuntimeCatalogVerifiedAt,
+	)
 
 	return &App{
-		catalog:           catalog,
-		legal:             legalCatalog,
-		environment:       environment,
-		directoryPicker:   wailsDirectoryPicker{},
-		storageInspector:  storage.NewInspector(),
-		setup:             setup,
-		layoutPreparer:    storage.NewLayoutPreparer(),
-		installation:      installation,
-		management:        management,
-		updates:           updates,
-		runtimeOnboarding: runtimeOnboarding,
-		applicationData:   applicationData,
-		serviceAccess:     application.NewServiceAccess(credentialStore),
-		clipboard:         wailsClipboard{},
+		catalog:            catalog,
+		legal:              legalCatalog,
+		environment:        environment,
+		directoryPicker:    wailsDirectoryPicker{},
+		storageInspector:   storageInspector,
+		setup:              setup,
+		layoutPreparer:     storage.NewLayoutPreparer(),
+		installation:       installation,
+		management:         management,
+		updates:            updates,
+		runtimeOnboarding:  runtimeOnboarding,
+		applicationData:    applicationData,
+		serviceAccess:      application.NewServiceAccess(credentialStore),
+		clipboard:          wailsClipboard{},
+		diagnosticPicker:   wailsDiagnosticFilePicker{},
+		diagnosticReporter: diagnosticReporter,
+		diagnosticWriter:   diagnostics.NewFileWriter(),
 	}, nil
 }
 
@@ -266,6 +300,29 @@ func (a *App) PrepareRuntime() (onboarding.PreparationResult, error) {
 		return onboarding.PreparationResult{}, application.ErrTermsNotAccepted
 	}
 	return a.runtimeOnboarding.Prepare(a.appContext())
+}
+
+// ExportDiagnostics writes a redacted, log-free snapshot only to the path
+// explicitly selected in the native save dialog.
+func (a *App) ExportDiagnostics() (DiagnosticExportResult, error) {
+	destination, err := a.diagnosticPicker.Choose(
+		a.appContext(),
+		"corsarr-diagnostics.json",
+	)
+	if err != nil {
+		return DiagnosticExportResult{}, fmt.Errorf("choose diagnostic destination: %w", err)
+	}
+	if destination == "" {
+		return DiagnosticExportResult{}, nil
+	}
+	report, err := a.diagnosticReporter.Build(a.appContext())
+	if err != nil {
+		return DiagnosticExportResult{}, err
+	}
+	if err := a.diagnosticWriter.Write(destination, report); err != nil {
+		return DiagnosticExportResult{}, err
+	}
+	return DiagnosticExportResult{Exported: true, Path: destination}, nil
 }
 
 // ChooseStorageLocation opens the native picker and inspects only the selected directory.
@@ -432,4 +489,12 @@ func newRuntimeOnboarding(probe runtimeenv.Probe) (runtimePreparer, error) {
 		return nil, err
 	}
 	return onboarding.NewDockerService(probe, runner, installer, goruntime.GOOS), nil
+}
+
+func corsarrBuildVersion() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok || buildInfo.Main.Version == "" || buildInfo.Main.Version == "(devel)" {
+		return "development"
+	}
+	return buildInfo.Main.Version
 }

@@ -300,6 +300,25 @@ export namespace legal {
 
 }
 
+export namespace main {
+
+	export class DiagnosticExportResult {
+	    exported: boolean;
+	    path?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DiagnosticExportResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.exported = source["exported"];
+	        this.path = source["path"];
+	    }
+	}
+
+}
+
 export namespace onboarding {
 
 	export class PreparationResult {

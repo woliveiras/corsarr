@@ -5,6 +5,7 @@ import {
   ChooseStorageLocation,
   CopyJellyfinPassword,
   CopyQBittorrentPassword,
+  ExportDiagnostics,
   GetApplicationDataStatuses,
   GetApplicationStatuses,
   GetEnvironmentStatus,
@@ -49,6 +50,7 @@ root.innerHTML = [
   '      <button id="show-home" class="nav-item active" type="button"><span aria-hidden="true">⌂</span>Início</button>',
   '      <button class="nav-item" type="button" disabled><span aria-hidden="true">⊞</span>Aplicativos<small>em breve</small></button>',
   '      <button id="show-licenses" class="nav-item" type="button"><span aria-hidden="true">§</span>Licenças</button>',
+  '      <button id="export-diagnostics" class="nav-item" type="button"><span aria-hidden="true">⇩</span>Exportar diagnóstico</button>',
   '    </nav>',
   '    <div class="sidebar-note">',
   '      <span class="status-dot"></span>',
@@ -153,6 +155,7 @@ const homeView = document.querySelector<HTMLElement>('#home-view');
 const licensesView = document.querySelector<HTMLElement>('#licenses-view');
 const showHomeButton = document.querySelector<HTMLButtonElement>('#show-home');
 const showLicensesButton = document.querySelector<HTMLButtonElement>('#show-licenses');
+const exportDiagnosticsButton = document.querySelector<HTMLButtonElement>('#export-diagnostics');
 const licensesBackButton = document.querySelector<HTMLButtonElement>('#licenses-back');
 const legalNoticesElement = document.querySelector<HTMLElement>('#legal-notices');
 
@@ -179,6 +182,28 @@ function showView(view: 'home' | 'licenses'): void {
 showHomeButton?.addEventListener('click', () => showView('home'));
 showLicensesButton?.addEventListener('click', () => showView('licenses'));
 licensesBackButton?.addEventListener('click', () => showView('home'));
+
+exportDiagnosticsButton?.addEventListener('click', async () => {
+  if (!exportDiagnosticsButton) return;
+  exportDiagnosticsButton.disabled = true;
+  try {
+    const result = await ExportDiagnostics();
+    if (!result.exported) return;
+    if (messageElement) {
+      messageElement.textContent = `Diagnóstico salvo em ${result.path}. O arquivo não inclui logs nem credenciais.`;
+      messageElement.classList.remove('error');
+    }
+    showView('home');
+  } catch {
+    if (messageElement) {
+      messageElement.textContent = 'Não foi possível exportar o diagnóstico.';
+      messageElement.classList.add('error');
+    }
+    showView('home');
+  } finally {
+    exportDiagnosticsButton.disabled = false;
+  }
+});
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',

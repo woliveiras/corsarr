@@ -162,6 +162,15 @@ the non-secret username. Password retrieval remains in Go: an explicit
 `CopyQBittorrentPassword` intent writes it directly to the native clipboard and
 returns no secret to TypeScript.
 
+`internal/diagnostics.Reporter` builds the support snapshot only after the user
+chooses Export diagnostics. It includes bounded platform, runtime, catalog,
+application, setup, and storage facts, redacts credential-shaped text, and
+deliberately excludes logs, cookies, request bodies, runtime sockets, passwords,
+and API keys. `FileWriter` accepts only an absolute user-selected destination,
+rejects symlinks/non-regular targets, writes mode `0600`, syncs, and atomically
+renames the JSON. Canceling the native save dialog performs no collection or
+write.
+
 `internal/provisioning.ARRDownloadClientProvisioner` loads both secrets only in
 Go and asks `ARRClient` to reconcile the reserved `qBittorrent (Corsarr)`
 provider. The client first fetches the app's official live provider schema,

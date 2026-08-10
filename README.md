@@ -62,8 +62,9 @@ client built from each app's live provider schema, without modifying providers
 created by the user. Prowlarr also receives reserved full-sync connections to
 those three apps using their internal network URLs and generated API keys.
 Bazarr requires Radarr and Sonarr, reads their generated keys only in Go, and
-connects to both through Bazarr's authenticated settings API. Automatic runtime
-installation is still pending. Jellyfin's first-run wizard is automated with a
+connects to both through Bazarr's authenticated settings API. On macOS, the
+desktop can install or start its pinned, verified runtime after explicit
+consent; Windows and Linux onboarding remain pending. Jellyfin's first-run wizard is automated with a
 generated `corsarr` administrator stored in the macOS Keychain, remote access
 disabled by default, and reserved movie, TV, and music libraries. Installed
 containers expose status plus open, start, stop, restart, and removal actions
@@ -71,6 +72,11 @@ that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and
 never targets the shared media or downloads tree. The prerequisites and usage
 instructions below describe the current CLI release.
+
+The desktop can export a user-selected JSON diagnostic snapshot containing
+versions, runtime and application health, and storage capabilities. The file is
+written privately and atomically, redacts credential-shaped values, and never
+includes application logs, cookies, passwords, API keys, or runtime sockets.
 
 Seerr signs in through that local Jellyfin administrator, enables the discovered
 Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles

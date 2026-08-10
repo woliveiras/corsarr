@@ -7,6 +7,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
+	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
@@ -234,6 +235,46 @@ func TestPrepareRuntimeUsesBoundedOnboardingAfterConsent(t *testing.T) {
 	}
 }
 
+func TestExportDiagnosticsWritesOnlyAfterNativeDestinationSelection(t *testing.T) {
+	picker := &desktopDiagnosticPicker{path: "/Users/test/corsarr-diagnostics.json"}
+	reporter := &desktopDiagnosticReporter{report: diagnostics.Report{
+		SchemaVersion: diagnostics.CurrentSchemaVersion,
+	}}
+	writer := &desktopDiagnosticWriter{}
+	app := &App{
+		diagnosticPicker: picker, diagnosticReporter: reporter, diagnosticWriter: writer,
+	}
+
+	result, err := app.ExportDiagnostics()
+	if err != nil {
+		t.Fatalf("export diagnostics: %v", err)
+	}
+	if !result.Exported || result.Path != picker.path {
+		t.Fatalf("unexpected export result %#v", result)
+	}
+	if reporter.calls != 1 || writer.calls != 1 || writer.path != picker.path {
+		t.Fatalf("unexpected diagnostic flow reporter=%#v writer=%#v", reporter, writer)
+	}
+}
+
+func TestExportDiagnosticsCancelDoesNotCollectOrWrite(t *testing.T) {
+	reporter := &desktopDiagnosticReporter{}
+	writer := &desktopDiagnosticWriter{}
+	app := &App{
+		diagnosticPicker:   &desktopDiagnosticPicker{},
+		diagnosticReporter: reporter,
+		diagnosticWriter:   writer,
+	}
+
+	result, err := app.ExportDiagnostics()
+	if err != nil {
+		t.Fatalf("cancel diagnostics: %v", err)
+	}
+	if result.Exported || reporter.calls != 0 || writer.calls != 0 {
+		t.Fatalf("expected canceled export without collection, result=%#v", result)
+	}
+}
+
 type desktopRuntimeProbe struct {
 	status runtimeenv.Status
 	calls  int
@@ -257,6 +298,40 @@ func (f *desktopRuntimeProbe) Check(context.Context) runtimeenv.Status {
 type desktopDirectoryPicker struct {
 	path string
 	err  error
+}
+
+type desktopDiagnosticPicker struct {
+	path string
+	err  error
+}
+
+func (p *desktopDiagnosticPicker) Choose(context.Context, string) (string, error) {
+	return p.path, p.err
+}
+
+type desktopDiagnosticReporter struct {
+	report diagnostics.Report
+	err    error
+	calls  int
+}
+
+func (r *desktopDiagnosticReporter) Build(context.Context) (diagnostics.Report, error) {
+	r.calls++
+	return r.report, r.err
+}
+
+type desktopDiagnosticWriter struct {
+	path   string
+	report diagnostics.Report
+	err    error
+	calls  int
+}
+
+func (w *desktopDiagnosticWriter) Write(path string, report diagnostics.Report) error {
+	w.calls++
+	w.path = path
+	w.report = report
+	return w.err
 }
 
 func (f *desktopDirectoryPicker) Choose(context.Context) (string, error) {

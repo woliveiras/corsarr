@@ -683,6 +683,10 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Added consent-gated macOS Docker Desktop onboarding with a pinned
   official download, checksum, signer/Gatekeeper verification, native
   authorization, bounded startup, and automatic start for existing installs.
+- 2026-08-10: Added explicit diagnostic export through the native save dialog.
+  The private atomic JSON contains bounded environment, application, and
+  storage facts, redacts credential-shaped values, and excludes logs and
+  secrets by construction.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

@@ -22,6 +22,10 @@ export function CopyQBittorrentPassword() {
   return window['go']['main']['App']['CopyQBittorrentPassword']();
 }
 
+export function ExportDiagnostics() {
+  return window['go']['main']['App']['ExportDiagnostics']();
+}
+
 export function GetApplicationDataStatuses() {
   return window['go']['main']['App']['GetApplicationDataStatuses']();
 }
