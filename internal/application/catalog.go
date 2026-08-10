@@ -14,12 +14,13 @@ const localApplicationHost = "127.0.0.1"
 // ApplicationSummary is the runtime-independent application data exposed to
 // presentation layers such as Corsarr Desktop.
 type ApplicationSummary struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Category    string `json:"category"`
-	URL         string `json:"url"`
-	Optional    bool   `json:"optional"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Category     string   `json:"category"`
+	URL          string   `json:"url"`
+	Optional     bool     `json:"optional"`
+	Dependencies []string `json:"dependencies"`
 }
 
 // Catalog exposes only user-facing applications from the service registry.
@@ -44,12 +45,13 @@ func NewCatalog(registry *services.Registry) *Catalog {
 		}
 
 		summary := ApplicationSummary{
-			ID:          service.ID,
-			Name:        service.Name,
-			Description: service.Description,
-			Category:    string(service.Category),
-			URL:         applicationURL,
-			Optional:    service.Optional,
+			ID:           service.ID,
+			Name:         service.Name,
+			Description:  service.Description,
+			Category:     string(service.Category),
+			URL:          applicationURL,
+			Optional:     service.Optional,
+			Dependencies: append([]string(nil), service.Dependencies...),
 		}
 
 		applications = append(applications, summary)
