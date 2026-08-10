@@ -20,6 +20,19 @@ func TestServiceAccessReportsStoredQBittorrentCredentialWithoutRevealingIt(t *te
 	}
 }
 
+func TestServiceAccessReportsStoredJellyfinCredentialWithoutRevealingIt(t *testing.T) {
+	store := &serviceAccessStore{secret: credentials.NewSecret("private-password")}
+	service := NewServiceAccess(store)
+
+	status, err := service.JellyfinStatus(context.Background())
+	if err != nil {
+		t.Fatalf("get Jellyfin access status: %v", err)
+	}
+	if !status.Available || status.Username != "corsarr" || status.ApplicationID != "jellyfin" {
+		t.Fatalf("unexpected access status %#v", status)
+	}
+}
+
 type serviceAccessStore struct {
 	secret credentials.Secret
 	err    error

@@ -14,6 +14,10 @@ export function ChooseStorageLocation() {
   return window['go']['main']['App']['ChooseStorageLocation']();
 }
 
+export function CopyJellyfinPassword() {
+  return window['go']['main']['App']['CopyJellyfinPassword']();
+}
+
 export function CopyQBittorrentPassword() {
   return window['go']['main']['App']['CopyQBittorrentPassword']();
 }
@@ -28,6 +32,10 @@ export function GetApplicationStatuses() {
 
 export function GetEnvironmentStatus() {
   return window['go']['main']['App']['GetEnvironmentStatus']();
+}
+
+export function GetJellyfinAccessStatus() {
+  return window['go']['main']['App']['GetJellyfinAccessStatus']();
 }
 
 export function GetQBittorrentAccessStatus() {

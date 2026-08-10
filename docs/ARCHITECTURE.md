@@ -145,6 +145,18 @@ endpoint, uses internal network aliases, then reads the settings back and
 verifies that both connections were persisted. No API key crosses the Wails
 boundary.
 
+`internal/provisioning.JellyfinProvisioner` owns the first-run wizard. It stores
+a generated `corsarr` administrator password in the platform credential store
+before activation and removes a newly generated value only when Jellyfin never
+accepted it. `JellyfinClient` detects the public wizard state, authenticates
+through the official user endpoint, creates only the reserved movie, TV, and
+music libraries under `/data/library`, disables remote access by default, and
+then completes the wizard. Existing matching libraries are preserved; a user
+library occupying a reserved Corsarr name with different settings is rejected.
+The HTTP client is loopback-only, proxy-free, redirect-free, and response
+bounded. The desktop can copy the stored password directly to the native
+clipboard without returning it to TypeScript.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

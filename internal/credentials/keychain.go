@@ -22,9 +22,13 @@ var (
 
 type Key string
 
-const KeyQBitTorrentPassword Key = "qbittorrent-password"
+const (
+	KeyJellyfinPassword    Key = "jellyfin-password"
+	KeyQBitTorrentPassword Key = "qbittorrent-password"
+)
 
 var keychainAccounts = map[Key]string{
+	KeyJellyfinPassword:    "jellyfin",
 	KeyQBitTorrentPassword: "qbittorrent",
 }
 

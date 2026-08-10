@@ -58,6 +58,8 @@ type applicationDataManager interface {
 }
 
 type serviceAccessManager interface {
+	JellyfinStatus(ctx context.Context) (application.ServiceAccessStatus, error)
+	JellyfinPassword(ctx context.Context) (credentials.Secret, error)
 	QBittorrentStatus(ctx context.Context) (application.ServiceAccessStatus, error)
 	QBittorrentPassword(ctx context.Context) (credentials.Secret, error)
 }
@@ -136,12 +138,17 @@ func NewApp() (*App, error) {
 		arrCredentials,
 		provisioning.NewBazarrClient(catalog),
 	)
+	jellyfinProvisioner := provisioning.NewJellyfinProvisioner(
+		credentialStore,
+		provisioning.NewJellyfinClient(catalog),
+	)
 	provisioner := provisioning.NewChainProvisioner(
 		arrProvisioner,
 		qbittorrentProvisioner,
 		arrDownloadProvisioner,
 		prowlarrProvisioner,
 		bazarrProvisioner,
+		jellyfinProvisioner,
 	)
 	installation := application.NewInstallationService(
 		setup,
@@ -271,6 +278,20 @@ func (a *App) GetQBittorrentAccessStatus() (application.ServiceAccessStatus, err
 // an explicit user action. The value is never returned through Wails.
 func (a *App) CopyQBittorrentPassword() error {
 	secret, err := a.serviceAccess.QBittorrentPassword(a.appContext())
+	if err != nil {
+		return err
+	}
+	return a.clipboard.SetText(a.appContext(), secret.Reveal())
+}
+
+func (a *App) GetJellyfinAccessStatus() (application.ServiceAccessStatus, error) {
+	return a.serviceAccess.JellyfinStatus(a.appContext())
+}
+
+// CopyJellyfinPassword reveals the secret only to the native clipboard after
+// an explicit user action. The value is never returned through Wails.
+func (a *App) CopyJellyfinPassword() error {
+	secret, err := a.serviceAccess.JellyfinPassword(a.appContext())
 	if err != nil {
 		return err
 	}

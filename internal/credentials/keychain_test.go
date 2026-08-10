@@ -70,6 +70,25 @@ func TestDarwinKeychainMapsMissingCredential(t *testing.T) {
 	}
 }
 
+func TestDarwinKeychainUsesDedicatedJellyfinAccount(t *testing.T) {
+	runner := &recordingKeychainRunner{}
+	store := newDarwinKeychain(runner)
+
+	if err := store.Save(
+		context.Background(),
+		KeyJellyfinPassword,
+		NewSecret("generated-password"),
+	); err != nil {
+		t.Fatalf("save Jellyfin credential: %v", err)
+	}
+	if len(runner.calls) != 1 || !reflect.DeepEqual(runner.calls[0].args, []string{
+		"add-generic-password", "-a", "jellyfin", "-s", keychainService,
+		"-w", "generated-password", "-U",
+	}) {
+		t.Fatalf("unexpected Jellyfin keychain call %#v", runner.calls)
+	}
+}
+
 func TestDarwinKeychainRejectsUnknownKeyWithoutCommand(t *testing.T) {
 	runner := &recordingKeychainRunner{}
 	store := newDarwinKeychain(runner)

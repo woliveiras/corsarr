@@ -63,7 +63,9 @@ created by the user. Prowlarr also receives reserved full-sync connections to
 those three apps using their internal network URLs and generated API keys.
 Bazarr requires Radarr and Sonarr, reads their generated keys only in Go, and
 connects to both through Bazarr's authenticated settings API. Automatic runtime
-installation and media-server connections are still pending. Installed
+installation is still pending. Jellyfin's first-run wizard is automated with a
+generated `corsarr` administrator stored in the macOS Keychain, remote access
+disabled by default, and reserved movie, TV, and music libraries. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and

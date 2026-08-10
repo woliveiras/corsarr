@@ -627,6 +627,10 @@ claims must be rechecked during implementation and release validation.
 - [qBittorrent API key authentication](https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29)
 - [Jellyfin server API and local Swagger UI](https://github.com/jellyfin/jellyfin)
 - [Jellyfin setup wizard and administrator](https://jellyfin.org/docs/general/post-install/setup-wizard/)
+- [Jellyfin startup wizard API controller](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/StartupController.cs)
+- [Jellyfin public server state API](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/SystemController.cs)
+- [Jellyfin library structure API controller](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/LibraryStructureController.cs)
+- [Jellyfin user authentication API controller](https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Api/Controllers/UserController.cs)
 - [Jellyfin official container image](https://jellyfin.org/docs/general/installation/container/)
 - [Bazarr supported container images](https://wiki.bazarr.media/Getting-Started/Installation/Docker/docker/)
 - [Bazarr API-key authentication contract](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/utils.py)
@@ -691,3 +695,6 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Made Radarr and Sonarr explicit Bazarr dependencies and connected
   both through Bazarr's authenticated settings API with persisted-state
   verification.
+- 2026-08-10: Automated Jellyfin's local administrator, safe remote-access
+  default, reserved movie/TV/music libraries, wizard completion, and explicit
+  native clipboard access to its Keychain password.

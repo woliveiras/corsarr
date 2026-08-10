@@ -9,6 +9,8 @@ export function ArchiveApplicationData(arg1:string):Promise<storage.ArchivedAppl
 
 export function ChooseStorageLocation():Promise<storage.Status>;
 
+export function CopyJellyfinPassword():Promise<void>;
+
 export function CopyQBittorrentPassword():Promise<void>;
 
 export function GetApplicationDataStatuses():Promise<Array<storage.ApplicationDataStatus>>;
@@ -16,6 +18,8 @@ export function GetApplicationDataStatuses():Promise<Array<storage.ApplicationDa
 export function GetApplicationStatuses():Promise<Array<application.ManagedApplicationStatus>>;
 
 export function GetEnvironmentStatus():Promise<application.EnvironmentStatus>;
+
+export function GetJellyfinAccessStatus():Promise<application.ServiceAccessStatus>;
 
 export function GetQBittorrentAccessStatus():Promise<application.ServiceAccessStatus>;
 

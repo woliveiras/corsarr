@@ -154,6 +154,19 @@ func TestCopyQBittorrentPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	}
 }
 
+func TestCopyJellyfinPasswordWritesOnlyToNativeClipboard(t *testing.T) {
+	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
+	clipboard := &desktopClipboard{}
+	app := &App{serviceAccess: access, clipboard: clipboard}
+
+	if err := app.CopyJellyfinPassword(); err != nil {
+		t.Fatalf("copy Jellyfin password: %v", err)
+	}
+	if clipboard.value != "private-password" || clipboard.calls != 1 {
+		t.Fatalf("expected one native clipboard write, got %#v", clipboard)
+	}
+}
+
 func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
 		Provider: runtimeenv.ProviderDocker,
@@ -262,6 +275,18 @@ func (a *desktopServiceAccess) QBittorrentStatus(context.Context) (application.S
 }
 
 func (a *desktopServiceAccess) QBittorrentPassword(context.Context) (credentials.Secret, error) {
+	return a.password, nil
+}
+
+func (a *desktopServiceAccess) JellyfinStatus(context.Context) (application.ServiceAccessStatus, error) {
+	return application.ServiceAccessStatus{
+		ApplicationID: "jellyfin",
+		Username:      "corsarr",
+		Available:     true,
+	}, nil
+}
+
+func (a *desktopServiceAccess) JellyfinPassword(context.Context) (credentials.Secret, error) {
 	return a.password, nil
 }
 

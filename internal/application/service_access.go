@@ -42,3 +42,24 @@ func (s *ServiceAccess) QBittorrentPassword(ctx context.Context) (credentials.Se
 	}
 	return secret, nil
 }
+
+func (s *ServiceAccess) JellyfinStatus(ctx context.Context) (ServiceAccessStatus, error) {
+	status := ServiceAccessStatus{ApplicationID: "jellyfin", Username: "corsarr"}
+	_, err := s.store.Load(ctx, credentials.KeyJellyfinPassword)
+	if errors.Is(err, credentials.ErrCredentialNotFound) {
+		return status, nil
+	}
+	if err != nil {
+		return status, fmt.Errorf("load Jellyfin access status: %w", err)
+	}
+	status.Available = true
+	return status, nil
+}
+
+func (s *ServiceAccess) JellyfinPassword(ctx context.Context) (credentials.Secret, error) {
+	secret, err := s.store.Load(ctx, credentials.KeyJellyfinPassword)
+	if err != nil {
+		return credentials.Secret{}, fmt.Errorf("load Jellyfin credential: %w", err)
+	}
+	return secret, nil
+}
