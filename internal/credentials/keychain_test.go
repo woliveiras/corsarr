@@ -59,7 +59,8 @@ func TestDarwinKeychainStoresAndLoadsAllowlistedCredential(t *testing.T) {
 
 func TestDarwinKeychainMapsMissingCredential(t *testing.T) {
 	runner := &recordingKeychainRunner{results: []keychainResult{{
-		err: errors.New("security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain."),
+		output: "security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.",
+		err:    errors.New("exit status 44"),
 	}}}
 	store := newDarwinKeychain(runner)
 

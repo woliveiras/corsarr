@@ -3,9 +3,11 @@ import {
   AcceptCurrentTerms,
   ArchiveApplicationData,
   ChooseStorageLocation,
+  CopyQBittorrentPassword,
   GetApplicationDataStatuses,
   GetApplicationStatuses,
   GetEnvironmentStatus,
+  GetQBittorrentAccessStatus,
   GetSetupStatus,
   InstallSelectedApplications,
   ListApplications,
@@ -138,6 +140,7 @@ let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
 let managedStatuses = new Map<string, ManagedStatus>();
 let dataStatuses = new Map<string, DataStatus>();
+let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -266,6 +269,13 @@ function createApplicationCard(application: Application): HTMLElement {
   ) {
     actions.append(dataRemovalButton(application));
   }
+  if (
+    application.id === 'qbittorrent' &&
+    qbittorrentAccess?.available &&
+    (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
+  ) {
+    actions.append(qbittorrentCredentialButton());
+  }
   card.append(icon, information, actions);
   return card;
 }
@@ -333,6 +343,31 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
   return button;
 }
 
+function qbittorrentCredentialButton(): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'credential-button';
+  button.type = 'button';
+  button.textContent = 'Copiar senha';
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await CopyQBittorrentPassword();
+      if (messageElement) {
+        messageElement.textContent = `Senha copiada. Use o usuário ${qbittorrentAccess?.username ?? 'corsarr'} para entrar no qBittorrent.`;
+        messageElement.classList.remove('error');
+      }
+    } catch {
+      if (messageElement) {
+        messageElement.textContent = 'Não foi possível copiar a senha do qBittorrent.';
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
 function renderApplications(): void {
   applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
 }
@@ -371,6 +406,15 @@ async function loadApplicationDataStatuses(): Promise<void> {
     renderApplications();
   } catch {
     dataStatuses = new Map();
+  }
+}
+
+async function loadQBittorrentAccess(): Promise<void> {
+  try {
+    qbittorrentAccess = await GetQBittorrentAccessStatus();
+    renderApplications();
+  } catch {
+    qbittorrentAccess = undefined;
   }
 }
 
@@ -632,7 +676,11 @@ async function installApplications(): Promise<void> {
         installationResultElement.textContent = `${result.items.length} aplicativos instalados e iniciados.`;
       }
       installApplicationsButton.textContent = 'Aplicativos instalados';
-      await Promise.all([loadApplicationStatuses(), loadApplicationDataStatuses()]);
+      await Promise.all([
+        loadApplicationStatuses(),
+        loadApplicationDataStatuses(),
+        loadQBittorrentAccess(),
+      ]);
     } else {
       const failed = result.items.find((item) => item.error);
       if (installationResultElement) {
@@ -660,7 +708,11 @@ installApplicationsButton?.addEventListener('click', () => void installApplicati
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);
   await loadApplications();
-  await Promise.all([loadApplicationStatuses(), loadApplicationDataStatuses()]);
+  await Promise.all([
+    loadApplicationStatuses(),
+    loadApplicationDataStatuses(),
+    loadQBittorrentAccess(),
+  ]);
 }
 
 void loadInitialState();

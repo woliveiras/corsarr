@@ -14,6 +14,10 @@ export function ChooseStorageLocation() {
   return window['go']['main']['App']['ChooseStorageLocation']();
 }
 
+export function CopyQBittorrentPassword() {
+  return window['go']['main']['App']['CopyQBittorrentPassword']();
+}
+
 export function GetApplicationDataStatuses() {
   return window['go']['main']['App']['GetApplicationDataStatuses']();
 }
@@ -24,6 +28,10 @@ export function GetApplicationStatuses() {
 
 export function GetEnvironmentStatus() {
   return window['go']['main']['App']['GetEnvironmentStatus']();
+}
+
+export function GetQBittorrentAccessStatus() {
+  return window['go']['main']['App']['GetQBittorrentAccessStatus']();
 }
 
 export function GetSetupStatus() {

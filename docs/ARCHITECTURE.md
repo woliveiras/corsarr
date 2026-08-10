@@ -106,6 +106,20 @@ and allowlisted account keys. Secret values redact default formatting and JSON,
 never enter desktop state, and are not exposed by Wails. Other platforms return
 an explicit unsupported error until their native secure-store adapters ship.
 
+`internal/provisioning.QBittorrentProvisioner` consumes the bounded owned log
+tail only when no stored credential exists, extracts the official temporary
+password without logging it, authenticates as `admin`, generates and stores a
+permanent password before activating the `corsarr` user, then verifies a fresh
+login. A failed activation removes the prepared Keychain entry. On every
+reconcile it enforces the shared complete/incomplete paths and the approved
+Radarr, Sonarr, and Lidarr categories. The HTTP client is loopback-only,
+redirect-free, cookie-scoped, and response-bounded.
+
+The Wails surface can report only whether qBittorrent access is available and
+the non-secret username. Password retrieval remains in Go: an explicit
+`CopyQBittorrentPassword` intent writes it directly to the native clipboard and
+returns no secret to TypeScript.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

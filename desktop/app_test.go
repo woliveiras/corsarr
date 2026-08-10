@@ -6,6 +6,7 @@ import (
 
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
+	"github.com/woliveiras/corsarr/internal/credentials"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
 )
@@ -140,6 +141,19 @@ func TestArchiveApplicationDataUsesBoundedApplicationService(t *testing.T) {
 	}
 }
 
+func TestCopyQBittorrentPasswordWritesOnlyToNativeClipboard(t *testing.T) {
+	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
+	clipboard := &desktopClipboard{}
+	app := &App{serviceAccess: access, clipboard: clipboard}
+
+	if err := app.CopyQBittorrentPassword(); err != nil {
+		t.Fatalf("copy qBittorrent password: %v", err)
+	}
+	if clipboard.value != "private-password" || clipboard.calls != 1 {
+		t.Fatalf("expected one native clipboard write, got %#v", clipboard)
+	}
+}
+
 func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
 		Provider: runtimeenv.ProviderDocker,
@@ -233,6 +247,33 @@ type desktopApplicationDataManager struct {
 	result        storage.ArchivedApplicationData
 	applicationID string
 	calls         int
+}
+
+type desktopServiceAccess struct {
+	password credentials.Secret
+}
+
+func (a *desktopServiceAccess) QBittorrentStatus(context.Context) (application.ServiceAccessStatus, error) {
+	return application.ServiceAccessStatus{
+		ApplicationID: "qbittorrent",
+		Username:      "corsarr",
+		Available:     true,
+	}, nil
+}
+
+func (a *desktopServiceAccess) QBittorrentPassword(context.Context) (credentials.Secret, error) {
+	return a.password, nil
+}
+
+type desktopClipboard struct {
+	value string
+	calls int
+}
+
+func (c *desktopClipboard) SetText(_ context.Context, value string) error {
+	c.calls++
+	c.value = value
+	return nil
 }
 
 func (m *desktopApplicationDataManager) ListStatuses() ([]storage.ApplicationDataStatus, error) {

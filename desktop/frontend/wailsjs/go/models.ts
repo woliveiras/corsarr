@@ -144,6 +144,22 @@ export namespace application {
 	        this.technicalDetail = source["technicalDetail"];
 	    }
 	}
+	export class ServiceAccessStatus {
+	    applicationId: string;
+	    username: string;
+	    available: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ServiceAccessStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.applicationId = source["applicationId"];
+	        this.username = source["username"];
+	        this.available = source["available"];
+	    }
+	}
 	export class SetupStatus {
 	    storagePath?: string;
 	    applications: string[];

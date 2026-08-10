@@ -53,8 +53,11 @@ can now record explicit consent and install the selected, digest-pinned
 containers through the ownership-safe runtime boundary. Installation waits for
 each allowlisted local web endpoint to become responsive before moving to its
 dependants. Radarr, Sonarr, and Lidarr then receive their approved library root
-folders idempotently through local authenticated APIs. Automatic runtime
-installation and download-client/cross-application connections are still
+folders idempotently through local authenticated APIs. qBittorrent's temporary
+administrator credential is replaced with a generated `corsarr` credential
+stored in the macOS Keychain; approved download paths and per-app categories are
+reconciled, and the user can copy the password explicitly from the desktop UI.
+Automatic runtime installation and cross-application connections are still
 pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after

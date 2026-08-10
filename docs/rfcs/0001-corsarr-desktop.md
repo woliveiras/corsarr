@@ -670,3 +670,6 @@ claims must be rechecked during implementation and release validation.
   bootstrap without exposing a general log method to the frontend.
 - 2026-08-10: Added an allowlisted macOS Keychain adapter for generated service
   secrets; non-macOS platforms fail closed until native adapters are added.
+- 2026-08-10: Automated qBittorrent temporary-password replacement, permanent
+  Keychain storage, approved download paths/categories, and explicit native
+  clipboard access without returning the password to TypeScript.

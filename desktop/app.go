@@ -9,6 +9,7 @@ import (
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
+	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
 	"github.com/woliveiras/corsarr/internal/provisioning"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
@@ -56,6 +57,21 @@ type applicationDataManager interface {
 	Archive(ctx context.Context, applicationID string) (storage.ArchivedApplicationData, error)
 }
 
+type serviceAccessManager interface {
+	QBittorrentStatus(ctx context.Context) (application.ServiceAccessStatus, error)
+	QBittorrentPassword(ctx context.Context) (credentials.Secret, error)
+}
+
+type clipboardWriter interface {
+	SetText(ctx context.Context, value string) error
+}
+
+type wailsClipboard struct{}
+
+func (wailsClipboard) SetText(ctx context.Context, value string) error {
+	return wailsruntime.ClipboardSetText(ctx, value)
+}
+
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	ctx              context.Context
@@ -68,6 +84,8 @@ type App struct {
 	installation     installationManager
 	management       applicationManager
 	applicationData  applicationDataManager
+	serviceAccess    serviceAccessManager
+	clipboard        clipboardWriter
 }
 
 func NewApp() (*App, error) {
@@ -99,12 +117,19 @@ func NewApp() (*App, error) {
 		provisioning.NewARRCredentialReader(),
 		provisioning.NewARRClient(catalog),
 	)
+	credentialStore := credentials.NewPlatformStore()
+	qbittorrentProvisioner := provisioning.NewQBittorrentProvisioner(
+		dockerManager,
+		credentialStore,
+		provisioning.NewQBittorrentClient(catalog),
+	)
+	provisioner := provisioning.NewChainProvisioner(arrProvisioner, qbittorrentProvisioner)
 	installation := application.NewInstallationService(
 		setup,
 		storage.NewLayoutPreparer(),
 		catalog,
 		installer,
-		arrProvisioner,
+		provisioner,
 	)
 	management := application.NewManagementService(catalog, dockerManager)
 	applicationData := application.NewDataManagementService(
@@ -124,6 +149,8 @@ func NewApp() (*App, error) {
 		installation:     installation,
 		management:       management,
 		applicationData:  applicationData,
+		serviceAccess:    application.NewServiceAccess(credentialStore),
+		clipboard:        wailsClipboard{},
 	}, nil
 }
 
@@ -215,6 +242,20 @@ func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, err
 
 func (a *App) ArchiveApplicationData(id string) (storage.ArchivedApplicationData, error) {
 	return a.applicationData.Archive(a.appContext(), id)
+}
+
+func (a *App) GetQBittorrentAccessStatus() (application.ServiceAccessStatus, error) {
+	return a.serviceAccess.QBittorrentStatus(a.appContext())
+}
+
+// CopyQBittorrentPassword reveals the secret only to the native clipboard after
+// an explicit user action. The value is never returned through Wails.
+func (a *App) CopyQBittorrentPassword() error {
+	secret, err := a.serviceAccess.QBittorrentPassword(a.appContext())
+	if err != nil {
+		return err
+	}
+	return a.clipboard.SetText(a.appContext(), secret.Reveal())
 }
 
 func (a *App) appContext() context.Context {

@@ -106,7 +106,8 @@ func (s *darwinKeychain) Load(ctx context.Context, key Key) (Secret, error) {
 		"-w",
 	)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "could not be found") {
+		detail := strings.ToLower(output + " " + err.Error())
+		if strings.Contains(detail, "could not be found") {
 			return Secret{}, ErrCredentialNotFound
 		}
 		return Secret{}, fmt.Errorf("load credential from macOS Keychain: %w", err)
@@ -123,14 +124,14 @@ func (s *darwinKeychain) Delete(ctx context.Context, key Key) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.runner.Run(
+	output, err := s.runner.Run(
 		ctx,
 		darwinSecurityPath,
 		"delete-generic-password",
 		"-a", account,
 		"-s", keychainService,
 	)
-	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "could not be found") {
+	if err != nil && !strings.Contains(strings.ToLower(output+" "+err.Error()), "could not be found") {
 		return fmt.Errorf("delete credential from macOS Keychain: %w", err)
 	}
 	return nil

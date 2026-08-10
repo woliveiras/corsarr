@@ -706,6 +706,22 @@ nav {
   cursor: wait;
 }
 
+.credential-button {
+  padding: 6px 9px;
+  color: #d8c889;
+  background: rgba(216, 200, 137, 0.08);
+  border: 1px solid rgba(216, 200, 137, 0.24);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.credential-button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
 .select-button[aria-pressed="true"] {
   color: #092126;
   background: #5ccdbf;
