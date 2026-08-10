@@ -607,6 +607,10 @@ claims must be rechecked during implementation and release validation.
 ### Managed applications and images
 
 - [Prowlarr application connections and synchronization](https://wiki.servarr.com/en/prowlarr/quick-start-guide)
+- [Prowlarr application provider API controller](https://github.com/Prowlarr/Prowlarr/blob/develop/src/Prowlarr.Api.V1/Applications/ApplicationController.cs)
+- [Prowlarr Radarr connection settings](https://github.com/Prowlarr/Prowlarr/blob/develop/src/NzbDrone.Core/Applications/Radarr/RadarrSettings.cs)
+- [Prowlarr Sonarr connection settings](https://github.com/Prowlarr/Prowlarr/blob/develop/src/NzbDrone.Core/Applications/Sonarr/SonarrSettings.cs)
+- [Prowlarr Lidarr connection settings](https://github.com/Prowlarr/Prowlarr/blob/develop/src/NzbDrone.Core/Applications/Lidarr/LidarrSettings.cs)
 - [Radarr authentication and API key](https://wiki.servarr.com/radarr/settings#security)
 - [Radarr generated API-key configuration source](https://github.com/Radarr/Radarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
 - [Sonarr generated API-key configuration source](https://github.com/Sonarr/Sonarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
@@ -679,3 +683,5 @@ claims must be rechecked during implementation and release validation.
   clipboard access without returning the password to TypeScript.
 - 2026-08-10: Connected qBittorrent to Radarr, Sonarr, and Lidarr from each
   app's live provider schema while preserving user-created download clients.
+- 2026-08-10: Added reserved full-sync Prowlarr connections for Radarr, Sonarr,
+  and Lidarr from Prowlarr's live application schemas.

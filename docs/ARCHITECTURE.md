@@ -128,6 +128,14 @@ alias, port, stored credentials, and app-specific category, then creates or
 updates only the exact reserved provider name. Other user providers are never
 selected. Radarr and Sonarr use API v3; Lidarr uses API v1.
 
+`internal/provisioning.ProwlarrProvisioner` runs when each supported target Arr
+app becomes ready. It reads the Prowlarr and target keys from their fixed config
+files and reconciles only `<App> (Corsarr)` through Prowlarr API v1. The client
+starts from the live application schema, retains its default category lists,
+sets full sync plus the internal `prowlarr` and target network URLs, and relies
+on Prowlarr's provider create/update path to validate connectivity. User-created
+Prowlarr applications remain untouched.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

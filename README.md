@@ -59,8 +59,10 @@ stored in the macOS Keychain; approved download paths and per-app categories are
 reconciled, and the user can copy the password explicitly from the desktop UI.
 Radarr, Sonarr, and Lidarr receive a dedicated `qBittorrent (Corsarr)` download
 client built from each app's live provider schema, without modifying providers
-created by the user. Automatic runtime installation plus Prowlarr, Bazarr, and
-media-server connections are still pending. Installed
+created by the user. Prowlarr also receives reserved full-sync connections to
+those three apps using their internal network URLs and generated API keys.
+Automatic runtime installation plus Bazarr and media-server connections are
+still pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and

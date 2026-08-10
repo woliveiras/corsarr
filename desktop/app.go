@@ -127,10 +127,15 @@ func NewApp() (*App, error) {
 		credentialStore,
 		arrClient,
 	)
+	prowlarrProvisioner := provisioning.NewProwlarrProvisioner(
+		arrCredentials,
+		provisioning.NewProwlarrClient(catalog),
+	)
 	provisioner := provisioning.NewChainProvisioner(
 		arrProvisioner,
 		qbittorrentProvisioner,
 		arrDownloadProvisioner,
+		prowlarrProvisioner,
 	)
 	installation := application.NewInstallationService(
 		setup,
