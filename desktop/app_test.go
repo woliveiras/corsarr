@@ -171,6 +171,24 @@ func TestPrepareStorageLayoutRejectsIncompleteSetupWithoutWriting(t *testing.T) 
 	}
 }
 
+func TestPrepareStorageLayoutRechecksPersistedStorageBeforeWriting(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"jellyfin"}, CanPrepare: true,
+	}}
+	inspector := &desktopStorageInspector{status: storage.Status{
+		Path: "/Users/test/Media", State: storage.StateInvalid, TechnicalDetail: "disk is full",
+	}}
+	layout := &desktopLayoutPreparer{}
+	app := &App{setup: setup, storageInspector: inspector, layoutPreparer: layout}
+
+	if _, err := app.PrepareStorageLayout(); err == nil {
+		t.Fatal("expected stale storage rejection")
+	}
+	if inspector.calls != 1 || layout.prepareCalls != 0 {
+		t.Fatalf("expected recheck before write, inspector=%d layout=%d", inspector.calls, layout.prepareCalls)
+	}
+}
+
 func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) {
 	installation := &desktopInstallationManager{result: application.InstallationResult{Complete: true}}
 	runtime := &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}}
@@ -203,6 +221,32 @@ func TestInstallSelectedApplicationsDoesNotPrepareWithoutConsent(t *testing.T) {
 	}
 	if runtime.calls != 0 || installation.calls != 0 {
 		t.Fatalf("unauthorized install accessed runtime=%d installer=%d", runtime.calls, installation.calls)
+	}
+}
+
+func TestInstallSelectedApplicationsRechecksStorageBeforeRuntimePreparation(t *testing.T) {
+	runtime := &desktopRuntimePreparer{}
+	installation := &desktopInstallationManager{}
+	inspector := &desktopStorageInspector{status: storage.Status{
+		Path: "/Users/test/Media", State: storage.StateInvalid, TechnicalDetail: "disk is full",
+	}}
+	app := &App{
+		setup: &desktopSetupManager{status: application.SetupStatus{
+			StoragePath: "/Users/test/Media", TermsAccepted: true,
+		}},
+		storageInspector: inspector, runtimeOnboarding: runtime, installation: installation,
+	}
+
+	if _, err := app.InstallSelectedApplications(); err == nil {
+		t.Fatal("expected stale storage rejection")
+	}
+	if inspector.calls != 1 || runtime.calls != 0 || installation.calls != 0 {
+		t.Fatalf(
+			"stale storage reached mutation: inspector=%d runtime=%d installer=%d",
+			inspector.calls,
+			runtime.calls,
+			installation.calls,
+		)
 	}
 }
 

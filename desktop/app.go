@@ -523,6 +523,9 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	if !setup.TermsAccepted {
 		return application.InstallationResult{}, application.ErrTermsNotAccepted
 	}
+	if err := a.ensureStorageReady(setup.StoragePath); err != nil {
+		return application.InstallationResult{}, err
+	}
 	if err := a.ensureHostReady(); err != nil {
 		return application.InstallationResult{}, err
 	}
@@ -659,6 +662,17 @@ func (a *App) appContext() context.Context {
 	return a.ctx
 }
 
+func (a *App) ensureStorageReady(path string) error {
+	if a.storageInspector == nil {
+		return nil
+	}
+	status := a.storageInspector.Inspect(path)
+	if status.State == storage.StateReady {
+		return nil
+	}
+	return fmt.Errorf("reviewed storage is no longer ready: %s", status.TechnicalDetail)
+}
+
 // PrepareStorageLayout creates only the reviewed Corsarr-owned directory tree.
 func (a *App) PrepareStorageLayout() (storage.LayoutStatus, error) {
 	setupStatus, err := a.setup.Load()
@@ -669,6 +683,9 @@ func (a *App) PrepareStorageLayout() (storage.LayoutStatus, error) {
 		return storage.LayoutStatus{}, fmt.Errorf(
 			"storage and at least one application must be selected before preparation",
 		)
+	}
+	if err := a.ensureStorageReady(setupStatus.StoragePath); err != nil {
+		return storage.LayoutStatus{}, err
 	}
 	return a.layoutPreparer.Prepare(setupStatus.StoragePath, setupStatus.Applications)
 }
