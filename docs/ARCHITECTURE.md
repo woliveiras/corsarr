@@ -17,6 +17,11 @@ request that an application be opened by ID. It can request predefined,
 read-only environment diagnostics, but cannot submit a URL, shell command,
 runtime command, or container operation.
 
+The Wails surface now also exposes explicit current-terms acceptance and one
+bounded `InstallSelectedApplications` intent. That method reads only persisted,
+reviewed setup and delegates to `InstallationService`; the frontend cannot
+provide an image, mount, container name, runtime argument, or cleanup target.
+
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,
 excludes infrastructure-only services without web UI metadata, and resolves

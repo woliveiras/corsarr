@@ -48,10 +48,11 @@ mutating it, and validates a user-selected storage folder for free space,
 writing, and hardlink support. It also persists the reviewed folder and
 application selection, includes catalog dependencies automatically, and creates
 an idempotent `Corsarr/` media/configuration tree only after explicit
-confirmation. It does not install or start containers yet. Runtime installation,
-container lifecycle, and application provisioning are the next milestones; the
-prerequisites and usage instructions below still describe the current CLI
-release.
+confirmation. With an existing healthy Docker runtime, the development build
+can now record explicit consent and install the selected, digest-pinned
+containers through the ownership-safe runtime boundary. Automatic runtime
+installation and cross-application provisioning are still pending; the
+prerequisites and usage instructions below describe the current CLI release.
 
 ### Run Corsarr Desktop from source
 

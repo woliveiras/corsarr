@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/application"
+	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
 )
@@ -110,6 +111,19 @@ func TestPrepareStorageLayoutRejectsIncompleteSetupWithoutWriting(t *testing.T) 
 	}
 }
 
+func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) {
+	installation := &desktopInstallationManager{result: application.InstallationResult{Complete: true}}
+	app := &App{installation: installation}
+
+	result, err := app.InstallSelectedApplications()
+	if err != nil {
+		t.Fatalf("install selected applications: %v", err)
+	}
+	if !result.Complete || installation.calls != 1 {
+		t.Fatalf("expected one completed installation call, got result=%#v calls=%d", result, installation.calls)
+	}
+}
+
 func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
 		Provider: runtimeenv.ProviderDocker,
@@ -192,6 +206,19 @@ type desktopLayoutPreparer struct {
 	basePath       string
 	applicationIDs []string
 	prepareCalls   int
+}
+
+type desktopInstallationManager struct {
+	result application.InstallationResult
+	calls  int
+}
+
+func (m *desktopInstallationManager) InstallSelected(
+	context.Context,
+	runtimecatalog.RuntimeOptions,
+) (application.InstallationResult, error) {
+	m.calls++
+	return m.result, nil
 }
 
 func (f *desktopLayoutPreparer) Prepare(

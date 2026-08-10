@@ -721,6 +721,30 @@ nav {
   color: #ee9b8f;
 }
 
+.terms-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 680px;
+  margin-top: 12px;
+  color: #8ca5a3;
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.terms-consent input {
+  margin: 2px 0 0;
+  accent-color: #5ccdbf;
+}
+
+.installation-actions {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+  min-width: 170px;
+}
+
 .prepare-button {
   flex: 0 0 auto;
   padding: 10px 14px;
@@ -741,6 +765,22 @@ nav {
   color: #64807f;
   background: rgba(100, 128, 127, 0.08);
   border-color: rgba(100, 128, 127, 0.13);
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  padding: 9px 13px;
+  color: #8bd3ca;
+  background: rgba(78, 175, 165, 0.08);
+  border: 1px solid rgba(92, 191, 181, 0.16);
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -787,6 +827,9 @@ nav {
     flex-direction: column;
   }
   .prepare-button {
+    width: 100%;
+  }
+  .installation-actions {
     width: 100%;
   }
 }

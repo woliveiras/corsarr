@@ -8,6 +8,8 @@ import (
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/woliveiras/corsarr/internal/application"
+	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
+	"github.com/woliveiras/corsarr/internal/orchestrator"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/services"
 	statefile "github.com/woliveiras/corsarr/internal/state"
@@ -33,6 +35,13 @@ type storageLayoutPreparer interface {
 	Prepare(basePath string, applicationIDs []string) (storage.LayoutStatus, error)
 }
 
+type installationManager interface {
+	InstallSelected(
+		ctx context.Context,
+		options runtimecatalog.RuntimeOptions,
+	) (application.InstallationResult, error)
+}
+
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	ctx              context.Context
@@ -42,6 +51,7 @@ type App struct {
 	storageInspector storageInspector
 	setup            setupManager
 	layoutPreparer   storageLayoutPreparer
+	installation     installationManager
 }
 
 func NewApp() (*App, error) {
@@ -62,6 +72,18 @@ func NewApp() (*App, error) {
 		return nil, err
 	}
 	setup := application.NewSetupService(catalog, statefile.NewFileStore(statePath))
+	approvedCatalog, err := runtimecatalog.NewRuntimeCatalog(registry)
+	if err != nil {
+		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
+	}
+	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
+	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog)
+	installation := application.NewInstallationService(
+		setup,
+		storage.NewLayoutPreparer(),
+		catalog,
+		installer,
+	)
 
 	return &App{
 		catalog:          catalog,
@@ -70,6 +92,7 @@ func NewApp() (*App, error) {
 		storageInspector: storage.NewInspector(),
 		setup:            setup,
 		layoutPreparer:   storage.NewLayoutPreparer(),
+		installation:     installation,
 	}, nil
 }
 
@@ -126,6 +149,14 @@ func (a *App) SaveApplicationSelection(applicationIDs []string) (application.Set
 
 func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
 	return a.setup.AcceptCurrentTerms()
+}
+
+func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return a.installation.InstallSelected(ctx, runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000})
 }
 
 // PrepareStorageLayout creates only the reviewed Corsarr-owned directory tree.

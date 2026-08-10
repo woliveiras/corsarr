@@ -646,3 +646,6 @@ claims must be rechecked during implementation and release validation.
   These boundaries are not exposed as an install action yet.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
+- 2026-08-10: Connected the reviewed setup to the transactional Docker install
+  flow. This installs containers only with an existing healthy runtime;
+  application provisioning and runtime onboarding remain pending.

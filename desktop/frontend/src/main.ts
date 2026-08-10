@@ -1,8 +1,10 @@
 import './style.css';
 import {
+  AcceptCurrentTerms,
   ChooseStorageLocation,
   GetEnvironmentStatus,
   GetSetupStatus,
+  InstallSelectedApplications,
   ListApplications,
   OpenApplication,
   PrepareStorageLayout,
@@ -84,9 +86,13 @@ root.innerHTML = [
   '        <p class="eyebrow">PRÓXIMA ETAPA</p>',
   '        <h2 id="installation-title">Revise sua preparação</h2>',
   '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
+  '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a usar o runtime instalado, baixar as imagens aprovadas e criar os serviços selecionados. Li que cada aplicação mantém sua própria licença.</span></label>',
   '        <p id="installation-result" class="installation-result"></p>',
   '      </div>',
-  '      <button id="prepare-storage" class="prepare-button" type="button" disabled>Criar estrutura de pastas</button>',
+  '      <div class="installation-actions">',
+  '        <button id="prepare-storage" class="secondary-button" type="button" disabled>Preparar pastas</button>',
+  '        <button id="install-applications" class="prepare-button" type="button" disabled>Instalar aplicativos</button>',
+  '      </div>',
   '    </section>',
   '  </main>',
   '</div>',
@@ -113,6 +119,9 @@ const chooseStorageButton = document.querySelector<HTMLButtonElement>('#choose-s
 const installationSummaryElement = document.querySelector<HTMLElement>('#installation-summary');
 const installationResultElement = document.querySelector<HTMLElement>('#installation-result');
 const prepareStorageButton = document.querySelector<HTMLButtonElement>('#prepare-storage');
+const installApplicationsButton =
+  document.querySelector<HTMLButtonElement>('#install-applications');
+const acceptTermsCheckbox = document.querySelector<HTMLInputElement>('#accept-terms');
 
 let setupStatus: application.SetupStatus | undefined;
 let availableApplications: Application[] = [];
@@ -280,7 +289,14 @@ function applySetupStatus(status: application.SetupStatus): void {
       installationSummaryElement.textContent = 'Agora escolha ao menos um aplicativo.';
     }
   }
-  if (prepareStorageButton) prepareStorageButton.disabled = !status.canInstall;
+  if (prepareStorageButton) prepareStorageButton.disabled = !status.canPrepare;
+  if (acceptTermsCheckbox) acceptTermsCheckbox.checked = status.termsAccepted;
+  updateInstallAuthority();
+}
+
+function updateInstallAuthority(): void {
+  if (!installApplicationsButton) return;
+  installApplicationsButton.disabled = !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked;
 }
 
 async function loadSetup(): Promise<void> {
@@ -446,7 +462,7 @@ async function chooseStorage(): Promise<void> {
 chooseStorageButton?.addEventListener('click', () => void chooseStorage());
 
 async function prepareStorage(): Promise<void> {
-  if (!prepareStorageButton || !setupStatus?.canInstall) return;
+  if (!prepareStorageButton || !setupStatus?.canPrepare) return;
 
   prepareStorageButton.disabled = true;
   prepareStorageButton.textContent = 'Preparando…';
@@ -469,11 +485,57 @@ async function prepareStorage(): Promise<void> {
     }
     prepareStorageButton.textContent = 'Tentar novamente';
   } finally {
-    prepareStorageButton.disabled = !setupStatus?.canInstall;
+    prepareStorageButton.disabled = !setupStatus?.canPrepare;
   }
 }
 
 prepareStorageButton?.addEventListener('click', () => void prepareStorage());
+acceptTermsCheckbox?.addEventListener('change', updateInstallAuthority);
+
+async function installApplications(): Promise<void> {
+  if (!installApplicationsButton || !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked) {
+    return;
+  }
+
+  installApplicationsButton.disabled = true;
+  installApplicationsButton.textContent = 'Instalando…';
+  if (installationResultElement) {
+    installationResultElement.textContent =
+      'Preparando o ambiente e baixando os aplicativos. Isso pode levar alguns minutos.';
+    installationResultElement.classList.remove('error');
+  }
+
+  try {
+    applySetupStatus(await AcceptCurrentTerms());
+    const result = await InstallSelectedApplications();
+    if (result.complete) {
+      if (installationResultElement) {
+        installationResultElement.textContent = `${result.items.length} aplicativos instalados e iniciados.`;
+      }
+      installApplicationsButton.textContent = 'Aplicativos instalados';
+    } else {
+      const failed = result.items.find((item) => item.error);
+      if (installationResultElement) {
+        installationResultElement.textContent = failed
+          ? `A instalação de ${failed.applicationId} não terminou. Tente novamente ou consulte os detalhes técnicos.`
+          : 'A instalação não terminou. Tente novamente.';
+        installationResultElement.classList.add('error');
+      }
+      installApplicationsButton.textContent = 'Tentar novamente';
+    }
+  } catch {
+    if (installationResultElement) {
+      installationResultElement.textContent =
+        'Não foi possível iniciar a instalação. Sua pasta e seleção continuam preservadas.';
+      installationResultElement.classList.add('error');
+    }
+    installApplicationsButton.textContent = 'Tentar novamente';
+  } finally {
+    updateInstallAuthority();
+  }
+}
+
+installApplicationsButton?.addEventListener('click', () => void installApplications());
 
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);

@@ -23,7 +23,9 @@ Phase 1 provides the reusable application catalog and Wails v2 shell. Early
 Phase 2 work adds read-only Docker diagnostics and native storage-folder
 inspection. The current slice persists the reviewed folder and application
 selection in the operating system's user configuration directory and creates
-the Corsarr-owned storage layout on explicit request. It does not install or
-manage containers. The RFC must not be read as a description of the current
-release: only milestones explicitly recorded as implemented have been
-delivered.
+the Corsarr-owned storage layout on explicit request. The latest development
+slice additionally accepts versioned runtime consent and can install selected
+digest-pinned containers when Docker is already healthy. Runtime onboarding and
+application provisioning are not yet implemented. The RFC must not be read as a
+description of the current release: only milestones explicitly recorded as
+implemented have been delivered.
