@@ -26,13 +26,9 @@ export namespace application {
 	}
 	export class ApplicationUpdateResult {
 	    applicationId: string;
-	    previousImage: string;
-	    approvedImage: string;
-	    backup: storage.BackupResult;
-	    status: runtime.ContainerStatus;
 	    updated: boolean;
 	    rolledBack: boolean;
-	    error?: string;
+	    requiresAttention: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new ApplicationUpdateResult(source);
@@ -41,32 +37,10 @@ export namespace application {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.applicationId = source["applicationId"];
-	        this.previousImage = source["previousImage"];
-	        this.approvedImage = source["approvedImage"];
-	        this.backup = this.convertValues(source["backup"], storage.BackupResult);
-	        this.status = this.convertValues(source["status"], runtime.ContainerStatus);
 	        this.updated = source["updated"];
 	        this.rolledBack = source["rolledBack"];
-	        this.error = source["error"];
+	        this.requiresAttention = source["requiresAttention"];
 	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class EnvironmentStatus {
 	    platform: string;
@@ -106,8 +80,7 @@ export namespace application {
 	}
 	export class InstallationItem {
 	    applicationId: string;
-	    status: runtime.ContainerStatus;
-	    error?: string;
+	    failed: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new InstallationItem(source);
@@ -116,27 +89,8 @@ export namespace application {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.applicationId = source["applicationId"];
-	        this.status = this.convertValues(source["status"], runtime.ContainerStatus);
-	        this.error = source["error"];
+	        this.failed = source["failed"];
 	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class InstallationResult {
 	    items: InstallationItem[];
@@ -455,7 +409,6 @@ export namespace storage {
 	export class ArchivedApplicationData {
 	    applicationId: string;
 	    archived: boolean;
-	    archivePath?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new ArchivedApplicationData(source);
@@ -465,7 +418,6 @@ export namespace storage {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.applicationId = source["applicationId"];
 	        this.archived = source["archived"];
-	        this.archivePath = source["archivePath"];
 	    }
 	}
 	export class BackupResult {

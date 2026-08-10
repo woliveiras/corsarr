@@ -35,8 +35,9 @@ type ApplicationProvisioner interface {
 
 type InstallationItem struct {
 	ApplicationID string                           `json:"applicationId"`
-	Status        containerruntime.ContainerStatus `json:"status"`
-	Error         string                           `json:"error,omitempty"`
+	Status        containerruntime.ContainerStatus `json:"-"`
+	Failed        bool                             `json:"failed"`
+	Error         string                           `json:"-"`
 }
 
 type InstallationResult struct {
@@ -121,6 +122,7 @@ func (s *InstallationService) InstallSelectedWithProgress(
 		item := InstallationItem{ApplicationID: applicationID, Status: status}
 		if installErr != nil {
 			item.Error = installErr.Error()
+			item.Failed = true
 			result.Items = append(result.Items, item)
 			notifyInstallationProgress(observer, applicationID, InstallationStageFailed, index+1, len(ordered))
 			return result, nil
@@ -128,6 +130,7 @@ func (s *InstallationService) InstallSelectedWithProgress(
 		notifyInstallationProgress(observer, applicationID, InstallationStageProvisioning, index+1, len(ordered))
 		if provisionErr := s.provisioner.Provision(ctx, layout.RootPath, applicationID); provisionErr != nil {
 			item.Error = provisionErr.Error()
+			item.Failed = true
 			result.Items = append(result.Items, item)
 			notifyInstallationProgress(observer, applicationID, InstallationStageFailed, index+1, len(ordered))
 			return result, nil

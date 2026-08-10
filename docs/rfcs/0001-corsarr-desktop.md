@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: minimized completed-operation DTOs at the Wails boundary. Backup
+  and trash paths, checksums, internal image/status fields, and raw backend errors
+  remain in Go; TypeScript receives only catalog IDs and bounded failure,
+  rollback, update, archive, and attention state.
 - 2026-08-11: applied the runtime-contract fingerprint to idempotent install as
   well as update. A matching image with stale ports, mounts, init, or environment
   is no longer reused, and the idempotent path passed the real Docker installer

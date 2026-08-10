@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -36,6 +37,59 @@ func TestNewAppExposesCatalogWithoutArbitraryURLs(t *testing.T) {
 	}
 	if err := app.OpenLegalLink("radarr", "https://attacker.example"); err == nil {
 		t.Fatal("expected arbitrary legal URL to be rejected before reaching Wails runtime")
+	}
+}
+
+func TestDesktopResultContractsExcludeBackendRecoveryDetails(t *testing.T) {
+	results := []any{
+		application.InstallationResult{Items: []application.InstallationItem{{
+			ApplicationID: "radarr",
+			Status:        applicationContainerStatus("installed-image"),
+			Error:         "runtime socket /private/runtime.sock failed",
+		}}},
+		application.ApplicationUpdateResult{
+			ApplicationID: "radarr",
+			PreviousImage: "previous-image",
+			ApprovedImage: "approved-image",
+			Backup: storage.BackupResult{
+				Path: "/Users/test/Media/Corsarr/backups/private.tar.gz", SHA256: "private-checksum",
+			},
+			Status: applicationContainerStatus("updated-image"),
+			Error:  "update backend detail",
+		},
+		storage.ArchivedApplicationData{
+			ApplicationID: "radarr", Archived: true,
+			ArchivePath: "/Users/test/Media/Corsarr/trash/config/radarr/private",
+		},
+	}
+	for _, result := range results {
+		payload, err := json.Marshal(result)
+		if err != nil {
+			t.Fatalf("encode desktop result: %v", err)
+		}
+		for _, forbidden := range []string{
+			"runtime.sock", "installed-image", "previous-image", "approved-image",
+			"private.tar.gz", "private-checksum", "updated-image", "backend detail",
+			"trash/config",
+		} {
+			if strings.Contains(string(payload), forbidden) {
+				t.Fatalf("desktop payload exposed %q: %s", forbidden, payload)
+			}
+		}
+	}
+	installationPayload, _ := json.Marshal(application.InstallationItem{Failed: true})
+	if !strings.Contains(string(installationPayload), `"failed":true`) {
+		t.Fatalf("desktop install payload omitted bounded failure state: %s", installationPayload)
+	}
+	updatePayload, _ := json.Marshal(application.ApplicationUpdateResult{RequiresAttention: true})
+	if !strings.Contains(string(updatePayload), `"requiresAttention":true`) {
+		t.Fatalf("desktop update payload omitted bounded attention state: %s", updatePayload)
+	}
+}
+
+func applicationContainerStatus(image string) runtimeenv.ContainerStatus {
+	return runtimeenv.ContainerStatus{
+		ApplicationID: "radarr", State: runtimeenv.ContainerStateRunning, Image: image,
 	}
 }
 

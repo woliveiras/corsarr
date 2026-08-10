@@ -466,13 +466,13 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
     try {
       const result = await UpdateApplication(target.id);
       if (messageElement) {
-        if (result.updated && !result.error) {
+        if (result.updated && !result.requiresAttention) {
           messageElement.textContent = `${target.name} foi atualizado e verificado. O backup das configurações foi preservado.`;
           messageElement.classList.remove('error');
         } else if (result.rolledBack) {
           messageElement.textContent = `A nova versão de ${target.name} não passou na verificação. A imagem anterior foi restaurada e o backup foi preservado.`;
           messageElement.classList.add('error');
-        } else if (result.error) {
+        } else if (result.requiresAttention) {
           messageElement.textContent = `${target.name} requer atenção após a tentativa de atualização. Consulte os detalhes técnicos.`;
           messageElement.classList.add('error');
         } else {
@@ -1261,7 +1261,7 @@ async function installApplications(): Promise<void> {
         loadQBittorrentAccess(),
       ]);
     } else {
-      const failed = result.items.find((item) => item.error);
+      const failed = result.items.find((item) => item.failed);
       if (installationResultElement) {
         installationResultElement.textContent = failed
           ? `A instalação de ${failed.applicationId} não terminou. Tente novamente ou consulte os detalhes técnicos.`

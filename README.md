@@ -104,6 +104,9 @@ than a compatibility failure. Corsarr repeats this check immediately before
 folder preparation and installation. During installation, the UI reports the
 current application and whether it is being started or configured without
 exposing runtime logs or credentials.
+Completed-operation payloads likewise expose only bounded success, failure,
+rollback, and attention flags; private backup/trash paths, checksums, raw runtime
+status, and backend error text remain in Go.
 The Go desktop boundary also permits only one setup, runtime, or application-data
 change at a time, so update, lifecycle, removal, onboarding, and login recovery
 cannot race each other even if separate interface controls are activated.

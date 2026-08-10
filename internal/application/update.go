@@ -22,14 +22,15 @@ type UpdateExecutor interface {
 }
 
 type ApplicationUpdateResult struct {
-	ApplicationID string                           `json:"applicationId"`
-	PreviousImage string                           `json:"previousImage"`
-	ApprovedImage string                           `json:"approvedImage"`
-	Backup        storage.BackupResult             `json:"backup"`
-	Status        containerruntime.ContainerStatus `json:"status"`
-	Updated       bool                             `json:"updated"`
-	RolledBack    bool                             `json:"rolledBack"`
-	Error         string                           `json:"error,omitempty"`
+	ApplicationID     string                           `json:"applicationId"`
+	PreviousImage     string                           `json:"-"`
+	ApprovedImage     string                           `json:"-"`
+	Backup            storage.BackupResult             `json:"-"`
+	Status            containerruntime.ContainerStatus `json:"-"`
+	Updated           bool                             `json:"updated"`
+	RolledBack        bool                             `json:"rolledBack"`
+	RequiresAttention bool                             `json:"requiresAttention"`
+	Error             string                           `json:"-"`
 }
 
 type UpdateService struct {
@@ -87,6 +88,7 @@ func (s *UpdateService) Update(
 	result := applicationUpdateResult(execution)
 	if updateErr != nil {
 		result.Error = updateErr.Error()
+		result.RequiresAttention = !result.RolledBack
 		return result, nil
 	}
 	if !result.Updated {
@@ -94,6 +96,7 @@ func (s *UpdateService) Update(
 	}
 	if err := s.provisioner.Provision(ctx, filepath.Join(setup.StoragePath, "Corsarr"), applicationID); err != nil {
 		result.Error = fmt.Sprintf("reconcile application configuration after update: %v", err)
+		result.RequiresAttention = true
 	}
 	return result, nil
 }

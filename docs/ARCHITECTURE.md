@@ -26,6 +26,11 @@ An application-wide non-blocking change gate wraps every setup, runtime, storage
 layout, update, lifecycle, and configuration-archive intent. A second mutation
 is rejected before it reaches an adapter, and login recovery uses the same gate;
 read-only status and catalog methods remain available while work is in progress.
+Result DTOs also minimize backend disclosure: installation returns a catalog ID
+plus a bounded failure flag, update returns updated/rolled-back/attention flags,
+and configuration archival returns only whether it occurred. Recovery paths,
+backup checksums, runtime status objects, and raw backend errors are retained for
+Go control flow but carry `json:"-"` and do not appear in generated bindings.
 
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,

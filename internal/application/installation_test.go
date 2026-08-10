@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -88,6 +89,31 @@ func TestInstallationServiceReportsBoundedProgress(t *testing.T) {
 	}
 }
 
+func TestInstallationServiceReturnsOnlyBoundedFailureStateToDesktop(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	service := NewInstallationService(
+		&installationSetup{status: SetupStatus{
+			StoragePath: "/Users/test/Media", Applications: []string{"jellyfin"},
+			CanPrepare: true, CanInstall: true, TermsAccepted: true,
+		}},
+		&installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Media/Corsarr"}},
+		NewCatalog(registry),
+		&recordingInstaller{err: errors.New("private runtime detail")},
+		&recordingProvisioner{},
+	)
+
+	result, err := service.InstallSelected(context.Background(), runtimecatalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("return structured install failure: %v", err)
+	}
+	if result.Complete || len(result.Items) != 1 || !result.Items[0].Failed || result.Items[0].Error == "" {
+		t.Fatalf("unexpected bounded install failure %#v", result)
+	}
+}
+
 type installationSetup struct{ status SetupStatus }
 
 func (s *installationSetup) Load() (SetupStatus, error) { return s.status, nil }
@@ -98,7 +124,10 @@ func (l *installationLayout) Prepare(string, []string) (storage.LayoutStatus, er
 	return l.status, nil
 }
 
-type recordingInstaller struct{ applicationIDs []string }
+type recordingInstaller struct {
+	applicationIDs []string
+	err            error
+}
 
 type recordingProvisioner struct{ applicationIDs []string }
 
@@ -118,6 +147,9 @@ func (i *recordingInstaller) Install(
 	_ runtimecatalog.RuntimeOptions,
 ) (containerruntime.ContainerStatus, error) {
 	i.applicationIDs = append(i.applicationIDs, applicationID)
+	if i.err != nil {
+		return containerruntime.ContainerStatus{}, i.err
+	}
 	return containerruntime.ContainerStatus{
 		ApplicationID: applicationID,
 		State:         containerruntime.ContainerStateRunning,

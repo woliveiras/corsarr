@@ -13,7 +13,7 @@ import (
 type ArchivedApplicationData struct {
 	ApplicationID string `json:"applicationId"`
 	Archived      bool   `json:"archived"`
-	ArchivePath   string `json:"archivePath,omitempty"`
+	ArchivePath   string `json:"-"`
 }
 
 type ApplicationDataStatus struct {

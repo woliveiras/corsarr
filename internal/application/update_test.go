@@ -59,8 +59,27 @@ func TestUpdateServiceReturnsRollbackOutcomeWithoutProvisioning(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected structured update failure, got %v", err)
 	}
-	if !result.RolledBack || result.Error == "" || len(provisioner.applicationIDs) != 0 {
+	if !result.RolledBack || result.RequiresAttention || result.Error == "" || len(provisioner.applicationIDs) != 0 {
 		t.Fatalf("unexpected rollback result %#v", result)
+	}
+}
+
+func TestUpdateServiceReportsAttentionWithoutExposingDetailsToDesktop(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	executor := &fakeUpdateExecutor{err: errors.New("private rollback detail")}
+	service := NewUpdateService(&updateSetup{status: SetupStatus{
+		StoragePath: "/tmp", CanInstall: true, TermsAccepted: true,
+	}}, NewCatalog(registry), executor, &recordingProvisioner{})
+
+	result, err := service.Update(context.Background(), "sonarr", catalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("return structured update failure: %v", err)
+	}
+	if !result.RequiresAttention || result.Error == "" || result.RolledBack {
+		t.Fatalf("unexpected attention result %#v", result)
 	}
 }
 
