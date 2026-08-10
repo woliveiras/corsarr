@@ -87,6 +87,14 @@ The returned credential redacts default formatting and JSON serialization and
 is never part of the Wails API; only the Go provisioning layer may explicitly
 reveal it for an allowlisted loopback API request.
 
+`internal/provisioning.ARRClient` accepts only the catalog loopback endpoint,
+the correct API version, and the approved container library path for Radarr,
+Sonarr, or Lidarr. It sends the key in `X-Api-Key`, disables proxy and redirect
+following, bounds response bodies, lists existing root folders first, and posts
+only when the desired path is absent. `ARRProvisioner` connects this client to
+installation after readiness, making retries idempotent. Unsupported apps are
+left unchanged for their dedicated provisioners.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

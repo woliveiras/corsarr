@@ -29,6 +29,10 @@ type ApplicationInstaller interface {
 	) (containerruntime.ContainerStatus, error)
 }
 
+type ApplicationProvisioner interface {
+	Provision(ctx context.Context, rootPath string, applicationID string) error
+}
+
 type InstallationItem struct {
 	ApplicationID string                           `json:"applicationId"`
 	Status        containerruntime.ContainerStatus `json:"status"`
@@ -41,10 +45,11 @@ type InstallationResult struct {
 }
 
 type InstallationService struct {
-	setup     InstallationSetup
-	layout    InstallationLayout
-	catalog   *Catalog
-	installer ApplicationInstaller
+	setup       InstallationSetup
+	layout      InstallationLayout
+	catalog     *Catalog
+	installer   ApplicationInstaller
+	provisioner ApplicationProvisioner
 }
 
 func NewInstallationService(
@@ -52,8 +57,12 @@ func NewInstallationService(
 	layout InstallationLayout,
 	catalog *Catalog,
 	installer ApplicationInstaller,
+	provisioner ApplicationProvisioner,
 ) *InstallationService {
-	return &InstallationService{setup: setup, layout: layout, catalog: catalog, installer: installer}
+	return &InstallationService{
+		setup: setup, layout: layout, catalog: catalog,
+		installer: installer, provisioner: provisioner,
+	}
 }
 
 func (s *InstallationService) InstallSelected(
@@ -82,6 +91,11 @@ func (s *InstallationService) InstallSelected(
 		item := InstallationItem{ApplicationID: applicationID, Status: status}
 		if installErr != nil {
 			item.Error = installErr.Error()
+			result.Items = append(result.Items, item)
+			return result, nil
+		}
+		if provisionErr := s.provisioner.Provision(ctx, layout.RootPath, applicationID); provisionErr != nil {
+			item.Error = provisionErr.Error()
 			result.Items = append(result.Items, item)
 			return result, nil
 		}

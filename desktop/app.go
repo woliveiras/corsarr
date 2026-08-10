@@ -95,11 +95,16 @@ func NewApp() (*App, error) {
 	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
 	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
 	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog, readiness)
+	arrProvisioner := provisioning.NewARRProvisioner(
+		provisioning.NewARRCredentialReader(),
+		provisioning.NewARRClient(catalog),
+	)
 	installation := application.NewInstallationService(
 		setup,
 		storage.NewLayoutPreparer(),
 		catalog,
 		installer,
+		arrProvisioner,
 	)
 	management := application.NewManagementService(catalog, dockerManager)
 	applicationData := application.NewDataManagementService(

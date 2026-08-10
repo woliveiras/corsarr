@@ -612,6 +612,9 @@ claims must be rechecked during implementation and release validation.
 - [Sonarr generated API-key configuration source](https://github.com/Sonarr/Sonarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
 - [Prowlarr generated API-key configuration source](https://github.com/Prowlarr/Prowlarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
 - [Lidarr generated API-key configuration source](https://github.com/Lidarr/Lidarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
+- [Radarr root-folder API controller and v3 contract](https://github.com/Radarr/Radarr/blob/develop/src/Radarr.Api.V3/RootFolders/RootFolderController.cs)
+- [Sonarr root-folder API controller and v3 contract](https://github.com/Sonarr/Sonarr/blob/develop/src/Sonarr.Api.V3/RootFolders/RootFolderController.cs)
+- [Lidarr root-folder API controller and v1 contract](https://github.com/Lidarr/Lidarr/blob/develop/src/Lidarr.Api.V1/RootFolders/RootFolderController.cs)
 - [qBittorrent WebUI API](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29)
 - [qBittorrent API key authentication](https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29)
 - [Jellyfin server API and local Swagger UI](https://github.com/jellyfin/jellyfin)
@@ -661,3 +664,5 @@ claims must be rechecked during implementation and release validation.
   loopback endpoints before installation advances to dependent applications.
 - 2026-08-10: Added bounded, symlink-safe local discovery of generated Arr API
   keys with redacted formatting and no frontend exposure.
+- 2026-08-10: Added idempotent authenticated creation of approved Radarr,
+  Sonarr, and Lidarr library root folders after readiness.

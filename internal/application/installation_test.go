@@ -33,7 +33,8 @@ func TestInstallationServicePreparesAndInstallsInDependencyOrder(t *testing.T) {
 	}}
 	layout := &installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Media/Corsarr"}}
 	installer := &recordingInstaller{}
-	service := NewInstallationService(setup, layout, NewCatalog(registry), installer)
+	provisioner := &recordingProvisioner{}
+	service := NewInstallationService(setup, layout, NewCatalog(registry), installer, provisioner)
 
 	result, err := service.InstallSelected(context.Background(), runtimecatalog.RuntimeOptions{})
 	if err != nil {
@@ -45,6 +46,9 @@ func TestInstallationServicePreparesAndInstallsInDependencyOrder(t *testing.T) {
 	want := []string{"prowlarr", "qbittorrent", "radarr"}
 	if !reflect.DeepEqual(installer.applicationIDs, want) {
 		t.Fatalf("unexpected installation order\nwant: %v\n got: %v", want, installer.applicationIDs)
+	}
+	if !reflect.DeepEqual(provisioner.applicationIDs, want) {
+		t.Fatalf("unexpected provisioning order\nwant: %v\n got: %v", want, provisioner.applicationIDs)
 	}
 }
 
@@ -59,6 +63,17 @@ func (l *installationLayout) Prepare(string, []string) (storage.LayoutStatus, er
 }
 
 type recordingInstaller struct{ applicationIDs []string }
+
+type recordingProvisioner struct{ applicationIDs []string }
+
+func (p *recordingProvisioner) Provision(
+	_ context.Context,
+	_ string,
+	applicationID string,
+) error {
+	p.applicationIDs = append(p.applicationIDs, applicationID)
+	return nil
+}
 
 func (i *recordingInstaller) Install(
 	_ context.Context,

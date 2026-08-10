@@ -52,8 +52,10 @@ confirmation. With an existing healthy Docker runtime, the development build
 can now record explicit consent and install the selected, digest-pinned
 containers through the ownership-safe runtime boundary. Installation waits for
 each allowlisted local web endpoint to become responsive before moving to its
-dependants. Automatic runtime
-installation and cross-application provisioning are still pending. Installed
+dependants. Radarr, Sonarr, and Lidarr then receive their approved library root
+folders idempotently through local authenticated APIs. Automatic runtime
+installation and download-client/cross-application connections are still
+pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and
