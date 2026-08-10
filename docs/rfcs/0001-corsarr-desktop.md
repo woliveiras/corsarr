@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: serialized desktop setup, runtime, storage, update, lifecycle, and
+  data-archive mutations behind one backend gate. Concurrent requests fail
+  before reaching their adapters, and automatic login recovery participates in
+  the same authority boundary.
 - 2026-08-11: made application-data confirmation show an approximate logical
   size measured only from regular files below the selected application's config
   directory. Nested links and special files fail closed; shared media and

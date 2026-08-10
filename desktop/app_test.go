@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/application"
@@ -239,6 +240,44 @@ func TestInstallSelectedApplicationsDoesNotPrepareWithoutConsent(t *testing.T) {
 	}
 	if runtime.calls != 0 || installation.calls != 0 {
 		t.Fatalf("unauthorized install accessed runtime=%d installer=%d", runtime.calls, installation.calls)
+	}
+}
+
+func TestDesktopRejectsConcurrentRuntimeMutation(t *testing.T) {
+	updates := &desktopUpdateManager{
+		started: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	management := &desktopApplicationManager{}
+	app := &App{
+		setup:      &desktopSetupManager{},
+		updates:    updates,
+		management: management,
+	}
+	updateDone := make(chan error, 1)
+	go func() {
+		_, err := app.UpdateApplication("radarr")
+		updateDone <- err
+	}()
+	<-updates.started
+
+	removeErr := app.RemoveApplication("radarr")
+	if removeErr == nil || !strings.Contains(removeErr.Error(), "another change is already in progress") {
+		t.Fatalf("expected concurrent mutation rejection, got %v", removeErr)
+	}
+	if management.removeCalls != 0 {
+		t.Fatalf("concurrent removal reached runtime manager %d times", management.removeCalls)
+	}
+
+	close(updates.release)
+	if err := <-updateDone; err != nil {
+		t.Fatalf("finish original update: %v", err)
+	}
+	if err := app.RemoveApplication("radarr"); err != nil {
+		t.Fatalf("run removal after update: %v", err)
+	}
+	if management.removeCalls != 1 {
+		t.Fatalf("expected one removal after update, got %d", management.removeCalls)
 	}
 }
 
@@ -818,7 +857,8 @@ type desktopApplicationDataManager struct {
 }
 
 type desktopApplicationManager struct {
-	statuses []application.ManagedApplicationStatus
+	statuses    []application.ManagedApplicationStatus
+	removeCalls int
 }
 
 func (m *desktopApplicationManager) ListStatuses(context.Context) []application.ManagedApplicationStatus {
@@ -828,12 +868,17 @@ func (m *desktopApplicationManager) ListStatuses(context.Context) []application.
 func (m *desktopApplicationManager) Start(context.Context, string) error   { return nil }
 func (m *desktopApplicationManager) Stop(context.Context, string) error    { return nil }
 func (m *desktopApplicationManager) Restart(context.Context, string) error { return nil }
-func (m *desktopApplicationManager) Remove(context.Context, string) error  { return nil }
+func (m *desktopApplicationManager) Remove(context.Context, string) error {
+	m.removeCalls++
+	return nil
+}
 
 type desktopUpdateManager struct {
 	result        application.ApplicationUpdateResult
 	applicationID string
 	calls         int
+	started       chan struct{}
+	release       chan struct{}
 }
 
 func (m *desktopUpdateManager) Update(
@@ -843,6 +888,12 @@ func (m *desktopUpdateManager) Update(
 ) (application.ApplicationUpdateResult, error) {
 	m.calls++
 	m.applicationID = applicationID
+	if m.started != nil {
+		close(m.started)
+	}
+	if m.release != nil {
+		<-m.release
+	}
 	return m.result, nil
 }
 

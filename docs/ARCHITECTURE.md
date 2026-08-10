@@ -22,6 +22,10 @@ The Wails surface now also exposes explicit current-terms acceptance and one
 bounded `InstallSelectedApplications` intent. That method reads only persisted,
 reviewed setup and delegates to `InstallationService`; the frontend cannot
 provide an image, mount, container name, runtime argument, or cleanup target.
+An application-wide non-blocking change gate wraps every setup, runtime, storage
+layout, update, lifecycle, and configuration-archive intent. A second mutation
+is rejected before it reaches an adapter, and login recovery uses the same gate;
+read-only status and catalog methods remain available while work is in progress.
 
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,

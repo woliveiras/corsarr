@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -9,6 +10,7 @@ import (
 	goruntime "runtime"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -139,6 +141,8 @@ type DiagnosticExportResult struct {
 	Path     string `json:"path,omitempty"`
 }
 
+var errDesktopChangeInProgress = errors.New("another change is already in progress")
+
 type wailsClipboard struct{}
 
 func (wailsClipboard) SetText(ctx context.Context, value string) error {
@@ -153,6 +157,7 @@ func (wailsEventPublisher) Emit(ctx context.Context, name string, data ...interf
 
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
+	changeMu           sync.Mutex
 	ctx                context.Context
 	catalog            *application.Catalog
 	legal              *legal.Catalog
@@ -344,6 +349,12 @@ type BackgroundRecoveryEvent struct {
 }
 
 func (a *App) runBackgroundRecovery(ctx context.Context) {
+	release, err := a.beginChange()
+	if err != nil {
+		return
+	}
+	defer release()
+
 	setup, err := a.setup.Load()
 	if err != nil || !setup.StartAtLogin || !setup.StartAtLoginSupported ||
 		setup.StartAtLoginRequiresApproval {
@@ -366,6 +377,12 @@ func (a *App) ListApplications() []application.ApplicationSummary {
 
 // SelectRecommendedApplications persists Corsarr's reviewed starter stack.
 func (a *App) SelectRecommendedApplications() (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
+
 	applicationIDs, err := a.catalog.RecommendedApplicationIDs()
 	if err != nil {
 		return application.SetupStatus{}, err
@@ -399,6 +416,12 @@ func (a *App) GetEnvironmentStatus() application.EnvironmentStatus {
 }
 
 func (a *App) PrepareRuntime() (onboarding.PreparationResult, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return onboarding.PreparationResult{}, err
+	}
+	defer release()
+
 	setup, err := a.setup.Load()
 	if err != nil {
 		return onboarding.PreparationResult{}, err
@@ -448,6 +471,12 @@ func (a *App) ExportDiagnostics() (DiagnosticExportResult, error) {
 
 // ChooseStorageLocation opens the native picker and inspects only the selected directory.
 func (a *App) ChooseStorageLocation() (storage.Status, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return storage.Status{}, err
+	}
+	defer release()
+
 	ctx := a.ctx
 	if ctx == nil {
 		ctx = context.Background()
@@ -476,6 +505,11 @@ func (a *App) GetSetupStatus() (application.SetupStatus, error) {
 }
 
 func (a *App) SaveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
 	return a.saveApplicationSelection(applicationIDs)
 }
 
@@ -505,14 +539,29 @@ func (a *App) saveApplicationSelection(applicationIDs []string) (application.Set
 }
 
 func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
 	return a.setup.AcceptCurrentTerms()
 }
 
 func (a *App) SetStartAtLogin(enabled bool) (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
 	return a.setup.SetStartAtLogin(enabled)
 }
 
 func (a *App) SetJellyfinLAN(enabled bool) (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
 	for _, status := range a.management.ListStatuses(a.appContext()) {
 		if status.ApplicationID == "jellyfin" &&
 			status.State != application.ManagedStateNotInstalled {
@@ -529,6 +578,12 @@ func (a *App) OpenStartAtLoginSettings() error {
 }
 
 func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.InstallationResult{}, err
+	}
+	defer release()
+
 	setup, err := a.setup.Load()
 	if err != nil {
 		return application.InstallationResult{}, err
@@ -569,22 +624,48 @@ func (a *App) GetApplicationStatuses() []application.ManagedApplicationStatus {
 }
 
 func (a *App) StartApplication(id string) error {
+	release, err := a.beginChange()
+	if err != nil {
+		return err
+	}
+	defer release()
 	return a.management.Start(a.appContext(), id)
 }
 
 func (a *App) StopApplication(id string) error {
+	release, err := a.beginChange()
+	if err != nil {
+		return err
+	}
+	defer release()
 	return a.management.Stop(a.appContext(), id)
 }
 
 func (a *App) RestartApplication(id string) error {
+	release, err := a.beginChange()
+	if err != nil {
+		return err
+	}
+	defer release()
 	return a.management.Restart(a.appContext(), id)
 }
 
 func (a *App) RemoveApplication(id string) error {
+	release, err := a.beginChange()
+	if err != nil {
+		return err
+	}
+	defer release()
 	return a.management.Remove(a.appContext(), id)
 }
 
 func (a *App) UpdateApplication(id string) (application.ApplicationUpdateResult, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.ApplicationUpdateResult{}, err
+	}
+	defer release()
+
 	setup, err := a.setup.Load()
 	if err != nil {
 		return application.ApplicationUpdateResult{}, err
@@ -609,6 +690,11 @@ func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, err
 }
 
 func (a *App) ArchiveApplicationData(id string) (storage.ArchivedApplicationData, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return storage.ArchivedApplicationData{}, err
+	}
+	defer release()
 	return a.applicationData.Archive(a.appContext(), id)
 }
 
@@ -688,6 +774,12 @@ func (a *App) ensureStorageReady(path string) error {
 
 // PrepareStorageLayout creates only the reviewed Corsarr-owned directory tree.
 func (a *App) PrepareStorageLayout() (storage.LayoutStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return storage.LayoutStatus{}, err
+	}
+	defer release()
+
 	setupStatus, err := a.setup.Load()
 	if err != nil {
 		return storage.LayoutStatus{}, err
@@ -701,6 +793,13 @@ func (a *App) PrepareStorageLayout() (storage.LayoutStatus, error) {
 		return storage.LayoutStatus{}, err
 	}
 	return a.layoutPreparer.Prepare(setupStatus.StoragePath, setupStatus.Applications)
+}
+
+func (a *App) beginChange() (func(), error) {
+	if !a.changeMu.TryLock() {
+		return nil, errDesktopChangeInProgress
+	}
+	return a.changeMu.Unlock, nil
 }
 
 // OpenApplication opens only a local URL resolved from Corsarr's catalog.
