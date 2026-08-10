@@ -76,6 +76,14 @@ pod. The adapter exists for the accepted cross-platform spike and is not wired
 as the desktop default. Podman installation, Podman Machine supervision, host
 path translation, and the empirical promotion matrix remain separate gates.
 
+The spike also has a bounded read-only `PodmanDetector` and a separate
+`PodmanMachineService`. On macOS and Windows, that service inspects only the
+fixed rootless `podman-machine-default`, initializes it with Corsarr's reviewed
+resource defaults when absent, starts it when stopped, and polls runtime
+readiness. It never removes or purges a machine, changes its provider, installs
+the Podman client, or invokes Podman Machine on native Linux. Neither component
+is exposed through Wails while the promotion gate remains open.
+
 The adapter can also return at most 500 trailing log lines from a container,
 after the same ownership verification. This capability is backend-only and is
 not exposed through Wails because startup logs may contain temporary secrets;

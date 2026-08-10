@@ -78,6 +78,13 @@ and the adapter has not yet run the Corsarr workloads across the required host
 and filesystem matrix. Docker remains the default until those results are
 recorded here.
 
+A follow-up checkpoint added a bounded readiness detector plus idempotent
+default-machine supervision for macOS and Windows. The service uses only the
+official `machine inspect`, `machine init`, and `machine start` operations,
+keeps the machine rootless, uses explicit non-interactive connection selection,
+and performs no machine deletion or runtime installation. These deterministic
+contract tests still do not replace the required real-host matrix.
+
 ## Pros and Cons of the Options
 
 ### Docker-first with a Podman gate
@@ -153,6 +160,9 @@ commands/API versions, results, and known limitations.
 - [Microsoft WSL commands](https://learn.microsoft.com/windows/wsl/basic-commands)
 - [Podman installation](https://podman.io/docs/installation)
 - [Podman Machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html)
+- [Podman Machine inspect](https://docs.podman.io/en/stable/markdown/podman-machine-inspect.1.html)
+- [Podman Machine init](https://docs.podman.io/en/stable/markdown/podman-machine-init.1.html)
+- [Podman Machine start](https://docs.podman.io/en/stable/markdown/podman-machine-start.1.html)
 - [Podman REST API](https://docs.podman.io/en/stable/_static/api.html)
 - [Podman Go bindings](https://pkg.go.dev/github.com/containers/podman/v5/pkg/bindings)
 - [Podman system service security boundary](https://docs.podman.io/en/stable/markdown/podman-system-service.1.html)
