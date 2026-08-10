@@ -38,6 +38,14 @@ absolute bind mounts, valid ports, and an explicit loopback-or-LAN exposure for
 every published port. The Docker and Podman translation layers must consume this
 contract; it is not exposed as a general-purpose Wails method.
 
+`internal/runtime.DockerManager` is the first adapter for that contract. It uses
+fixed Docker CLI operations with argument arrays, creates a labeled bridge
+network, translates validated specs into labeled containers, and supports
+inspect/start/stop/restart/remove. Lifecycle changes verify Corsarr ownership
+before touching an existing container; a resource with the expected name but
+without matching labels is rejected. The adapter is not wired to an install
+button yet, so this boundary alone does not create runtime resources.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
