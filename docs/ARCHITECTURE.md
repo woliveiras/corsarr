@@ -69,6 +69,13 @@ before touching an existing container; a resource with the expected name but
 without matching labels is rejected. Application services call this adapter
 only after catalog, reviewed-setup, and consent checks.
 
+`internal/runtime.PodmanManager` implements the same contract with direct,
+fixed Podman CLI operations. It manages independent containers on the same
+labeled network; it does not use Compose or place the media stack in a shared
+pod. The adapter exists for the accepted cross-platform spike and is not wired
+as the desktop default. Podman installation, Podman Machine supervision, host
+path translation, and the empirical promotion matrix remain separate gates.
+
 The adapter can also return at most 500 trailing log lines from a container,
 after the same ownership verification. This capability is backend-only and is
 not exposed through Wails because startup logs may contain temporary secrets;

@@ -3,7 +3,6 @@ package runtime
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -13,62 +12,26 @@ import (
 	"time"
 )
 
-const (
-	CorsarrNetworkName       = "corsarr"
-	managedLabelName         = "io.corsarr.managed"
-	applicationLabelName     = "io.corsarr.application"
-	managedLabelValue        = "true"
-	containerNamePrefix      = "corsarr-"
-	containerOwnershipFormat = `{{index .Config.Labels "io.corsarr.managed"}}`
-	networkOwnershipFormat   = `{{index .Labels "io.corsarr.managed"}}`
-)
-
-var (
-	ErrResourceNotFound = errors.New("runtime resource not found")
-	ErrResourceNotOwned = errors.New("runtime resource is not owned by Corsarr")
-)
-
-type Manager interface {
-	EnsureNetwork(ctx context.Context) error
-	Pull(ctx context.Context, image string) error
-	Create(ctx context.Context, spec ContainerSpec) error
-	Inspect(ctx context.Context, applicationID string) (ContainerStatus, error)
-	Start(ctx context.Context, applicationID string) error
-	Stop(ctx context.Context, applicationID string) error
-	Restart(ctx context.Context, applicationID string) error
-	Remove(ctx context.Context, applicationID string) error
-	Logs(ctx context.Context, applicationID string, tail int) (string, error)
-}
-
-type ContainerState string
-
-const (
-	ContainerStateCreated    ContainerState = "created"
-	ContainerStateRunning    ContainerState = "running"
-	ContainerStateStopped    ContainerState = "stopped"
-	ContainerStateRestarting ContainerState = "restarting"
-	ContainerStatePaused     ContainerState = "paused"
-	ContainerStateUnknown    ContainerState = "unknown"
-)
-
-type ContainerStatus struct {
-	ApplicationID string         `json:"applicationId"`
-	State         ContainerState `json:"state"`
-	Health        string         `json:"health,omitempty"`
-	Image         string         `json:"image,omitempty"`
-}
-
-type DockerManager struct {
+// PodmanManager controls individual containers directly through the Podman
+// client. Compose files and pods are deliberately outside this adapter: the
+// desired state remains owned by the Corsarr catalog and orchestrator.
+type PodmanManager struct {
 	runner  CommandRunner
 	timeout time.Duration
 }
 
-func NewDockerManager(runner CommandRunner, timeout time.Duration) *DockerManager {
-	return &DockerManager{runner: runner, timeout: timeout}
+var _ Manager = (*PodmanManager)(nil)
+
+func NewPodmanManager(runner CommandRunner, timeout time.Duration) *PodmanManager {
+	return &PodmanManager{runner: runner, timeout: timeout}
 }
 
-func (m *DockerManager) EnsureNetwork(ctx context.Context) error {
-	output, err := m.run(ctx, "network", "inspect", CorsarrNetworkName, "--format", networkOwnershipFormat)
+func (m *PodmanManager) EnsureNetwork(ctx context.Context) error {
+	output, err := m.run(
+		ctx,
+		"network", "inspect", CorsarrNetworkName,
+		"--format", networkOwnershipFormat,
+	)
 	if err == nil {
 		if strings.TrimSpace(output) != managedLabelValue {
 			return fmt.Errorf("network %s: %w", CorsarrNetworkName, ErrResourceNotOwned)
@@ -92,7 +55,7 @@ func (m *DockerManager) EnsureNetwork(ctx context.Context) error {
 	return nil
 }
 
-func (m *DockerManager) Pull(ctx context.Context, image string) error {
+func (m *PodmanManager) Pull(ctx context.Context, image string) error {
 	if err := validateImageReference(image); err != nil {
 		return err
 	}
@@ -102,7 +65,7 @@ func (m *DockerManager) Pull(ctx context.Context, image string) error {
 	return nil
 }
 
-func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
+func (m *PodmanManager) Create(ctx context.Context, spec ContainerSpec) error {
 	if err := spec.Validate(); err != nil {
 		return err
 	}
@@ -132,14 +95,13 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 		if binding.Exposure == ExposureLAN {
 			host = "0.0.0.0"
 		}
-		publishedPort := fmt.Sprintf(
+		arguments = append(arguments, "--publish", fmt.Sprintf(
 			"%s:%d:%d/%s",
 			host,
 			binding.HostPort,
 			binding.ContainerPort,
 			binding.Protocol,
-		)
-		arguments = append(arguments, "--publish", publishedPort)
+		))
 	}
 
 	mounts := append([]BindMount(nil), spec.Mounts...)
@@ -174,7 +136,7 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 	return nil
 }
 
-func (m *DockerManager) Inspect(
+func (m *PodmanManager) Inspect(
 	ctx context.Context,
 	applicationID string,
 ) (ContainerStatus, error) {
@@ -228,19 +190,19 @@ func (m *DockerManager) Inspect(
 	return status, nil
 }
 
-func (m *DockerManager) Start(ctx context.Context, applicationID string) error {
+func (m *PodmanManager) Start(ctx context.Context, applicationID string) error {
 	return m.ownedLifecycle(ctx, applicationID, "start")
 }
 
-func (m *DockerManager) Stop(ctx context.Context, applicationID string) error {
+func (m *PodmanManager) Stop(ctx context.Context, applicationID string) error {
 	return m.ownedLifecycle(ctx, applicationID, "stop")
 }
 
-func (m *DockerManager) Restart(ctx context.Context, applicationID string) error {
+func (m *PodmanManager) Restart(ctx context.Context, applicationID string) error {
 	return m.ownedLifecycle(ctx, applicationID, "restart")
 }
 
-func (m *DockerManager) Remove(ctx context.Context, applicationID string) error {
+func (m *PodmanManager) Remove(ctx context.Context, applicationID string) error {
 	if err := m.verifyOwnedContainer(ctx, applicationID); err != nil {
 		return err
 	}
@@ -250,9 +212,7 @@ func (m *DockerManager) Remove(ctx context.Context, applicationID string) error 
 	return nil
 }
 
-// Logs returns only a bounded tail from an owned container. It is intentionally
-// backend-only because application logs may contain bootstrap credentials.
-func (m *DockerManager) Logs(
+func (m *PodmanManager) Logs(
 	ctx context.Context,
 	applicationID string,
 	tail int,
@@ -273,7 +233,7 @@ func (m *DockerManager) Logs(
 	return output, nil
 }
 
-func (m *DockerManager) ownedLifecycle(
+func (m *PodmanManager) ownedLifecycle(
 	ctx context.Context,
 	applicationID string,
 	operation string,
@@ -287,7 +247,7 @@ func (m *DockerManager) ownedLifecycle(
 	return nil
 }
 
-func (m *DockerManager) verifyOwnedContainer(ctx context.Context, applicationID string) error {
+func (m *PodmanManager) verifyOwnedContainer(ctx context.Context, applicationID string) error {
 	if !runtimeApplicationIDPattern.MatchString(applicationID) {
 		return fmt.Errorf("unsafe application ID: %q", applicationID)
 	}
@@ -308,49 +268,12 @@ func (m *DockerManager) verifyOwnedContainer(ctx context.Context, applicationID 
 	return nil
 }
 
-func (m *DockerManager) run(ctx context.Context, arguments ...string) (string, error) {
-	dockerPath, err := m.runner.LookPath("docker")
+func (m *PodmanManager) run(ctx context.Context, arguments ...string) (string, error) {
+	podmanPath, err := m.runner.LookPath("podman")
 	if err != nil {
-		return "", fmt.Errorf("find Docker client: %w", err)
+		return "", fmt.Errorf("find Podman client: %w", err)
 	}
 	operationContext, cancel := context.WithTimeout(ctx, m.timeout)
 	defer cancel()
-	return m.runner.Run(operationContext, dockerPath, arguments...)
-}
-
-func containerName(applicationID string) string {
-	return containerNamePrefix + applicationID
-}
-
-func indicatesMissingResource(detail string, resource string) bool {
-	normalized := strings.ToLower(detail)
-	return strings.Contains(normalized, "no such "+resource) ||
-		(resource == "container" && strings.Contains(normalized, "no such object")) ||
-		(resource == "container" && strings.Contains(normalized, "no container with name or id")) ||
-		strings.Contains(normalized, resource+" not found") ||
-		(strings.Contains(normalized, resource) && strings.Contains(normalized, "not found"))
-}
-
-func containerCLIMountPath(hostPath string) string {
-	if strings.ContainsAny(hostPath, ",\"") {
-		return strconv.Quote(hostPath)
-	}
-	return hostPath
-}
-
-func normalizedContainerState(state string) ContainerState {
-	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "created":
-		return ContainerStateCreated
-	case "running":
-		return ContainerStateRunning
-	case "restarting":
-		return ContainerStateRestarting
-	case "paused":
-		return ContainerStatePaused
-	case "exited", "dead", "removing":
-		return ContainerStateStopped
-	default:
-		return ContainerStateUnknown
-	}
+	return m.runner.Run(operationContext, podmanPath, arguments...)
 }

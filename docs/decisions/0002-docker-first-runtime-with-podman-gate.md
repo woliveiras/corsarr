@@ -41,10 +41,10 @@ product domain to Docker or prematurely making Podman the default.
 Chosen option: **Docker-first MVP behind a runtime interface, with Podman
 promotion gated by a cross-platform spike**.
 
-The first implementation may use Docker Compose internally because that is the
-shortest path from the current CLI. New product behavior must depend on a
-runtime-neutral desired-state model and a narrow `Runtime` interface, not on
-Compose files or Docker-specific types.
+The desktop implementation controls Docker containers directly and does not use
+Compose. New product behavior depends on a runtime-neutral desired-state model
+and a narrow `Manager` interface, not on Compose files or Docker-specific
+types.
 
 Podman is a candidate for the default runtime before the stable desktop release.
 It will be promoted only if the validation gate in this record passes.
@@ -62,6 +62,21 @@ It will be promoted only if the validation gate in this record passes.
   Windows/macOS onboarding path.
 - Neutral: Windows and macOS require a Linux virtualization layer for either
   Docker or Podman.
+
+### Implementation checkpoint: direct Podman adapter
+
+The first direct `PodmanManager` adapter was added on 2026-08-10. It consumes
+the same validated `ContainerSpec` contract as Docker and uses fixed Podman CLI
+arguments for immutable image pulls, one labeled bridge network, independent
+labeled containers, bind mounts, ports, lifecycle operations, bounded logs, and
+inspection. It does not generate Compose YAML, create a shared pod, expose the
+Podman API, or make Podman selectable in the desktop UI.
+
+This is implementation evidence only. It does not satisfy the promotion gate:
+Podman is not installed by Corsarr, no Podman Machine lifecycle has shipped,
+and the adapter has not yet run the Corsarr workloads across the required host
+and filesystem matrix. Docker remains the default until those results are
+recorded here.
 
 ## Pros and Cons of the Options
 
