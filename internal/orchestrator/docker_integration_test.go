@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -39,6 +40,7 @@ func TestInstallerRealDockerContract(t *testing.T) {
 	}
 
 	hostPort := availableLoopbackPort(t)
+	mountPath := t.TempDir()
 	manager := containerruntime.NewDockerManager(runner, 30*time.Second)
 	runtime := &locallySeededRuntime{Manager: manager, image: image}
 	const applicationID = "installer-contract"
@@ -66,6 +68,9 @@ func TestInstallerRealDockerContract(t *testing.T) {
 			HostPort: hostPort, ContainerPort: 8025,
 			Protocol: containerruntime.ProtocolTCP, Exposure: containerruntime.ExposureLoopback,
 		}},
+		Mounts: []containerruntime.BindMount{{
+			HostPath: mountPath, ContainerPath: "/corsarr-contract", ReadOnly: true,
+		}},
 		Environment: map[string]string{"TZ": "Etc/UTC"},
 	}}
 	readiness := provisioning.NewHTTPReadiness(
@@ -87,6 +92,7 @@ func TestInstallerRealDockerContract(t *testing.T) {
 	if runtime.pullCalls != 1 {
 		t.Fatalf("expected one locally verified pull boundary, got %d", runtime.pullCalls)
 	}
+	verifyInstallerContractMount(t, ctx, runner, dockerPath)
 
 	status, err = installer.Install(
 		ctx,
@@ -104,6 +110,39 @@ func TestInstallerRealDockerContract(t *testing.T) {
 	if err := manager.Remove(ctx, applicationID); err != nil {
 		t.Fatalf("remove installer contract container: %v", err)
 	}
+}
+
+func verifyInstallerContractMount(
+	t *testing.T,
+	ctx context.Context,
+	runner containerruntime.OSCommandRunner,
+	dockerPath string,
+) {
+	t.Helper()
+	output, err := runner.Run(
+		ctx,
+		dockerPath,
+		"inspect", "corsarr-installer-contract", "--format", `{{json .Mounts}}`,
+	)
+	if err != nil {
+		t.Fatalf("inspect installer contract mounts: %v", err)
+	}
+	var mounts []struct {
+		Type        string `json:"Type"`
+		Source      string `json:"Source"`
+		Destination string `json:"Destination"`
+		RW          bool   `json:"RW"`
+	}
+	if err := json.Unmarshal([]byte(output), &mounts); err != nil {
+		t.Fatalf("decode installer contract mounts: %v", err)
+	}
+	for _, mount := range mounts {
+		if mount.Type == "bind" && mount.Source != "" &&
+			mount.Destination == "/corsarr-contract" && !mount.RW {
+			return
+		}
+	}
+	t.Fatalf("expected read-only host bind mount, got %#v", mounts)
 }
 
 type locallySeededRuntime struct {
