@@ -4,7 +4,10 @@ import "context"
 
 type Provider string
 
-const ProviderDocker Provider = "docker"
+const (
+	ProviderDocker Provider = "docker"
+	ProviderPodman Provider = "podman"
+)
 
 type State string
 
