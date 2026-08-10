@@ -50,7 +50,9 @@ application selection, includes catalog dependencies automatically, and creates
 an idempotent `Corsarr/` media/configuration tree only after explicit
 confirmation. With an existing healthy Docker runtime, the development build
 can now record explicit consent and install the selected, digest-pinned
-containers through the ownership-safe runtime boundary. Automatic runtime
+containers through the ownership-safe runtime boundary. Installation waits for
+each allowlisted local web endpoint to become responsive before moving to its
+dependants. Automatic runtime
 installation and cross-application provisioning are still pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after

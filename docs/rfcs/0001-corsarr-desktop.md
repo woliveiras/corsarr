@@ -653,3 +653,5 @@ claims must be rechecked during implementation and release validation.
   restart, and remove-preserving-data actions in Corsarr Desktop.
 - 2026-08-10: Separated container removal from recoverable application-data
   removal; shared media and downloads are never deletion targets.
+- 2026-08-10: Added bounded, redirect-free readiness checks against catalog
+  loopback endpoints before installation advances to dependent applications.

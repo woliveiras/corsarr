@@ -74,6 +74,11 @@ replaced implicitly; that case is routed to the future update/rollback flow.
 `internal/application.InstallationService` enforces current consent, prepares
 the reviewed layout, orders dependencies before consumers, and returns a
 structured per-application result while preserving already completed apps.
+`internal/provisioning.HTTPReadiness` then probes only the catalog-resolved
+loopback URL, without credentials or redirects, until the application accepts
+HTTP or a bounded timeout expires. A newly created container that never becomes
+ready is removed while its bind-mounted data remains available for diagnosis;
+an existing container is never removed by this check.
 
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its

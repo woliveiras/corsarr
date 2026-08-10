@@ -10,6 +10,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
+	"github.com/woliveiras/corsarr/internal/provisioning"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/services"
 	statefile "github.com/woliveiras/corsarr/internal/state"
@@ -92,7 +93,8 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
 	}
 	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
-	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog)
+	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
+	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog, readiness)
 	installation := application.NewInstallationService(
 		setup,
 		storage.NewLayoutPreparer(),

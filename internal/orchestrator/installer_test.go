@@ -15,7 +15,8 @@ func TestInstallerCompletesOwnedContainerLifecycle(t *testing.T) {
 		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning,
 	}}
 	resolver := &fakeSpecResolver{spec: validInstallerSpec("radarr")}
-	installer := NewInstaller(manager, resolver)
+	readiness := &fakeReadiness{}
+	installer := NewInstaller(manager, resolver, readiness)
 
 	status, err := installer.Install(
 		context.Background(),
@@ -33,6 +34,9 @@ func TestInstallerCompletesOwnedContainerLifecycle(t *testing.T) {
 	if !reflect.DeepEqual(manager.operations, want) {
 		t.Fatalf("unexpected install operations\nwant: %v\n got: %v", want, manager.operations)
 	}
+	if !reflect.DeepEqual(readiness.applications, []string{"radarr"}) {
+		t.Fatalf("expected readiness verification, got %v", readiness.applications)
+	}
 }
 
 func TestInstallerRemovesIncompleteContainerAfterStartFailure(t *testing.T) {
@@ -40,7 +44,11 @@ func TestInstallerRemovesIncompleteContainerAfterStartFailure(t *testing.T) {
 		initialInspectErr: containerruntime.ErrResourceNotFound,
 		startErr:          errors.New("runtime stopped"),
 	}
-	installer := NewInstaller(manager, &fakeSpecResolver{spec: validInstallerSpec("radarr")})
+	installer := NewInstaller(
+		manager,
+		&fakeSpecResolver{spec: validInstallerSpec("radarr")},
+		&fakeReadiness{},
+	)
 
 	_, err := installer.Install(
 		context.Background(),
@@ -62,7 +70,8 @@ func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
 	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
 		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning, Image: spec.Image,
 	}}
-	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec})
+	readiness := &fakeReadiness{}
+	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec}, readiness)
 
 	status, err := installer.Install(context.Background(), "radarr", "/tmp/Corsarr", catalog.RuntimeOptions{})
 	if err != nil {
@@ -73,6 +82,33 @@ func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
 	}
 	if !reflect.DeepEqual(manager.operations, []string{"network", "inspect"}) {
 		t.Fatalf("expected no container recreation, got %v", manager.operations)
+	}
+	if !reflect.DeepEqual(readiness.applications, []string{"radarr"}) {
+		t.Fatalf("expected existing application readiness check, got %v", readiness.applications)
+	}
+}
+
+func TestInstallerRemovesNewContainerWhenReadinessFails(t *testing.T) {
+	manager := &fakeRuntimeManager{
+		initialInspectErr: containerruntime.ErrResourceNotFound,
+		inspectStatus: containerruntime.ContainerStatus{
+			ApplicationID: "radarr",
+			State:         containerruntime.ContainerStateRunning,
+		},
+	}
+	installer := NewInstaller(
+		manager,
+		&fakeSpecResolver{spec: validInstallerSpec("radarr")},
+		&fakeReadiness{err: errors.New("not ready")},
+	)
+
+	_, err := installer.Install(context.Background(), "radarr", "/tmp/Corsarr", catalog.RuntimeOptions{})
+	if err == nil {
+		t.Fatal("expected readiness failure")
+	}
+	want := []string{"network", "inspect", "pull", "create", "start", "inspect", "remove"}
+	if !reflect.DeepEqual(manager.operations, want) {
+		t.Fatalf("expected incomplete container cleanup\nwant: %v\n got: %v", want, manager.operations)
 	}
 }
 
@@ -86,6 +122,16 @@ func validInstallerSpec(applicationID string) containerruntime.ContainerSpec {
 type fakeSpecResolver struct {
 	spec containerruntime.ContainerSpec
 	err  error
+}
+
+type fakeReadiness struct {
+	applications []string
+	err          error
+}
+
+func (r *fakeReadiness) Wait(_ context.Context, applicationID string) error {
+	r.applications = append(r.applications, applicationID)
+	return r.err
 }
 
 func (r *fakeSpecResolver) Resolve(

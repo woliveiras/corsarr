@@ -17,13 +17,22 @@ type SpecResolver interface {
 	) (containerruntime.ContainerSpec, error)
 }
 
-type Installer struct {
-	runtime  containerruntime.Manager
-	resolver SpecResolver
+type ReadinessWaiter interface {
+	Wait(ctx context.Context, applicationID string) error
 }
 
-func NewInstaller(runtime containerruntime.Manager, resolver SpecResolver) *Installer {
-	return &Installer{runtime: runtime, resolver: resolver}
+type Installer struct {
+	runtime   containerruntime.Manager
+	resolver  SpecResolver
+	readiness ReadinessWaiter
+}
+
+func NewInstaller(
+	runtime containerruntime.Manager,
+	resolver SpecResolver,
+	readiness ReadinessWaiter,
+) *Installer {
+	return &Installer{runtime: runtime, resolver: resolver, readiness: readiness}
 }
 
 func (i *Installer) Install(
@@ -57,6 +66,9 @@ func (i *Installer) Install(
 			)
 		}
 		if existing.State == containerruntime.ContainerStateRunning {
+			if err := i.waitUntilReady(ctx, applicationID); err != nil {
+				return containerruntime.ContainerStatus{}, err
+			}
 			return existing, nil
 		}
 		if err := i.runtime.Start(ctx, applicationID); err != nil {
@@ -71,6 +83,9 @@ func (i *Installer) Install(
 				"existing application container did not reach running state: %s",
 				status.State,
 			)
+		}
+		if err := i.waitUntilReady(ctx, applicationID); err != nil {
+			return containerruntime.ContainerStatus{}, err
 		}
 		return status, nil
 	}
@@ -106,7 +121,17 @@ func (i *Installer) Install(
 			fmt.Errorf("application container did not reach running state: %s", status.State),
 		)
 	}
+	if err := i.waitUntilReady(ctx, applicationID); err != nil {
+		return containerruntime.ContainerStatus{}, i.cleanupIncomplete(ctx, applicationID, err)
+	}
 	return status, nil
+}
+
+func (i *Installer) waitUntilReady(ctx context.Context, applicationID string) error {
+	if err := i.readiness.Wait(ctx, applicationID); err != nil {
+		return fmt.Errorf("wait for application readiness: %w", err)
+	}
+	return nil
 }
 
 func (i *Installer) cleanupIncomplete(
