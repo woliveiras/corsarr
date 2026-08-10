@@ -130,6 +130,16 @@ $(go env GOPATH)/bin/wails build
 open build/bin/Corsarr.app
 ```
 
+An opt-in Docker adapter contract can use an immutable image that is already
+present locally. It creates only a labeled `corsarr-contract-test` container
+and the owned `corsarr` network, exercises lifecycle/log inspection, and removes
+both afterward without pulling an image:
+
+```bash
+CORSARR_DOCKER_CONTRACT_IMAGE='repository/name@sha256:<digest>' \
+  go test ./internal/runtime -run TestDockerManagerRealContract -v
+```
+
 This development build is self-signed and is not a published Corsarr release.
 Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,
 and TypeScript types with Biome and `tsc`.
