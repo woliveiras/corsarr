@@ -121,6 +121,13 @@ configuration mount per application plus the single shared media mount. Web
 administration ports remain loopback-only in the default spec. Catalog refresh,
 review, and update policy remain separate from ordinary application startup.
 
+The user-facing `internal/application.Catalog` keeps its existing English
+constructor for CLI compatibility. Corsarr Desktop uses
+`NewLocalizedCatalog` with the embedded Brazilian Portuguese locale, so names
+and descriptions come from the same reviewed translation keys already used by
+the CLI instead of being duplicated in TypeScript. Missing translation keys
+fall back to registry metadata.
+
 `RuntimeOptions.AllowJellyfinLAN` is the only MVP exception to the loopback
 default. It changes Jellyfin's approved TCP 8096 binding to explicit LAN
 exposure while every other application remains on loopback. The persisted

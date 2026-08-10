@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -80,6 +81,16 @@ type Catalog struct {
 
 // NewCatalog creates a desktop-safe view of the existing service registry.
 func NewCatalog(registry *services.Registry) *Catalog {
+	return newCatalog(registry, nil)
+}
+
+// NewLocalizedCatalog creates the same runtime-safe catalog while translating
+// user-facing service names and descriptions through Corsarr's embedded locale.
+func NewLocalizedCatalog(registry *services.Registry, translator *i18n.I18n) *Catalog {
+	return newCatalog(registry, translator)
+}
+
+func newCatalog(registry *services.Registry, translator *i18n.I18n) *Catalog {
 	applications := make([]ApplicationSummary, 0)
 	byID := make(map[string]ApplicationSummary)
 
@@ -93,10 +104,21 @@ func NewCatalog(registry *services.Registry) *Catalog {
 			continue
 		}
 
+		name := service.Name
+		description := service.Description
+		if translator != nil {
+			if translated := translator.T(service.GetNameKey()); translated != service.GetNameKey() {
+				name = translated
+			}
+			if translated := translator.T(service.GetDescriptionKey()); translated != service.GetDescriptionKey() {
+				description = translated
+			}
+		}
+
 		summary := ApplicationSummary{
 			ID:           service.ID,
-			Name:         service.Name,
-			Description:  service.Description,
+			Name:         name,
+			Description:  description,
 			Category:     string(service.Category),
 			URL:          applicationURL,
 			Optional:     service.Optional,

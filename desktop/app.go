@@ -17,6 +17,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/hostprofile"
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/legal"
 	"github.com/woliveiras/corsarr/internal/localnetwork"
 	"github.com/woliveiras/corsarr/internal/onboarding"
@@ -172,7 +173,11 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("create service registry: %w", err)
 	}
 
-	catalog := application.NewCatalog(registry)
+	translator, err := i18n.New("pt-br")
+	if err != nil {
+		return nil, fmt.Errorf("create desktop translations: %w", err)
+	}
+	catalog := application.NewLocalizedCatalog(registry, translator)
 	dockerDetector := runtimeenv.NewDockerDetector(runtimeenv.OSCommandRunner{}, 5*time.Second)
 	environment := application.NewEnvironmentService(
 		dockerDetector,

@@ -101,7 +101,7 @@ root.innerHTML = [
   '      <button id="choose-storage" class="choose-storage-button" type="button">Escolher pasta</button>',
   '    </section>',
   '    <section class="section-heading">',
-  '      <div><p class="eyebrow">CATÁLOGO DETECTADO</p><h2>Seus aplicativos</h2></div>',
+  '      <div><p class="eyebrow">APLICATIVOS</p><h2>Seus aplicativos</h2></div>',
   '      <p id="catalog-count" class="catalog-count">Carregando…</p>',
   '    </section>',
   '    <div id="message" class="message" role="status" aria-live="polite"></div>',

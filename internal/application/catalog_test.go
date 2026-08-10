@@ -3,6 +3,7 @@ package application
 import (
 	"testing"
 
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -30,6 +31,26 @@ func TestCatalogListsOnlyApplicationsWithWebInterfaces(t *testing.T) {
 		if _, ok := findApplication(applications, infrastructureID); ok {
 			t.Fatalf("did not expect infrastructure service %q in desktop catalog", infrastructureID)
 		}
+	}
+}
+
+func TestLocalizedCatalogUsesEmbeddedDesktopTranslations(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	translator, err := i18n.New("pt-br")
+	if err != nil {
+		t.Fatalf("create translator: %v", err)
+	}
+
+	catalog := NewLocalizedCatalog(registry, translator)
+	radarr, ok := findApplication(catalog.ListApplications(), "radarr")
+	if !ok {
+		t.Fatal("expected Radarr in localized catalog")
+	}
+	if radarr.Description != "buscador e gerenciador de filmes" {
+		t.Fatalf("unexpected localized description %q", radarr.Description)
 	}
 }
 

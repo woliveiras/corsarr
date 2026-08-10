@@ -671,6 +671,9 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-10: the Portuguese desktop catalog began reusing Corsarr's embedded
+  service translations. The existing catalog constructor remains unchanged for
+  CLI compatibility, and missing keys fall back to registry metadata.
 - 2026-08-10: the desktop began deriving one validated host runtime profile.
   Native Linux uses the current positive UID/GID, macOS and Windows use the
   stable VM identity `1000:1000`, and timezone detection accepts only valid
