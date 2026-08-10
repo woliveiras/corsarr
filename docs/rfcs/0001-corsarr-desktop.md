@@ -671,6 +671,11 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: CI began reading Go 1.25 from `go.mod`, validating the pnpm/Biome
+  frontend, running a fixed golangci-lint version, retaining revision-named
+  coverage/build evidence, using read-only permissions, and pinning actions by
+  immutable commit SHA. The tag-only release workflow remains a separate write
+  authority and was not executed.
 - 2026-08-10: the Portuguese desktop catalog began reusing Corsarr's embedded
   service translations. The existing catalog constructor remains unchanged for
   CLI compatibility, and missing keys fall back to registry metadata.

@@ -100,7 +100,8 @@ Development currently targets macOS on Apple Silicon first and requires Go
 1.25+, Node.js 22+, pnpm 11.1.3, Xcode command-line tooling, and Wails v2:
 
 ```bash
-npm install --global pnpm@11.1.3
+corepack enable
+corepack install
 go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
 cd desktop
 $(go env GOPATH)/bin/wails dev
@@ -117,6 +118,13 @@ open build/bin/Corsarr.app
 This development build is self-signed and is not a published Corsarr release.
 Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,
 and TypeScript types with Biome and `tsc`.
+
+Pull requests and `main` run Go dependency verification, vet, race-enabled
+tests with a retained coverage artifact, golangci-lint v2.11.1, the frontend
+quality/build commands, and CGO-free CLI builds for the supported OS/CPU
+matrix. CI reads the Go version from `go.mod`, installs pnpm from the pinned
+`packageManager` field, grants only repository read access, and pins every
+third-party action to a reviewed commit SHA.
 
 ## ⚡ Quick Start
 
