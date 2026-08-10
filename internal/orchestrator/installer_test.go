@@ -179,6 +179,10 @@ func (m *fakeRuntimeManager) Remove(context.Context, string) error {
 	return nil
 }
 
+func (m *fakeRuntimeManager) Logs(context.Context, string, int) (string, error) {
+	return "", nil
+}
+
 func (m *fakeRuntimeManager) Inspect(context.Context, string) (containerruntime.ContainerStatus, error) {
 	m.operations = append(m.operations, "inspect")
 	m.inspectCalls++

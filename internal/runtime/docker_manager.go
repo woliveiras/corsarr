@@ -37,6 +37,7 @@ type Manager interface {
 	Stop(ctx context.Context, applicationID string) error
 	Restart(ctx context.Context, applicationID string) error
 	Remove(ctx context.Context, applicationID string) error
+	Logs(ctx context.Context, applicationID string, tail int) (string, error)
 }
 
 type ContainerState string
@@ -244,6 +245,29 @@ func (m *DockerManager) Remove(ctx context.Context, applicationID string) error 
 		return fmt.Errorf("remove container for %s: %w", applicationID, err)
 	}
 	return nil
+}
+
+// Logs returns only a bounded tail from an owned container. It is intentionally
+// backend-only because application logs may contain bootstrap credentials.
+func (m *DockerManager) Logs(
+	ctx context.Context,
+	applicationID string,
+	tail int,
+) (string, error) {
+	if tail < 1 || tail > 500 {
+		return "", fmt.Errorf("log tail must be between 1 and 500 lines")
+	}
+	if err := m.verifyOwnedContainer(ctx, applicationID); err != nil {
+		return "", err
+	}
+	output, err := m.run(
+		ctx,
+		"logs", "--tail", strconv.Itoa(tail), containerName(applicationID),
+	)
+	if err != nil {
+		return "", fmt.Errorf("read container logs for %s: %w", applicationID, err)
+	}
+	return output, nil
 }
 
 func (m *DockerManager) ownedLifecycle(

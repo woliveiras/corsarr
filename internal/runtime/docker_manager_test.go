@@ -202,6 +202,47 @@ func TestDockerManagerInspectMapsDockerMissingObject(t *testing.T) {
 	}
 }
 
+func TestDockerManagerReadsBoundedLogsOnlyAfterOwnershipCheck(t *testing.T) {
+	runner := &recordingCommandRunner{
+		path: "/usr/local/bin/docker",
+		results: []managerCommandResult{
+			{output: "true"},
+			{output: "temporary startup detail"},
+		},
+	}
+	manager := NewDockerManager(runner, time.Second)
+
+	logs, err := manager.Logs(context.Background(), "qbittorrent", 200)
+	if err != nil {
+		t.Fatalf("read owned container logs: %v", err)
+	}
+	if logs != "temporary startup detail" {
+		t.Fatalf("unexpected logs %q", logs)
+	}
+	want := []commandCall{
+		{name: runner.path, args: []string{"inspect", "corsarr-qbittorrent", "--format", `{{index .Config.Labels "io.corsarr.managed"}}`}},
+		{name: runner.path, args: []string{"logs", "--tail", "200", "corsarr-qbittorrent"}},
+	}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("unexpected log commands\nwant: %#v\n got: %#v", want, runner.calls)
+	}
+}
+
+func TestDockerManagerRejectsUnboundedLogRequest(t *testing.T) {
+	runner := &recordingCommandRunner{path: "/usr/local/bin/docker"}
+	manager := NewDockerManager(runner, time.Second)
+
+	if _, err := manager.Logs(context.Background(), "qbittorrent", 0); err == nil {
+		t.Fatal("expected zero log tail to be rejected")
+	}
+	if _, err := manager.Logs(context.Background(), "qbittorrent", 501); err == nil {
+		t.Fatal("expected excessive log tail to be rejected")
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected invalid log request not to access runtime, got %v", runner.calls)
+	}
+}
+
 type commandCall struct {
 	name string
 	args []string

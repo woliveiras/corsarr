@@ -666,3 +666,5 @@ claims must be rechecked during implementation and release validation.
   keys with redacted formatting and no frontend exposure.
 - 2026-08-10: Added idempotent authenticated creation of approved Radarr,
   Sonarr, and Lidarr library root folders after readiness.
+- 2026-08-10: Added ownership-checked, bounded backend log access for secret
+  bootstrap without exposing a general log method to the frontend.

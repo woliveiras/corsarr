@@ -76,6 +76,9 @@ func (m *managementRuntime) Remove(context.Context, string) error {
 	m.lastOperation = "remove"
 	return nil
 }
+func (m *managementRuntime) Logs(context.Context, string, int) (string, error) {
+	return "", nil
+}
 
 func findManagedStatus(statuses []ManagedApplicationStatus, id string) ManagedApplicationStatus {
 	for _, status := range statuses {

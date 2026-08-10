@@ -52,6 +52,11 @@ before touching an existing container; a resource with the expected name but
 without matching labels is rejected. Application services call this adapter
 only after catalog, reviewed-setup, and consent checks.
 
+The adapter can also return at most 500 trailing log lines from a container,
+after the same ownership verification. This capability is backend-only and is
+not exposed through Wails because startup logs may contain temporary secrets;
+its first intended consumer is qBittorrent credential bootstrap.
+
 `internal/catalog.RuntimeCatalog` is the approved desktop translation from the
 existing service registry to `ContainerSpec`. Its image references are pinned
 to multi-architecture OCI index digests verified on 2026-08-10, and each entry
