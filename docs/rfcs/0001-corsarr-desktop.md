@@ -671,6 +671,12 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-10: the desktop began deriving one validated host runtime profile.
+  Native Linux uses the current positive UID/GID, macOS and Windows use the
+  stable VM identity `1000:1000`, and timezone detection accepts only valid
+  IANA locations with an `Etc/UTC` fallback. The profile is applied to all
+  supporting application images during install and update.
+
 - 2026-08-10: Accepted the focused local-desktop product scope.
 - 2026-08-10: Rejected native per-application installation.
 - 2026-08-10: Accepted Wails v2 for the desktop application.

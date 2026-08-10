@@ -16,6 +16,7 @@ import (
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
+	"github.com/woliveiras/corsarr/internal/hostprofile"
 	"github.com/woliveiras/corsarr/internal/legal"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
@@ -151,6 +152,7 @@ type App struct {
 	diagnosticWriter   diagnosticWriter
 	backgroundRecovery backgroundRecoveryManager
 	events             eventPublisher
+	runtimeDefaults    runtimecatalog.RuntimeOptions
 }
 
 func NewApp() (*App, error) {
@@ -262,6 +264,7 @@ func NewApp() (*App, error) {
 		runtimecatalog.RuntimeCatalogVerifiedAt,
 	)
 	backgroundRecovery := application.NewRecoveryService(setup, catalog, dockerManager)
+	hostProfile := hostprofile.NewProfiler().Current(goruntime.GOOS)
 
 	return &App{
 		catalog:            catalog,
@@ -283,6 +286,9 @@ func NewApp() (*App, error) {
 		diagnosticWriter:   diagnostics.NewFileWriter(),
 		backgroundRecovery: backgroundRecovery,
 		events:             wailsEventPublisher{},
+		runtimeDefaults: runtimecatalog.RuntimeOptions{
+			Timezone: hostProfile.Timezone, PUID: hostProfile.PUID, PGID: hostProfile.PGID,
+		},
 	}, nil
 }
 
@@ -452,7 +458,7 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	}
 	return a.installation.InstallSelected(
 		a.appContext(),
-		runtimeOptions(setup),
+		runtimeOptions(a.runtimeDefaults, setup),
 	)
 }
 
@@ -484,14 +490,16 @@ func (a *App) UpdateApplication(id string) (application.ApplicationUpdateResult,
 	return a.updates.Update(
 		a.appContext(),
 		id,
-		runtimeOptions(setup),
+		runtimeOptions(a.runtimeDefaults, setup),
 	)
 }
 
-func runtimeOptions(setup application.SetupStatus) runtimecatalog.RuntimeOptions {
-	return runtimecatalog.RuntimeOptions{
-		PUID: 1000, PGID: 1000, AllowJellyfinLAN: setup.JellyfinLANEnabled,
-	}
+func runtimeOptions(
+	defaults runtimecatalog.RuntimeOptions,
+	setup application.SetupStatus,
+) runtimecatalog.RuntimeOptions {
+	defaults.AllowJellyfinLAN = setup.JellyfinLANEnabled
+	return defaults
 }
 
 func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, error) {

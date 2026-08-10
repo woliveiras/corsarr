@@ -129,6 +129,17 @@ exists; changing it later requires removing only the container and reinstalling
 with the preserved configuration/media. The frontend asks for confirmation
 before enabling it.
 
+`internal/hostprofile.Profiler` derives the shared runtime identity and
+timezone once when the desktop backend starts. Native Linux uses the current
+positive UID/GID so bind-mounted files remain owned by the desktop user.
+macOS and Windows use the stable `1000:1000` identity inside their Linux VM
+instead of leaking host identifiers that have different semantics. Timezone
+detection accepts only loadable IANA names from `TZ`, the `/etc/localtime`
+target, or the Go local location and otherwise falls back to `Etc/UTC`. These
+defaults are applied to every approved image that supports `PUID`, `PGID`, and
+`TZ`; the reviewed Jellyfin network choice is layered on without replacing
+them.
+
 `internal/orchestrator.Installer` owns the first transactional application
 workflow: resolve and validate the approved spec, ensure the network, pull,
 create, start, and inspect. A failure after container creation removes only that

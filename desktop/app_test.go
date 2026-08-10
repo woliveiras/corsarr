@@ -231,6 +231,17 @@ func TestSetJellyfinLANPersistsBeforeInstallation(t *testing.T) {
 	}
 }
 
+func TestRuntimeOptionsPreserveHostProfileAndApplyReviewedNetworkChoice(t *testing.T) {
+	options := runtimeOptions(runtimecatalog.RuntimeOptions{
+		Timezone: "Europe/Madrid", PUID: 1001, PGID: 1002,
+	}, application.SetupStatus{JellyfinLANEnabled: true})
+
+	if options.Timezone != "Europe/Madrid" || options.PUID != 1001 || options.PGID != 1002 ||
+		!options.AllowJellyfinLAN {
+		t.Fatalf("unexpected runtime options %#v", options)
+	}
+}
+
 func TestCopyQBittorrentPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
 	clipboard := &desktopClipboard{}
