@@ -55,11 +55,24 @@ func (i *Installer) Install(
 	if err := spec.Validate(); err != nil {
 		return containerruntime.ContainerStatus{}, fmt.Errorf("validate application manifest: %w", err)
 	}
+	approvedContract, err := spec.ContractFingerprint()
+	if err != nil {
+		return containerruntime.ContainerStatus{}, fmt.Errorf(
+			"fingerprint application manifest: %w",
+			err,
+		)
+	}
 	if err := i.runtime.EnsureNetwork(ctx); err != nil {
 		return containerruntime.ContainerStatus{}, fmt.Errorf("prepare runtime network: %w", err)
 	}
 	existing, inspectErr := i.runtime.Inspect(ctx, applicationID)
 	if inspectErr == nil {
+		if existing.ContractFingerprint != approvedContract {
+			return containerruntime.ContainerStatus{}, fmt.Errorf(
+				"installed container contract differs from the approved contract; " +
+					"remove the container while preserving data and install it again",
+			)
+		}
 		if existing.Image != spec.Image {
 			return containerruntime.ContainerStatus{}, fmt.Errorf(
 				"installed image differs from approved image; use the update workflow",

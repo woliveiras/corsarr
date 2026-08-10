@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: applied the runtime-contract fingerprint to idempotent install as
+  well as update. A matching image with stale ports, mounts, init, or environment
+  is no longer reused, and the idempotent path passed the real Docker installer
+  contract on the first Mac.
 - 2026-08-11: labeled Docker and Podman containers with a deterministic SHA-256
   fingerprint of the image-independent runtime contract. Automatic update now
   rejects contract drift before backup, pull, or container mutation, and the

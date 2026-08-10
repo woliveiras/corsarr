@@ -188,9 +188,12 @@ facts for explanation, while `PrepareRuntime` and the combined install intent
 recheck the same backend gate immediately before mutation.
 
 Installation is reconciliatory: a matching running container is reused, and a
-matching stopped container is started. A differently pinned image is never
-replaced implicitly by installation; that case is routed to the explicit
-update/backup/rollback flow described below.
+matching stopped container is started, but only when its recorded runtime
+contract fingerprint also matches the resolved approved spec. Missing or
+divergent fingerprints require container removal with data preservation and a
+fresh install; a matching image alone is insufficient. A differently pinned
+image is never replaced implicitly by installation; that case is routed to the
+explicit update/backup/rollback flow described below.
 `internal/application.InstallationService` enforces current consent, prepares
 the reviewed layout, orders dependencies before consumers, and returns a
 structured per-application result while preserving already completed apps.

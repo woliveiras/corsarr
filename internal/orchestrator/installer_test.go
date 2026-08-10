@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/catalog"
@@ -69,6 +70,7 @@ func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
 	spec := validInstallerSpec("radarr")
 	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
 		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning, Image: spec.Image,
+		ContractFingerprint: mustContractFingerprint(t, spec),
 	}}
 	readiness := &fakeReadiness{}
 	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec}, readiness)
@@ -85,6 +87,27 @@ func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
 	}
 	if !reflect.DeepEqual(readiness.applications, []string{"radarr"}) {
 		t.Fatalf("expected existing application readiness check, got %v", readiness.applications)
+	}
+}
+
+func TestInstallerRejectsMatchingImageWithChangedContainerContract(t *testing.T) {
+	spec := validInstallerSpec("radarr")
+	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
+		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning,
+		Image: spec.Image, ContractFingerprint: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	}}
+	readiness := &fakeReadiness{}
+	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec}, readiness)
+
+	_, err := installer.Install(context.Background(), "radarr", "/tmp/Corsarr", catalog.RuntimeOptions{})
+	if err == nil || !strings.Contains(err.Error(), "container contract differs") {
+		t.Fatalf("expected changed contract rejection, got %v", err)
+	}
+	if !reflect.DeepEqual(manager.operations, []string{"network", "inspect"}) {
+		t.Fatalf("changed contract mutated runtime: %v", manager.operations)
+	}
+	if len(readiness.applications) != 0 {
+		t.Fatalf("changed contract reached readiness: %v", readiness.applications)
 	}
 }
 
@@ -117,6 +140,15 @@ func validInstallerSpec(applicationID string) containerruntime.ContainerSpec {
 		ApplicationID: applicationID,
 		Image:         "example.invalid/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
+}
+
+func mustContractFingerprint(t *testing.T, spec containerruntime.ContainerSpec) string {
+	t.Helper()
+	fingerprint, err := spec.ContractFingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint test container contract: %v", err)
+	}
+	return fingerprint
 }
 
 type fakeSpecResolver struct {

@@ -152,6 +152,8 @@ Managed containers carry a SHA-256 fingerprint of their image-independent
 runtime contract. Automatic updates stop before backup, pull, or replacement
 when the installed ports, mounts, init flag, or environment no longer match the
 approved contract; such changes require a separately reviewed migration.
+Idempotent installation applies the same check before reusing an existing
+container, so a matching image cannot conceal stale mounts or network exposure.
 
 This development build is self-signed and is not a published Corsarr release.
 Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,
