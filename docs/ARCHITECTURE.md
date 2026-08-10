@@ -185,7 +185,8 @@ recheck the same backend gate immediately before mutation.
 
 Installation is reconciliatory: a matching running container is reused, and a
 matching stopped container is started. A differently pinned image is never
-replaced implicitly; that case is routed to the future update/rollback flow.
+replaced implicitly by installation; that case is routed to the explicit
+update/backup/rollback flow described below.
 `internal/application.InstallationService` enforces current consent, prepares
 the reviewed layout, orders dependencies before consumers, and returns a
 structured per-application result while preserving already completed apps.
