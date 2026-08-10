@@ -16,6 +16,7 @@ import {
   ListLegalNotices,
   OpenApplication,
   OpenLegalLink,
+  PrepareRuntime,
   PrepareStorageLayout,
   RemoveApplication,
   RestartApplication,
@@ -77,6 +78,7 @@ root.innerHTML = [
   '        <details id="environment-details"><summary>Detalhes técnicos</summary><code id="environment-technical">Executando diagnóstico…</code></details>',
   '      </div>',
   '      <span id="environment-badge" class="runtime-badge checking">Verificando</span>',
+  '      <button id="prepare-runtime" class="choose-storage-button" type="button" hidden>Preparar computador</button>',
   '      <button id="refresh-environment" class="refresh-button" type="button" aria-label="Verificar ambiente novamente">↻</button>',
   '    </section>',
   '    <section class="storage-card" aria-labelledby="storage-title">',
@@ -104,7 +106,7 @@ root.innerHTML = [
   '        <p class="eyebrow">PRÓXIMA ETAPA</p>',
   '        <h2 id="installation-title">Revise sua preparação</h2>',
   '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
-  '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a usar o runtime instalado, baixar as imagens aprovadas e criar os serviços selecionados. Li que cada aplicação mantém sua própria licença.</span></label>',
+  '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a instalar e usar o Docker Desktop, baixar as imagens aprovadas e criar os serviços selecionados. Aceito os termos do Docker Desktop e entendo que o uso pessoal é gratuito, enquanto empresas maiores e entidades governamentais podem precisar de assinatura. Cada aplicação mantém sua própria licença.</span></label>',
   '        <p id="installation-result" class="installation-result"></p>',
   '      </div>',
   '      <div class="installation-actions">',
@@ -134,6 +136,7 @@ const environmentDescriptionElement = document.querySelector<HTMLElement>(
 const environmentTechnicalElement = document.querySelector<HTMLElement>('#environment-technical');
 const environmentBadgeElement = document.querySelector<HTMLElement>('#environment-badge');
 const refreshEnvironmentButton = document.querySelector<HTMLButtonElement>('#refresh-environment');
+const prepareRuntimeButton = document.querySelector<HTMLButtonElement>('#prepare-runtime');
 const storageTitleElement = document.querySelector<HTMLElement>('#storage-title');
 const storageDescriptionElement = document.querySelector<HTMLElement>('#storage-description');
 const storagePathElement = document.querySelector<HTMLElement>('#storage-path');
@@ -162,6 +165,7 @@ let dataStatuses = new Map<string, DataStatus>();
 let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 let jellyfinAccess: application.ServiceAccessStatus | undefined;
 let legalNotices: LegalNotice[] = [];
+let currentRuntimeState = 'checking';
 
 function showView(view: 'home' | 'licenses'): void {
   const showHome = view === 'home';
@@ -713,6 +717,7 @@ async function loadEnvironment(): Promise<void> {
 
   try {
     const environment = await GetEnvironmentStatus();
+    currentRuntimeState = environment.runtime.state;
     const runtimeMessage = runtimeMessages[environment.runtime.state] ?? runtimeMessages.error;
 
     if (platformElement) {
@@ -741,7 +746,13 @@ async function loadEnvironment(): Promise<void> {
       }
       environmentTechnicalElement.textContent = details.join('\n');
     }
+    if (prepareRuntimeButton) {
+      prepareRuntimeButton.hidden = environment.runtime.state === 'ready';
+      prepareRuntimeButton.textContent =
+        environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+    }
   } catch {
+    currentRuntimeState = 'error';
     if (environmentTitleElement) environmentTitleElement.textContent = 'Não foi possível verificar';
     if (environmentDescriptionElement) {
       environmentDescriptionElement.textContent = 'Tente novamente em alguns instantes.';
@@ -756,6 +767,66 @@ async function loadEnvironment(): Promise<void> {
 }
 
 refreshEnvironmentButton?.addEventListener('click', () => void loadEnvironment());
+
+async function prepareRuntime(): Promise<void> {
+  if (!prepareRuntimeButton) return;
+  if (!acceptTermsCheckbox?.checked) {
+    if (installationResultElement) {
+      installationResultElement.textContent =
+        'Leia e marque a autorização abaixo antes de preparar este computador.';
+      installationResultElement.classList.add('error');
+      acceptTermsCheckbox?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+  if (
+    currentRuntimeState === 'unavailable' &&
+    !window.confirm(
+      'O Corsarr baixará o Docker Desktop 4.86.0 diretamente da Docker, verificará o checksum e a assinatura oficial e solicitará a autorização do macOS para instalar. Continuar?',
+    )
+  ) {
+    return;
+  }
+
+  prepareRuntimeButton.disabled = true;
+  prepareRuntimeButton.textContent =
+    currentRuntimeState === 'unavailable' ? 'Instalando…' : 'Iniciando…';
+  if (environmentDescriptionElement) {
+    environmentDescriptionElement.textContent =
+      currentRuntimeState === 'unavailable'
+        ? 'Baixando e verificando os componentes oficiais. O macOS poderá solicitar sua senha.'
+        : 'Iniciando os componentes necessários. Isso pode levar alguns instantes.';
+  }
+  try {
+    applySetupStatus(await AcceptCurrentTerms());
+    const result = await PrepareRuntime();
+    if (!result.ready) throw new Error('runtime not ready');
+    await loadEnvironment();
+    if (messageElement) {
+      messageElement.textContent = result.installed
+        ? 'Este computador foi preparado e está pronto para instalar os aplicativos.'
+        : 'O ambiente foi iniciado e está pronto.';
+      messageElement.classList.remove('error');
+    }
+  } catch {
+    if (environmentDescriptionElement) {
+      environmentDescriptionElement.textContent =
+        'A preparação não terminou. Nada foi instalado sem assinatura válida; tente novamente ou consulte os detalhes técnicos.';
+    }
+    if (messageElement) {
+      messageElement.textContent = 'Não foi possível concluir a preparação deste computador.';
+      messageElement.classList.add('error');
+    }
+  } finally {
+    prepareRuntimeButton.disabled = false;
+    if (currentRuntimeState !== 'ready') {
+      prepareRuntimeButton.textContent =
+        currentRuntimeState === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+    }
+  }
+}
+
+prepareRuntimeButton?.addEventListener('click', () => void prepareRuntime());
 
 function formatAvailableSpace(bytes: number): string {
   if (bytes <= 0) return 'Espaço disponível não identificado';

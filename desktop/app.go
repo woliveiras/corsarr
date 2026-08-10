@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/user"
+	"path/filepath"
 	goruntime "runtime"
 	"time"
 
@@ -11,6 +14,7 @@ import (
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/legal"
+	"github.com/woliveiras/corsarr/internal/onboarding"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
 	"github.com/woliveiras/corsarr/internal/provisioning"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
@@ -77,6 +81,10 @@ type clipboardWriter interface {
 	SetText(ctx context.Context, value string) error
 }
 
+type runtimePreparer interface {
+	Prepare(ctx context.Context) (onboarding.PreparationResult, error)
+}
+
 type wailsClipboard struct{}
 
 func (wailsClipboard) SetText(ctx context.Context, value string) error {
@@ -85,20 +93,21 @@ func (wailsClipboard) SetText(ctx context.Context, value string) error {
 
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
-	ctx              context.Context
-	catalog          *application.Catalog
-	legal            *legal.Catalog
-	environment      *application.EnvironmentService
-	directoryPicker  directoryPicker
-	storageInspector storageInspector
-	setup            setupManager
-	layoutPreparer   storageLayoutPreparer
-	installation     installationManager
-	management       applicationManager
-	updates          applicationUpdateManager
-	applicationData  applicationDataManager
-	serviceAccess    serviceAccessManager
-	clipboard        clipboardWriter
+	ctx               context.Context
+	catalog           *application.Catalog
+	legal             *legal.Catalog
+	environment       *application.EnvironmentService
+	directoryPicker   directoryPicker
+	storageInspector  storageInspector
+	setup             setupManager
+	layoutPreparer    storageLayoutPreparer
+	installation      installationManager
+	management        applicationManager
+	updates           applicationUpdateManager
+	runtimeOnboarding runtimePreparer
+	applicationData   applicationDataManager
+	serviceAccess     serviceAccessManager
+	clipboard         clipboardWriter
 }
 
 func NewApp() (*App, error) {
@@ -119,6 +128,10 @@ func NewApp() (*App, error) {
 		return nil, err
 	}
 	setup := application.NewSetupService(catalog, statefile.NewFileStore(statePath))
+	runtimeOnboarding, err := newRuntimeOnboarding(dockerDetector)
+	if err != nil {
+		return nil, fmt.Errorf("create runtime onboarding: %w", err)
+	}
 	approvedCatalog, err := runtimecatalog.NewRuntimeCatalog(registry)
 	if err != nil {
 		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
@@ -194,19 +207,20 @@ func NewApp() (*App, error) {
 	)
 
 	return &App{
-		catalog:          catalog,
-		legal:            legalCatalog,
-		environment:      environment,
-		directoryPicker:  wailsDirectoryPicker{},
-		storageInspector: storage.NewInspector(),
-		setup:            setup,
-		layoutPreparer:   storage.NewLayoutPreparer(),
-		installation:     installation,
-		management:       management,
-		updates:          updates,
-		applicationData:  applicationData,
-		serviceAccess:    application.NewServiceAccess(credentialStore),
-		clipboard:        wailsClipboard{},
+		catalog:           catalog,
+		legal:             legalCatalog,
+		environment:       environment,
+		directoryPicker:   wailsDirectoryPicker{},
+		storageInspector:  storage.NewInspector(),
+		setup:             setup,
+		layoutPreparer:    storage.NewLayoutPreparer(),
+		installation:      installation,
+		management:        management,
+		updates:           updates,
+		runtimeOnboarding: runtimeOnboarding,
+		applicationData:   applicationData,
+		serviceAccess:     application.NewServiceAccess(credentialStore),
+		clipboard:         wailsClipboard{},
 	}, nil
 }
 
@@ -241,6 +255,17 @@ func (a *App) GetEnvironmentStatus() application.EnvironmentStatus {
 		ctx = context.Background()
 	}
 	return a.environment.Status(ctx)
+}
+
+func (a *App) PrepareRuntime() (onboarding.PreparationResult, error) {
+	setup, err := a.setup.Load()
+	if err != nil {
+		return onboarding.PreparationResult{}, err
+	}
+	if !setup.TermsAccepted {
+		return onboarding.PreparationResult{}, application.ErrTermsNotAccepted
+	}
+	return a.runtimeOnboarding.Prepare(a.appContext())
 }
 
 // ChooseStorageLocation opens the native picker and inspects only the selected directory.
@@ -381,4 +406,30 @@ func (a *App) OpenApplication(id string) error {
 
 	wailsruntime.BrowserOpenURL(a.ctx, applicationURL)
 	return nil
+}
+
+func newRuntimeOnboarding(probe runtimeenv.Probe) (runtimePreparer, error) {
+	runner := runtimeenv.OSCommandRunner{}
+	if goruntime.GOOS != "darwin" {
+		return onboarding.NewDockerService(probe, runner, nil, goruntime.GOOS), nil
+	}
+	cacheRoot, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	currentUser, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+	installer, err := onboarding.NewMacDockerInstaller(
+		runner,
+		onboarding.NewHTTPDownloader(),
+		goruntime.GOARCH,
+		filepath.Join(cacheRoot, "Corsarr", "installers"),
+		currentUser.Username,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return onboarding.NewDockerService(probe, runner, installer, goruntime.GOOS), nil
 }

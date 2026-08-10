@@ -19,7 +19,7 @@ type SetupStatus struct {
 	TermsAccepted bool     `json:"termsAccepted"`
 }
 
-const CurrentTermsVersion = "2026-08-10"
+const CurrentTermsVersion = "2026-08-10.2"
 
 type SetupService struct {
 	catalog *Catalog

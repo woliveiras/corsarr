@@ -576,6 +576,8 @@ claims must be rechecked during implementation and release validation.
 
 - [Docker Desktop installation on Windows and installer flags](https://docs.docker.com/desktop/setup/install/windows-install/)
 - [Docker Desktop installation on macOS and installer flags](https://docs.docker.com/desktop/setup/install/mac-install/)
+- [Docker Desktop macOS permission model and `--user`](https://docs.docker.com/desktop/setup/install/mac-permission-requirements/)
+- [Docker Desktop 4.86.0 downloads and official checksums](https://docs.docker.com/desktop/release-notes/#4860)
 - [Docker Desktop CLI lifecycle](https://docs.docker.com/desktop/features/desktop-cli/)
 - [Docker Engine API and Go SDK](https://docs.docker.com/reference/api/engine/sdk/)
 - [Docker daemon socket protection](https://docs.docker.com/engine/security/protect-access/)
@@ -678,6 +680,9 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Added the validated runtime contract, ownership-safe Docker
   lifecycle adapter, and the first multi-architecture image-digest catalog.
   These boundaries are not exposed as an install action yet.
+- 2026-08-10: Added consent-gated macOS Docker Desktop onboarding with a pinned
+  official download, checksum, signer/Gatekeeper verification, native
+  authorization, bounded startup, and automatic start for existing installs.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

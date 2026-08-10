@@ -7,6 +7,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
+	"github.com/woliveiras/corsarr/internal/onboarding"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
 )
@@ -208,9 +209,44 @@ func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	}
 }
 
+func TestPrepareRuntimeRequiresCurrentConsent(t *testing.T) {
+	preparer := &desktopRuntimePreparer{}
+	app := &App{setup: &desktopSetupManager{}, runtimeOnboarding: preparer}
+
+	if _, err := app.PrepareRuntime(); err == nil {
+		t.Fatal("expected runtime preparation without consent to be rejected")
+	}
+	if preparer.calls != 0 {
+		t.Fatalf("expected no preparation, got %d calls", preparer.calls)
+	}
+}
+
+func TestPrepareRuntimeUsesBoundedOnboardingAfterConsent(t *testing.T) {
+	preparer := &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true, Started: true}}
+	app := &App{
+		setup:             &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		runtimeOnboarding: preparer,
+	}
+
+	result, err := app.PrepareRuntime()
+	if err != nil || !result.Ready || preparer.calls != 1 {
+		t.Fatalf("unexpected runtime preparation %#v, %v, calls=%d", result, err, preparer.calls)
+	}
+}
+
 type desktopRuntimeProbe struct {
 	status runtimeenv.Status
 	calls  int
+}
+
+type desktopRuntimePreparer struct {
+	result onboarding.PreparationResult
+	calls  int
+}
+
+func (p *desktopRuntimePreparer) Prepare(context.Context) (onboarding.PreparationResult, error) {
+	p.calls++
+	return p.result, nil
 }
 
 func (f *desktopRuntimeProbe) Check(context.Context) runtimeenv.Status {

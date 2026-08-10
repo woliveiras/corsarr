@@ -66,6 +66,10 @@ export function OpenLegalLink(arg1, arg2) {
   return window['go']['main']['App']['OpenLegalLink'](arg1, arg2);
 }
 
+export function PrepareRuntime() {
+  return window['go']['main']['App']['PrepareRuntime']();
+}
+
 export function PrepareStorageLayout() {
   return window['go']['main']['App']['PrepareStorageLayout']();
 }

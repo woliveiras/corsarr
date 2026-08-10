@@ -3,6 +3,7 @@
 import {application} from '../models';
 import {storage} from '../models';
 import {legal} from '../models';
+import {onboarding} from '../models';
 
 export function AcceptCurrentTerms():Promise<application.SetupStatus>;
 
@@ -35,6 +36,8 @@ export function ListLegalNotices():Promise<Array<legal.Notice>>;
 export function OpenApplication(arg1:string):Promise<void>;
 
 export function OpenLegalLink(arg1:string,arg2:string):Promise<void>;
+
+export function PrepareRuntime():Promise<onboarding.PreparationResult>;
 
 export function PrepareStorageLayout():Promise<storage.LayoutStatus>;
 

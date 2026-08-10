@@ -300,6 +300,29 @@ export namespace legal {
 
 }
 
+export namespace onboarding {
+
+	export class PreparationResult {
+	    ready: boolean;
+	    installed: boolean;
+	    started: boolean;
+	    version?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new PreparationResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ready = source["ready"];
+	        this.installed = source["installed"];
+	        this.started = source["started"];
+	        this.version = source["version"];
+	    }
+	}
+
+}
+
 export namespace runtime {
 
 	export class ContainerStatus {

@@ -37,6 +37,23 @@ distinguishes an unavailable client, a stopped runtime, a ready runtime, and an
 unexpected error. Raw runtime access remains inside Go; the frontend receives a
 bounded status object.
 
+`internal/onboarding` implements the first macOS runtime preparation path. A
+stopped Docker Desktop is started with the official Desktop CLI, with a fixed
+`open` fallback for older installations. When absent, Corsarr downloads the
+architecture-specific Docker Desktop 4.86.0 disk image directly from Docker's
+versioned endpoint into a private temporary cache, enforces a 2 GiB limit,
+verifies the official SHA-256, mounts it read-only, verifies the Apple code
+signature, Docker Team ID `9BNSXJN65R`, signed contents, and Gatekeeper policy,
+then invokes Docker's official installer with `--accept-license` and `--user`
+through the native macOS administrator authorization prompt. The temporary disk
+image and mount workspace are removed afterward. Runtime readiness is probed
+for a bounded three minutes before success is reported.
+
+`PrepareRuntime` is available only after the current versioned runtime consent
+has been persisted. The frontend supplies no URL, checksum, command, path,
+username, or installer argument. Windows and Linux return an explicit unsupported
+result until their separately tested onboarding implementations ship.
+
 The package also owns the validated `ContainerSpec` boundary used by future
 runtime adapters. A spec contains resolved values rather than templates or
 commands. It requires an immutable `sha256` image reference, a safe catalog ID,

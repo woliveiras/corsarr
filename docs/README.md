@@ -30,7 +30,10 @@ checksummed per-application configuration backup and a backend image-replacement
 transaction with readiness verification and image rollback are implemented.
 The desktop reports when an approved digest differs, explains the backup and
 database-migration limitation, and exposes a bounded per-application update
-intent. Runtime onboarding is not yet implemented. Current application
+intent. On macOS, explicit consent now authorizes a pinned, checksummed, signed
+Docker Desktop installation through the native administrator prompt, or an
+automatic start when it is already installed. Windows and Linux runtime
+onboarding remain pending. Current application
 provisioning covers Arr root folders, qBittorrent credentials, paths and
 categories, Arr download clients, Prowlarr connections, and Bazarr's Radarr and
 Sonarr connections. Jellyfin provisioning covers its local administrator,
