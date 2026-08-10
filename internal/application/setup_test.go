@@ -100,6 +100,41 @@ func TestSetupServiceSerializesConcurrentStorageAndApplicationUpdates(t *testing
 	}
 }
 
+func TestSetupServiceRequiresExplicitCurrentTermsForInstallation(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		StoragePath:   "/Users/test/Media",
+		Applications:  []string{"jellyfin"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+	service.now = func() time.Time {
+		return time.Date(2026, 8, 10, 18, 30, 0, 0, time.UTC)
+	}
+
+	before, err := service.Load()
+	if err != nil {
+		t.Fatalf("load setup before consent: %v", err)
+	}
+	if !before.CanPrepare || before.CanInstall || before.TermsAccepted {
+		t.Fatalf("expected preparation without installation authority, got %#v", before)
+	}
+
+	after, err := service.AcceptCurrentTerms()
+	if err != nil {
+		t.Fatalf("accept current terms: %v", err)
+	}
+	if !after.CanInstall || !after.TermsAccepted || after.TermsVersion != CurrentTermsVersion {
+		t.Fatalf("expected current consent to enable installation, got %#v", after)
+	}
+	if store.desktopState.RuntimeConsentAcceptedAt != "2026-08-10T18:30:00Z" {
+		t.Fatalf("unexpected consent timestamp %q", store.desktopState.RuntimeConsentAcceptedAt)
+	}
+}
+
 type memoryStateStore struct {
 	desktopState statefile.DesktopState
 	loadErr      error

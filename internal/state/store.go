@@ -8,12 +8,14 @@ import (
 	"path/filepath"
 )
 
-const CurrentSchemaVersion = 1
+const CurrentSchemaVersion = 2
 
 type DesktopState struct {
-	SchemaVersion int      `json:"schemaVersion"`
-	StoragePath   string   `json:"storagePath,omitempty"`
-	Applications  []string `json:"applications"`
+	SchemaVersion            int      `json:"schemaVersion"`
+	StoragePath              string   `json:"storagePath,omitempty"`
+	Applications             []string `json:"applications"`
+	RuntimeConsentVersion    string   `json:"runtimeConsentVersion,omitempty"`
+	RuntimeConsentAcceptedAt string   `json:"runtimeConsentAcceptedAt,omitempty"`
 }
 
 type Store interface {
@@ -49,6 +51,9 @@ func (s *FileStore) Load() (DesktopState, error) {
 	var desktopState DesktopState
 	if err := json.Unmarshal(data, &desktopState); err != nil {
 		return DesktopState{}, fmt.Errorf("decode desktop state: %w", err)
+	}
+	if desktopState.SchemaVersion == 1 {
+		desktopState.SchemaVersion = CurrentSchemaVersion
 	}
 	if desktopState.SchemaVersion != CurrentSchemaVersion {
 		return DesktopState{}, fmt.Errorf(

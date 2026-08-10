@@ -26,6 +26,7 @@ type setupManager interface {
 	Load() (application.SetupStatus, error)
 	SaveStorage(path string) (application.SetupStatus, error)
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
+	AcceptCurrentTerms() (application.SetupStatus, error)
 }
 
 type storageLayoutPreparer interface {
@@ -123,13 +124,17 @@ func (a *App) SaveApplicationSelection(applicationIDs []string) (application.Set
 	return a.setup.SaveApplications(applicationIDs)
 }
 
+func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
+	return a.setup.AcceptCurrentTerms()
+}
+
 // PrepareStorageLayout creates only the reviewed Corsarr-owned directory tree.
 func (a *App) PrepareStorageLayout() (storage.LayoutStatus, error) {
 	setupStatus, err := a.setup.Load()
 	if err != nil {
 		return storage.LayoutStatus{}, err
 	}
-	if !setupStatus.CanInstall {
+	if !setupStatus.CanPrepare {
 		return storage.LayoutStatus{}, fmt.Errorf(
 			"storage and at least one application must be selected before preparation",
 		)

@@ -73,6 +73,7 @@ func TestPrepareStorageLayoutUsesOnlyPersistedSetup(t *testing.T) {
 	setup := &desktopSetupManager{status: application.SetupStatus{
 		StoragePath:  "/Users/test/Media",
 		Applications: []string{"prowlarr", "radarr"},
+		CanPrepare:   true,
 		CanInstall:   true,
 	}}
 	layout := &desktopLayoutPreparer{status: storage.LayoutStatus{
@@ -177,6 +178,12 @@ func (f *desktopSetupManager) SaveStorage(path string) (application.SetupStatus,
 
 func (f *desktopSetupManager) SaveApplications(applicationIDs []string) (application.SetupStatus, error) {
 	f.status.Applications = applicationIDs
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) AcceptCurrentTerms() (application.SetupStatus, error) {
+	f.status.TermsAccepted = true
+	f.status.CanInstall = f.status.CanPrepare
 	return f.status, nil
 }
 

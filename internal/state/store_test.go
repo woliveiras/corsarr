@@ -78,3 +78,22 @@ func TestFileStoreRejectsCorruptedState(t *testing.T) {
 		t.Fatal("expected corrupted state to be rejected")
 	}
 }
+
+func TestFileStoreMigratesSchemaOneSetupWithoutInventingConsent(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":1,"storagePath":"/Users/test/Media","applications":["radarr"]}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write legacy state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load legacy state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion {
+		t.Fatalf("expected migrated schema %d, got %d", CurrentSchemaVersion, loaded.SchemaVersion)
+	}
+	if loaded.RuntimeConsentVersion != "" || loaded.RuntimeConsentAcceptedAt != "" {
+		t.Fatalf("expected consent to remain absent, got %#v", loaded)
+	}
+}

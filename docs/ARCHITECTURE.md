@@ -71,6 +71,12 @@ path and approved application IDs, uses the operating system's user
 configuration directory, and is written with private file permissions where the
 platform supports them.
 
+The state schema also records the accepted runtime-terms version and UTC
+timestamp. Schema 1 setup files migrate to schema 2 without inventing consent.
+Folder preparation remains available after storage/application review, but the
+backend reports installation authority only when the current terms version was
+explicitly accepted. A future terms version therefore requires new consent.
+
 Application selection is validated against the presentation-safe catalog.
 Required catalog dependencies are included recursively and the deterministic
 selection is persisted. The frontend cannot provide an arbitrary directory name

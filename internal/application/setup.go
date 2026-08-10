@@ -5,24 +5,48 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
 
 type SetupStatus struct {
-	StoragePath  string   `json:"storagePath,omitempty"`
-	Applications []string `json:"applications"`
-	CanInstall   bool     `json:"canInstall"`
+	StoragePath   string   `json:"storagePath,omitempty"`
+	Applications  []string `json:"applications"`
+	CanPrepare    bool     `json:"canPrepare"`
+	CanInstall    bool     `json:"canInstall"`
+	TermsVersion  string   `json:"termsVersion"`
+	TermsAccepted bool     `json:"termsAccepted"`
 }
+
+const CurrentTermsVersion = "2026-08-10"
 
 type SetupService struct {
 	catalog *Catalog
 	store   statefile.Store
 	mu      sync.Mutex
+	now     func() time.Time
 }
 
 func NewSetupService(catalog *Catalog, store statefile.Store) *SetupService {
-	return &SetupService{catalog: catalog, store: store}
+	return &SetupService{catalog: catalog, store: store, now: time.Now}
+}
+
+func (s *SetupService) AcceptCurrentTerms() (SetupStatus, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Applications = s.knownApplications(desktopState.Applications)
+	desktopState.RuntimeConsentVersion = CurrentTermsVersion
+	desktopState.RuntimeConsentAcceptedAt = s.now().UTC().Format(time.RFC3339)
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save runtime consent: %w", err)
+	}
+	return setupStatus(desktopState), nil
 }
 
 func (s *SetupService) Load() (SetupStatus, error) {
@@ -129,9 +153,15 @@ func (s *SetupService) knownApplications(applicationIDs []string) []string {
 }
 
 func setupStatus(desktopState statefile.DesktopState) SetupStatus {
+	canPrepare := desktopState.StoragePath != "" && len(desktopState.Applications) > 0
+	termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
+		desktopState.RuntimeConsentAcceptedAt != ""
 	return SetupStatus{
-		StoragePath:  desktopState.StoragePath,
-		Applications: desktopState.Applications,
-		CanInstall:   desktopState.StoragePath != "" && len(desktopState.Applications) > 0,
+		StoragePath:   desktopState.StoragePath,
+		Applications:  desktopState.Applications,
+		CanPrepare:    canPrepare,
+		CanInstall:    canPrepare && termsAccepted,
+		TermsVersion:  CurrentTermsVersion,
+		TermsAccepted: termsAccepted,
 	}
 }
