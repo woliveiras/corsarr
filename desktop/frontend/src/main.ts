@@ -39,6 +39,12 @@ type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
 type DataStatus = storage.ApplicationDataStatus;
 type LegalNotice = legal.Notice;
+type InstallationProgress = {
+  applicationId: string;
+  stage: 'installing' | 'provisioning' | 'ready' | 'failed';
+  position: number;
+  total: number;
+};
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -1244,6 +1250,25 @@ EventsOn('corsarr:background-recovery-complete', () => {
     loadJellyfinNetwork(),
     loadQBittorrentAccess(),
   ]);
+});
+
+EventsOn('corsarr:installation-progress', (progress: InstallationProgress) => {
+  const applicationName =
+    availableApplications.find((application) => application.id === progress.applicationId)?.name ??
+    'aplicativo';
+  const stageMessages: Record<InstallationProgress['stage'], string> = {
+    installing: `Baixando e iniciando ${applicationName}`,
+    provisioning: `Configurando ${applicationName}`,
+    ready: `${applicationName} está pronto`,
+    failed: `${applicationName} precisa de atenção`,
+  };
+  if (installationResultElement) {
+    installationResultElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    installationResultElement.classList.toggle('error', progress.stage === 'failed');
+  }
+  if (installApplicationsButton && progress.stage !== 'failed') {
+    installApplicationsButton.textContent = `${progress.position} de ${progress.total}`;
+  }
 });
 
 void loadInitialState();

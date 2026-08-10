@@ -52,6 +52,42 @@ func TestInstallationServicePreparesAndInstallsInDependencyOrder(t *testing.T) {
 	}
 }
 
+func TestInstallationServiceReportsBoundedProgress(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	setup := &installationSetup{status: SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"jellyfin"},
+		CanPrepare: true, CanInstall: true, TermsAccepted: true,
+	}}
+	service := NewInstallationService(
+		setup,
+		&installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Media/Corsarr"}},
+		NewCatalog(registry),
+		&recordingInstaller{},
+		&recordingProvisioner{},
+	)
+	var progress []InstallationProgress
+
+	result, err := service.InstallSelectedWithProgress(
+		context.Background(),
+		runtimecatalog.RuntimeOptions{},
+		func(event InstallationProgress) { progress = append(progress, event) },
+	)
+	if err != nil || !result.Complete {
+		t.Fatalf("install with progress: result=%#v err=%v", result, err)
+	}
+	want := []InstallationProgress{
+		{ApplicationID: "jellyfin", Stage: InstallationStageInstalling, Position: 1, Total: 1},
+		{ApplicationID: "jellyfin", Stage: InstallationStageProvisioning, Position: 1, Total: 1},
+		{ApplicationID: "jellyfin", Stage: InstallationStageReady, Position: 1, Total: 1},
+	}
+	if !reflect.DeepEqual(progress, want) {
+		t.Fatalf("unexpected progress\nwant: %#v\n got: %#v", want, progress)
+	}
+}
+
 type installationSetup struct{ status SetupStatus }
 
 func (s *installationSetup) Load() (SetupStatus, error) { return s.status, nil }

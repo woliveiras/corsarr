@@ -204,6 +204,33 @@ func TestInstallSelectedApplicationsStopsWhenRuntimePreparationFails(t *testing.
 	}
 }
 
+func TestInstallSelectedApplicationsPublishesBoundedProgress(t *testing.T) {
+	installation := &desktopProgressiveInstallationManager{}
+	events := &desktopEventPublisher{}
+	app := &App{
+		setup: &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		runtimeOnboarding: &desktopRuntimePreparer{
+			result: onboarding.PreparationResult{Ready: true},
+		},
+		installation: installation,
+		events:       events,
+	}
+
+	if _, err := app.InstallSelectedApplications(); err != nil {
+		t.Fatalf("install selected applications: %v", err)
+	}
+	if events.calls != 1 || events.name != installationProgressEvent {
+		t.Fatalf("expected one installation progress event, got %#v", events)
+	}
+	if len(events.data) != 1 {
+		t.Fatalf("expected bounded event payload, got %#v", events.data)
+	}
+	progress, ok := events.data[0].(application.InstallationProgress)
+	if !ok || progress.ApplicationID != "jellyfin" || progress.Stage != application.InstallationStageInstalling {
+		t.Fatalf("unexpected progress payload %#v", events.data[0])
+	}
+}
+
 func TestArchiveApplicationDataUsesBoundedApplicationService(t *testing.T) {
 	data := &desktopApplicationDataManager{result: storage.ArchivedApplicationData{
 		ApplicationID: "radarr",
@@ -679,6 +706,29 @@ type desktopInstallationManager struct {
 	result  application.InstallationResult
 	calls   int
 	options runtimecatalog.RuntimeOptions
+}
+
+type desktopProgressiveInstallationManager struct{}
+
+func (m *desktopProgressiveInstallationManager) InstallSelected(
+	context.Context,
+	runtimecatalog.RuntimeOptions,
+) (application.InstallationResult, error) {
+	return application.InstallationResult{}, nil
+}
+
+func (m *desktopProgressiveInstallationManager) InstallSelectedWithProgress(
+	_ context.Context,
+	_ runtimecatalog.RuntimeOptions,
+	observer application.InstallationProgressObserver,
+) (application.InstallationResult, error) {
+	observer(application.InstallationProgress{
+		ApplicationID: "jellyfin",
+		Stage:         application.InstallationStageInstalling,
+		Position:      1,
+		Total:         1,
+	})
+	return application.InstallationResult{Complete: true}, nil
 }
 
 type desktopApplicationDataManager struct {

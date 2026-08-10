@@ -60,6 +60,14 @@ type installationManager interface {
 	) (application.InstallationResult, error)
 }
 
+type progressiveInstallationManager interface {
+	InstallSelectedWithProgress(
+		ctx context.Context,
+		options runtimecatalog.RuntimeOptions,
+		observer application.InstallationProgressObserver,
+	) (application.InstallationResult, error)
+}
+
 type applicationManager interface {
 	ListStatuses(ctx context.Context) []application.ManagedApplicationStatus
 	Start(ctx context.Context, applicationID string) error
@@ -328,6 +336,8 @@ func (a *App) startup(ctx context.Context) {
 
 const backgroundRecoveryCompletedEvent = "corsarr:background-recovery-complete"
 
+const installationProgressEvent = "corsarr:installation-progress"
+
 type BackgroundRecoveryEvent struct {
 	Complete bool `json:"complete"`
 }
@@ -510,10 +520,19 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	if !prepared.Ready {
 		return application.InstallationResult{}, fmt.Errorf("runtime preparation did not become ready")
 	}
-	return a.installation.InstallSelected(
-		a.appContext(),
-		runtimeOptions(a.runtimeDefaults, setup),
-	)
+	options := runtimeOptions(a.runtimeDefaults, setup)
+	if installation, ok := a.installation.(progressiveInstallationManager); ok {
+		return installation.InstallSelectedWithProgress(
+			a.appContext(),
+			options,
+			func(progress application.InstallationProgress) {
+				if a.events != nil {
+					a.events.Emit(a.appContext(), installationProgressEvent, progress)
+				}
+			},
+		)
+	}
+	return a.installation.InstallSelected(a.appContext(), options)
 }
 
 func (a *App) GetApplicationStatuses() []application.ManagedApplicationStatus {
