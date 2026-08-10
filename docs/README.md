@@ -26,9 +26,10 @@ selection in the operating system's user configuration directory and creates
 the Corsarr-owned storage layout on explicit request. The latest development
 slice additionally accepts versioned runtime consent and can install selected
 digest-pinned containers when Docker is already healthy. A private, atomic,
-checksummed per-application configuration backup primitive is available to the
-developing update workflow. Runtime onboarding and complete safe updates are not
-yet implemented. Current application
+checksummed per-application configuration backup and a backend image-replacement
+transaction with readiness verification and image rollback are implemented.
+Runtime onboarding and the desktop update intent are not yet implemented.
+Current application
 provisioning covers Arr root folders, qBittorrent credentials, paths and
 categories, Arr download clients, Prowlarr connections, and Bazarr's Radarr and
 Sonarr connections. Jellyfin provisioning covers its local administrator,

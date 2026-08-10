@@ -85,6 +85,16 @@ HTTP or a bounded timeout expires. A newly created container that never becomes
 ready is removed while its bind-mounted data remains available for diagnosis;
 an existing container is never removed by this check.
 
+`internal/orchestrator.Updater` owns container replacement. It first verifies
+that the current owned container uses an immutable image that can be restored,
+creates the private configuration backup, pulls the approved digest, and only
+then replaces the container. It starts the replacement for bounded readiness
+verification and preserves whether the prior container was running or stopped.
+Any create, start, inspect, or readiness failure removes the replacement and
+recreates the previous image under a non-canceled cleanup context. A successful
+container rollback preserves service availability and the backup artifact, but
+does not claim to reverse an application database migration.
+
 `internal/provisioning.ARRCredentialReader` reads the generated `ApiKey` only
 from a fixed `config/<known-arr>/config.xml` beneath the reviewed Corsarr root.
 It rejects unknown apps, symlinked paths, oversized XML, and malformed keys.
@@ -188,8 +198,8 @@ archives exactly `config/<application>` into a private `tar.gz` below
 the archive without loading it into memory, computes SHA-256 over the compressed
 artifact, and publishes it atomically with mode `0600`. Media paths are not part
 of this API. Creating this recovery point does not claim that an older container
-can reverse an application database migration; the later update workflow must
-surface that limitation independently.
+can reverse an application database migration; the application surface must
+communicate that limitation independently.
 
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
