@@ -26,6 +26,11 @@ obtains versioned runtime consent, prepares or starts Docker Desktop on macOS,
 and installs only digest-pinned containers owned by Corsarr. Its lifecycle UI
 opens, starts, stops, restarts, updates, and removes each application while
 keeping container removal separate from recoverable configuration archival.
+The reviewed movie/TV preset includes its supporting dependencies; installed
+apps cannot be removed before their installed consumers or silently dropped
+from desired state. Storage requires a fresh writable, measurable 10 GiB free
+capacity check before preparation and installation, with missing hardlinks
+reported as a non-blocking efficiency warning.
 
 Provisioning currently covers Arr root folders and API keys, qBittorrent's
 generated Keychain credential, paths and categories, Arr download clients,
@@ -42,6 +47,11 @@ Windows/Linux onboarding, native secure stores on those platforms, Apple
 Developer ID signing/notarization, and the empirical Podman promotion matrix
 remain open gates. This is implemented development behavior, not a statement
 that a public Desktop release has shipped.
+
+The local macOS arm64 bundle builds, self-signs, declares macOS 14+, and has
+passed deterministic suites plus visual smoke checks on the first Mac. No media
+stack was installed during automated development validation: runtime terms,
+image downloads, and application installation remain an explicit user action.
 
 The Desktop also includes a catalog-generated "Aplicativos e licenças" screen.
 It credits every offered application and image maintainer, identifies Docker and

@@ -190,6 +190,9 @@ update/backup/rollback flow described below.
 `internal/application.InstallationService` enforces current consent, prepares
 the reviewed layout, orders dependencies before consumers, and returns a
 structured per-application result while preserving already completed apps.
+Its optional observer emits only catalog ID, bounded stage, position, and total
+for desktop progress. Runtime output and provisioning errors are excluded from
+events so progress reporting cannot become a log or credential channel.
 `internal/provisioning.HTTPReadiness` then probes only the catalog-resolved
 loopback URL, without credentials or redirects, until the application accepts
 HTTP or a bounded timeout expires. A newly created container that never becomes
@@ -303,7 +306,9 @@ start, stop, restart, and remove intents validate the catalog ID before reaching
 the runtime. It also compares an installed image with the approved catalog
 digest so the UI can offer an update only when one exists. Remove deletes only
 the labeled container; the bind-mounted config and shared media tree are outside
-its authority.
+its authority. Before removal it re-inspects direct catalog dependents and
+rejects the operation while any consumer remains installed. The same blockers
+are exposed as bounded IDs for an explanatory desktop state.
 
 `internal/application.UpdateService` accepts only one catalog application ID,
 reloads the persisted storage choice and current consent, serializes update
@@ -329,7 +334,10 @@ the persisted storage location, and delegates only that application's config
 directory to `internal/storage.ApplicationDataManager`. The storage manager
 refuses unsafe IDs and symlink targets, then atomically moves configuration into
 the private `<selected>/Corsarr/trash/config/<app>/` tree. It never receives or
-targets the shared media and downloads paths.
+targets the shared media and downloads paths. qBittorrent and Jellyfin Keychain
+entries are removed only after their configuration becomes recoverable. If
+credential deletion fails, the storage adapter restores the archived directory
+to its exact original location before reporting failure.
 
 `internal/storage.BackupManager` is the update workflow's recovery boundary. It
 accepts only a reviewed Corsarr root plus a safe catalog application ID and
@@ -349,7 +357,11 @@ probe artifacts. A ready selection is persisted through
 canceled selections are not persisted. The state file contains only the storage
 path and approved application IDs, uses the operating system's user
 configuration directory, and is written with private file permissions where the
-platform supports them.
+platform supports them. A folder is ready only when free capacity is measurable
+and at least 10 GiB; hardlink failure remains a visible efficiency warning.
+Both folder preparation and installation repeat this inspection before mutation
+so a disconnected external disk, permission change, or newly full filesystem
+cannot pass on stale setup state.
 
 The state schema also records the accepted runtime-terms version and UTC
 timestamp. Schema 1 setup files migrate to schema 2 without inventing consent.
@@ -359,9 +371,13 @@ explicitly accepted. A future terms version therefore requires new consent.
 
 Application selection is validated against the presentation-safe catalog.
 Required catalog dependencies are included recursively and the deterministic
-selection is persisted. The frontend cannot provide an arbitrary directory name
-to the layout operation: it can only request preparation from the persisted,
-reviewed setup.
+selection is persisted. The reviewed movie/TV preset is owned by the Go catalog,
+not duplicated in TypeScript. Running and stopped applications remain selected;
+during a runtime outage only previously persisted uncertain selections are
+retained, avoiding both accidental deselection and the false assumption that
+every catalog app is installed. The frontend cannot provide an arbitrary
+directory name to the layout operation: it can only request preparation from
+the persisted, reviewed setup.
 
 `internal/storage.LayoutPreparer` validates all application IDs before writing
 and idempotently creates `<selected>/Corsarr/config/<app>` plus one shared media

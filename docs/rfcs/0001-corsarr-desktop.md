@@ -671,6 +671,17 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: added a backend-owned recommended movie/TV preset, bounded
+  per-application installation progress, dependency-safe removal, and desired
+  state retention for installed apps. Runtime outages preserve only prior
+  uncertain choices instead of treating the entire catalog as installed.
+- 2026-08-11: made configuration archival clean up qBittorrent/Jellyfin
+  Keychain entries transactionally, restoring the archived directory when
+  credential removal fails. Shared media and downloads remain outside scope.
+- 2026-08-11: required 10 GiB of measurable free capacity on selected storage
+  and revalidated it before folder/runtime mutations. Hardlink absence remains
+  a non-blocking copy-efficiency warning. The bundle metadata now matches the
+  backend's macOS 14 minimum.
 - 2026-08-11: added a read-only first-Mac preflight for supported architecture,
   macOS 14+, Docker's official 4 GiB memory minimum, and a 4 GiB Corsarr free
   disk margin. The measured facts are visible in technical details and both

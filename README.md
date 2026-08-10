@@ -48,9 +48,12 @@ mutating it, and validates a user-selected storage folder for free space,
 writing, and hardlink support. It also persists the reviewed folder and
 application selection, includes catalog dependencies automatically, and creates
 an idempotent `Corsarr/` media/configuration tree only after explicit
-confirmation. The development build can now record explicit consent, prepare
-or start the supported runtime, and install the selected, digest-pinned
-containers through the ownership-safe runtime boundary. Installation waits for
+confirmation. A reviewed one-click preset selects the complete movie/TV stack
+while leaving music, books, and transcoding optional. Existing installed apps
+remain part of desired state, and removal is blocked while an installed app
+still depends on the target. The development build can now record explicit
+consent, prepare or start the supported runtime, and install the selected,
+digest-pinned containers through the ownership-safe runtime boundary. Installation waits for
 each allowlisted local web endpoint to become responsive before moving to its
 dependants. Radarr, Sonarr, and Lidarr then receive their approved library root
 folders idempotently through local authenticated APIs. qBittorrent's temporary
@@ -93,6 +96,13 @@ applications remain bound to this computer by default. While Jellyfin is
 running, the desktop lists a private IPv4 address that can be copied for a TV
 or mobile device on the same network; known virtual runtime and tunnel
 interfaces are not advertised.
+
+The selected storage filesystem must be writable, measurable, and have at
+least 10 GiB free. Hardlink support is reported as an efficiency warning rather
+than a compatibility failure. Corsarr repeats this check immediately before
+folder preparation and installation. During installation, the UI reports the
+current application and whether it is being started or configured without
+exposing runtime logs or credentials.
 
 Seerr signs in through that local Jellyfin administrator, enables the discovered
 Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles
