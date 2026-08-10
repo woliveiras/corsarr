@@ -49,6 +49,14 @@ through the native macOS administrator authorization prompt. The temporary disk
 image and mount workspace are removed afterward. Runtime readiness is probed
 for a bounded three minutes before success is reported.
 
+`internal/autostart` is the explicit background-start boundary. On macOS 13+
+it uses Apple's `SMAppService.mainAppService` to register the main Corsarr app
+for subsequent logins, report when approval is still required, and open the
+system Login Items panel. It does not write a legacy LaunchAgent plist, request
+administrator rights, or register anything until the user enables the option.
+Other platforms remain unsupported until they have native, separately tested
+adapters.
+
 `PrepareRuntime` is available only after the current versioned runtime consent
 has been persisted. The frontend supplies no URL, checksum, command, path,
 username, or installer argument. Windows and Linux return an explicit unsupported

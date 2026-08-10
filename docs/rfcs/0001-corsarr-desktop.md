@@ -441,6 +441,11 @@ On Windows/macOS with a runtime VM, Corsarr starts the machine/runtime first,
 waits for its API, and then reconciles applications. Closing the UI does not
 stop services. "Start services when I sign in" is an explicit setting.
 
+On macOS 13 and later, the implementation uses Apple's Service Management
+`mainAppService` registration so the setting remains visible and controllable
+in System Settings. Corsarr does not install a legacy plist into the user's
+LaunchAgents directory.
+
 ### Updates
 
 Do not track mutable `latest` tags as the installed contract. The catalog owns
@@ -571,6 +576,8 @@ claims must be rechecked during implementation and release validation.
 - [Wails repository and v2/v3 status](https://github.com/wailsapp/wails)
 - [Wails v2 supported platforms and build dependencies](https://wails.io/docs/v2.12.0/gettingstarted/installation/)
 - [Wails Go/frontend binding model](https://wails.io/docs/howdoesitwork/)
+- [Apple Service Management](https://developer.apple.com/documentation/servicemanagement/)
+- [SMAppService mainAppService](https://developer.apple.com/documentation/servicemanagement/smappservice/mainapp)
 
 ### Docker
 
