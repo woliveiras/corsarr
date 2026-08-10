@@ -113,3 +113,19 @@ func TestFileStoreMigratesSchemaTwoWithoutInventingStartAtLogin(t *testing.T) {
 		t.Fatalf("unexpected migrated state %#v", loaded)
 	}
 }
+
+func TestFileStoreMigratesSchemaThreeWithoutInventingLANAccess(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":3,"storagePath":"/Users/test/Media","applications":["jellyfin"],"startAtLogin":true}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write schema three state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load schema three state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.AllowJellyfinLAN {
+		t.Fatalf("unexpected migrated state %#v", loaded)
+	}
+}

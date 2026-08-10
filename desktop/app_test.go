@@ -125,7 +125,9 @@ func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) 
 	installation := &desktopInstallationManager{result: application.InstallationResult{Complete: true}}
 	runtime := &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}}
 	app := &App{
-		setup:        &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		setup: &desktopSetupManager{status: application.SetupStatus{
+			TermsAccepted: true, JellyfinLANEnabled: true,
+		}},
 		installation: installation, runtimeOnboarding: runtime,
 	}
 
@@ -133,7 +135,8 @@ func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) 
 	if err != nil {
 		t.Fatalf("install selected applications: %v", err)
 	}
-	if !result.Complete || installation.calls != 1 || runtime.calls != 1 {
+	if !result.Complete || installation.calls != 1 || runtime.calls != 1 ||
+		!installation.options.AllowJellyfinLAN {
 		t.Fatalf("expected one completed installation call, got result=%#v calls=%d", result, installation.calls)
 	}
 }
@@ -189,7 +192,7 @@ func TestUpdateApplicationUsesBoundedApplicationService(t *testing.T) {
 	updates := &desktopUpdateManager{result: application.ApplicationUpdateResult{
 		ApplicationID: "radarr", Updated: true,
 	}}
-	app := &App{updates: updates}
+	app := &App{setup: &desktopSetupManager{}, updates: updates}
 
 	result, err := app.UpdateApplication("radarr")
 	if err != nil {
@@ -197,6 +200,34 @@ func TestUpdateApplicationUsesBoundedApplicationService(t *testing.T) {
 	}
 	if !result.Updated || updates.applicationID != "radarr" || updates.calls != 1 {
 		t.Fatalf("expected one bounded update call, result=%#v manager=%#v", result, updates)
+	}
+}
+
+func TestSetJellyfinLANRejectsInstalledContainer(t *testing.T) {
+	setup := &desktopSetupManager{}
+	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{{
+		ApplicationID: "jellyfin", State: application.ManagedStateRunning,
+	}}}
+	app := &App{setup: setup, management: management}
+
+	if _, err := app.SetJellyfinLAN(true); err == nil {
+		t.Fatal("expected installed Jellyfin setting change to be rejected")
+	}
+	if setup.jellyfinLANCalls != 0 {
+		t.Fatalf("rejected setting reached setup %d times", setup.jellyfinLANCalls)
+	}
+}
+
+func TestSetJellyfinLANPersistsBeforeInstallation(t *testing.T) {
+	setup := &desktopSetupManager{}
+	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{{
+		ApplicationID: "jellyfin", State: application.ManagedStateNotInstalled,
+	}}}
+	app := &App{setup: setup, management: management}
+
+	status, err := app.SetJellyfinLAN(true)
+	if err != nil || !status.JellyfinLANEnabled || setup.jellyfinLANCalls != 1 {
+		t.Fatalf("unexpected LAN setting %#v, %v, calls=%d", status, err, setup.jellyfinLANCalls)
 	}
 }
 
@@ -481,6 +512,7 @@ type desktopSetupManager struct {
 	status            application.SetupStatus
 	savedStorage      string
 	startAtLoginCalls int
+	jellyfinLANCalls  int
 }
 
 func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
@@ -512,6 +544,12 @@ func (f *desktopSetupManager) SetStartAtLogin(enabled bool) (application.SetupSt
 
 func (f *desktopSetupManager) OpenStartAtLoginSettings() error { return nil }
 
+func (f *desktopSetupManager) SetJellyfinLAN(enabled bool) (application.SetupStatus, error) {
+	f.jellyfinLANCalls++
+	f.status.JellyfinLANEnabled = enabled
+	return f.status, nil
+}
+
 type desktopLayoutPreparer struct {
 	status         storage.LayoutStatus
 	basePath       string
@@ -520,8 +558,9 @@ type desktopLayoutPreparer struct {
 }
 
 type desktopInstallationManager struct {
-	result application.InstallationResult
-	calls  int
+	result  application.InstallationResult
+	calls   int
+	options runtimecatalog.RuntimeOptions
 }
 
 type desktopApplicationDataManager struct {
@@ -529,6 +568,19 @@ type desktopApplicationDataManager struct {
 	applicationID string
 	calls         int
 }
+
+type desktopApplicationManager struct {
+	statuses []application.ManagedApplicationStatus
+}
+
+func (m *desktopApplicationManager) ListStatuses(context.Context) []application.ManagedApplicationStatus {
+	return m.statuses
+}
+
+func (m *desktopApplicationManager) Start(context.Context, string) error   { return nil }
+func (m *desktopApplicationManager) Stop(context.Context, string) error    { return nil }
+func (m *desktopApplicationManager) Restart(context.Context, string) error { return nil }
+func (m *desktopApplicationManager) Remove(context.Context, string) error  { return nil }
 
 type desktopUpdateManager struct {
 	result        application.ApplicationUpdateResult
@@ -599,10 +651,11 @@ func (m *desktopApplicationDataManager) Archive(
 }
 
 func (m *desktopInstallationManager) InstallSelected(
-	context.Context,
-	runtimecatalog.RuntimeOptions,
+	_ context.Context,
+	options runtimecatalog.RuntimeOptions,
 ) (application.InstallationResult, error) {
 	m.calls++
+	m.options = options
 	return m.result, nil
 }
 

@@ -47,6 +47,7 @@ type SetupReport struct {
 	TermsAccepted                bool     `json:"termsAccepted"`
 	StartAtLogin                 bool     `json:"startAtLogin"`
 	StartAtLoginRequiresApproval bool     `json:"startAtLoginRequiresApproval"`
+	JellyfinLANEnabled           bool     `json:"jellyfinLanEnabled"`
 }
 
 type Report struct {
@@ -120,6 +121,7 @@ func (r *Reporter) Build(ctx context.Context) (Report, error) {
 			TermsAccepted:                setupStatus.TermsAccepted,
 			StartAtLogin:                 setupStatus.StartAtLogin,
 			StartAtLoginRequiresApproval: setupStatus.StartAtLoginRequiresApproval,
+			JellyfinLANEnabled:           setupStatus.JellyfinLANEnabled,
 		},
 		Applications: applicationStatuses,
 	}

@@ -81,6 +81,24 @@ func TestPodmanManagerCreatesOwnedNetworkWhenMissing(t *testing.T) {
 	}
 }
 
+func TestPodmanManagerPublishesExplicitLANPort(t *testing.T) {
+	runner := &recordingCommandRunner{path: "/opt/homebrew/bin/podman"}
+	manager := NewPodmanManager(runner, time.Second)
+
+	if err := manager.Create(context.Background(), ContainerSpec{
+		ApplicationID: "jellyfin",
+		Image:         "lscr.io/linuxserver/jellyfin@" + testImageDigest,
+		Ports: []PortBinding{{
+			HostPort: 8096, ContainerPort: 8096, Protocol: ProtocolTCP, Exposure: ExposureLAN,
+		}},
+	}); err != nil {
+		t.Fatalf("create LAN container: %v", err)
+	}
+	if !containsArguments(runner.calls[0].args, "--publish", "0.0.0.0:8096:8096/tcp") {
+		t.Fatalf("expected explicit LAN publication, got %v", runner.calls[0].args)
+	}
+}
+
 func TestPodmanManagerInspectsOwnedContainerState(t *testing.T) {
 	runner := &recordingCommandRunner{
 		path: "/opt/homebrew/bin/podman",

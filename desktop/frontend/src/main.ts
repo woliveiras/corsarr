@@ -23,6 +23,7 @@ import {
   RemoveApplication,
   RestartApplication,
   SaveApplicationSelection,
+  SetJellyfinLAN,
   SetStartAtLogin,
   StartApplication,
   StopApplication,
@@ -113,6 +114,7 @@ root.innerHTML = [
   '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
   '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a instalar e usar o Docker Desktop, baixar as imagens aprovadas e criar os serviços selecionados. Aceito os termos do Docker Desktop e entendo que o uso pessoal é gratuito, enquanto empresas maiores e entidades governamentais podem precisar de assinatura. Cada aplicação mantém sua própria licença.</span></label>',
   '        <div id="start-at-login-setting" class="start-at-login-setting" hidden><label><input id="start-at-login" type="checkbox"> <span>Iniciar meus serviços automaticamente quando eu entrar no Mac.</span></label><button id="open-login-settings" class="legal-link-button" type="button" hidden>Abrir Ajustes do Sistema</button></div>',
+  '        <div id="jellyfin-lan-setting" class="start-at-login-setting" hidden><label><input id="jellyfin-lan" type="checkbox"> <span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local. Os painéis administrativos continuam privados neste computador.</span></label></div>',
   '        <p id="installation-result" class="installation-result"></p>',
   '      </div>',
   '      <div class="installation-actions">',
@@ -158,6 +160,8 @@ const acceptTermsCheckbox = document.querySelector<HTMLInputElement>('#accept-te
 const startAtLoginSetting = document.querySelector<HTMLElement>('#start-at-login-setting');
 const startAtLoginCheckbox = document.querySelector<HTMLInputElement>('#start-at-login');
 const openLoginSettingsButton = document.querySelector<HTMLButtonElement>('#open-login-settings');
+const jellyfinLANSetting = document.querySelector<HTMLElement>('#jellyfin-lan-setting');
+const jellyfinLANCheckbox = document.querySelector<HTMLInputElement>('#jellyfin-lan');
 const homeView = document.querySelector<HTMLElement>('#home-view');
 const licensesView = document.querySelector<HTMLElement>('#licenses-view');
 const showHomeButton = document.querySelector<HTMLButtonElement>('#show-home');
@@ -618,6 +622,7 @@ async function loadApplicationStatuses(): Promise<void> {
   try {
     const statuses = await GetApplicationStatuses();
     managedStatuses = new Map(statuses.map((status) => [status.applicationId, status]));
+    updateJellyfinLANControl();
     renderApplications();
     renderLegalNotices();
   } catch {
@@ -697,7 +702,22 @@ function applySetupStatus(status: application.SetupStatus): void {
   if (openLoginSettingsButton) {
     openLoginSettingsButton.hidden = !status.startAtLoginRequiresApproval;
   }
+  updateJellyfinLANControl();
   updateInstallAuthority();
+}
+
+function updateJellyfinLANControl(): void {
+  const jellyfinSelected = setupStatus?.applications.includes('jellyfin') ?? false;
+  const jellyfinState = managedStatuses.get('jellyfin')?.state ?? 'not_installed';
+  const canChange = jellyfinState === 'not_installed';
+  if (jellyfinLANSetting) jellyfinLANSetting.hidden = !jellyfinSelected;
+  if (jellyfinLANCheckbox) {
+    jellyfinLANCheckbox.checked = setupStatus?.jellyfinLanEnabled ?? false;
+    jellyfinLANCheckbox.disabled = !canChange;
+    jellyfinLANCheckbox.title = canChange
+      ? ''
+      : 'Remova o container do Jellyfin antes de alterar o acesso à rede. As configurações e a mídia serão preservadas.';
+  }
 }
 
 function updateInstallAuthority(): void {
@@ -737,7 +757,7 @@ const runtimeMessages: Record<string, { title: string; description: string; badg
   unavailable: {
     title: 'Preparação necessária',
     description:
-      'Os componentes necessários ainda não estão instalados. A instalação guiada será habilitada no próximo marco.',
+      'O Corsarr pode preparar os componentes necessários após sua autorização explícita.',
     badge: 'Não preparado',
   },
   stopped: {
@@ -984,6 +1004,36 @@ startAtLoginCheckbox?.addEventListener('change', async () => {
     applySetupStatus(await GetSetupStatus());
     if (messageElement) {
       messageElement.textContent = 'Não foi possível alterar o início automático.';
+      messageElement.classList.add('error');
+    }
+  }
+});
+
+jellyfinLANCheckbox?.addEventListener('change', async () => {
+  if (!jellyfinLANCheckbox) return;
+  const requested = jellyfinLANCheckbox.checked;
+  if (
+    requested &&
+    !window.confirm(
+      'Permitir acesso ao Jellyfin nesta rede local? TVs, celulares e outros aparelhos conectados à mesma rede poderão acessar a tela do Jellyfin.',
+    )
+  ) {
+    jellyfinLANCheckbox.checked = false;
+    return;
+  }
+  jellyfinLANCheckbox.disabled = true;
+  try {
+    applySetupStatus(await SetJellyfinLAN(requested));
+    if (messageElement) {
+      messageElement.textContent = requested
+        ? 'O Jellyfin ficará disponível para os aparelhos desta rede após a instalação.'
+        : 'O Jellyfin ficará acessível somente neste computador.';
+      messageElement.classList.remove('error');
+    }
+  } catch {
+    applySetupStatus(await GetSetupStatus());
+    if (messageElement) {
+      messageElement.textContent = 'Não foi possível alterar o acesso do Jellyfin à rede.';
       messageElement.classList.add('error');
     }
   }

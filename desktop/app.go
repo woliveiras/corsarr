@@ -40,6 +40,7 @@ type setupManager interface {
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
 	AcceptCurrentTerms() (application.SetupStatus, error)
 	SetStartAtLogin(enabled bool) (application.SetupStatus, error)
+	SetJellyfinLAN(enabled bool) (application.SetupStatus, error)
 	OpenStartAtLoginSettings() error
 }
 
@@ -418,6 +419,18 @@ func (a *App) SetStartAtLogin(enabled bool) (application.SetupStatus, error) {
 	return a.setup.SetStartAtLogin(enabled)
 }
 
+func (a *App) SetJellyfinLAN(enabled bool) (application.SetupStatus, error) {
+	for _, status := range a.management.ListStatuses(a.appContext()) {
+		if status.ApplicationID == "jellyfin" &&
+			status.State != application.ManagedStateNotInstalled {
+			return application.SetupStatus{}, fmt.Errorf(
+				"remove the Jellyfin container before changing LAN access",
+			)
+		}
+	}
+	return a.setup.SetJellyfinLAN(enabled)
+}
+
 func (a *App) OpenStartAtLoginSettings() error {
 	return a.setup.OpenStartAtLoginSettings()
 }
@@ -439,7 +452,7 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	}
 	return a.installation.InstallSelected(
 		a.appContext(),
-		runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000},
+		runtimeOptions(setup),
 	)
 }
 
@@ -464,11 +477,21 @@ func (a *App) RemoveApplication(id string) error {
 }
 
 func (a *App) UpdateApplication(id string) (application.ApplicationUpdateResult, error) {
+	setup, err := a.setup.Load()
+	if err != nil {
+		return application.ApplicationUpdateResult{}, err
+	}
 	return a.updates.Update(
 		a.appContext(),
 		id,
-		runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000},
+		runtimeOptions(setup),
 	)
+}
+
+func runtimeOptions(setup application.SetupStatus) runtimecatalog.RuntimeOptions {
+	return runtimecatalog.RuntimeOptions{
+		PUID: 1000, PGID: 1000, AllowJellyfinLAN: setup.JellyfinLANEnabled,
+	}
 }
 
 func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, error) {

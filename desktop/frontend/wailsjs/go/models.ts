@@ -218,6 +218,7 @@ export namespace application {
 	    startAtLogin: boolean;
 	    startAtLoginSupported: boolean;
 	    startAtLoginRequiresApproval: boolean;
+	    jellyfinLanEnabled: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new SetupStatus(source);
@@ -234,6 +235,7 @@ export namespace application {
 	        this.startAtLogin = source["startAtLogin"];
 	        this.startAtLoginSupported = source["startAtLoginSupported"];
 	        this.startAtLoginRequiresApproval = source["startAtLoginRequiresApproval"];
+	        this.jellyfinLanEnabled = source["jellyfinLanEnabled"];
 	    }
 	}
 

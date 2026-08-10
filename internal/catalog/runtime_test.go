@@ -85,3 +85,29 @@ func TestRuntimeCatalogUsesOfficialSeerrImageWithInit(t *testing.T) {
 		t.Fatalf("expected official Seerr image, got %q", spec.Image)
 	}
 }
+
+func TestRuntimeCatalogExposesOnlyJellyfinToLANWhenExplicit(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create service registry: %v", err)
+	}
+	catalog, err := NewRuntimeCatalog(registry)
+	if err != nil {
+		t.Fatalf("create runtime catalog: %v", err)
+	}
+	root := filepath.Join(t.TempDir(), "Corsarr")
+
+	for _, applicationID := range []string{"jellyfin", "radarr", "qbittorrent"} {
+		spec, resolveErr := catalog.Resolve(applicationID, root, RuntimeOptions{AllowJellyfinLAN: true})
+		if resolveErr != nil {
+			t.Fatalf("resolve %s: %v", applicationID, resolveErr)
+		}
+		want := runtime.ExposureLoopback
+		if applicationID == "jellyfin" {
+			want = runtime.ExposureLAN
+		}
+		if spec.Ports[0].Exposure != want {
+			t.Fatalf("unexpected %s exposure: want %q got %q", applicationID, want, spec.Ports[0].Exposure)
+		}
+	}
+}

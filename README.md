@@ -81,6 +81,9 @@ On macOS 13+, an explicit optional setting registers Corsarr through Apple's
 Service Management framework. At login, Corsarr can start an already installed
 runtime and existing owned containers without installing new applications;
 pending approval remains visible in both Corsarr and System Settings.
+When Jellyfin is selected, a separate pre-install choice can expose only its
+HTTP service to the local network for TVs and mobile clients. All administrative
+applications remain bound to this computer by default.
 
 Seerr signs in through that local Jellyfin administrator, enables the discovered
 Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles

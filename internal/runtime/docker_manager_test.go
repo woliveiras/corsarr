@@ -72,6 +72,24 @@ func TestDockerManagerRejectsInvalidSpecBeforeRuntimeAccess(t *testing.T) {
 	}
 }
 
+func TestDockerManagerPublishesExplicitLANPort(t *testing.T) {
+	runner := &recordingCommandRunner{path: "/usr/local/bin/docker"}
+	manager := NewDockerManager(runner, time.Second)
+
+	if err := manager.Create(context.Background(), ContainerSpec{
+		ApplicationID: "jellyfin",
+		Image:         "lscr.io/linuxserver/jellyfin@" + testImageDigest,
+		Ports: []PortBinding{{
+			HostPort: 8096, ContainerPort: 8096, Protocol: ProtocolTCP, Exposure: ExposureLAN,
+		}},
+	}); err != nil {
+		t.Fatalf("create LAN container: %v", err)
+	}
+	if !containsArguments(runner.calls[0].args, "--publish", "0.0.0.0:8096:8096/tcp") {
+		t.Fatalf("expected explicit LAN publication, got %v", runner.calls[0].args)
+	}
+}
+
 func TestDockerManagerCreatesOwnedNetworkWhenMissing(t *testing.T) {
 	runner := &recordingCommandRunner{
 		path: "/usr/local/bin/docker",
@@ -261,6 +279,15 @@ type recordingCommandRunner struct {
 	lookPathCalls int
 	calls         []commandCall
 	results       []managerCommandResult
+}
+
+func containsArguments(arguments []string, expected ...string) bool {
+	for index := 0; index+len(expected) <= len(arguments); index++ {
+		if reflect.DeepEqual(arguments[index:index+len(expected)], expected) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *recordingCommandRunner) LookPath(string) (string, error) {

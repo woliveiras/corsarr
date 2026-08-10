@@ -52,6 +52,8 @@ export function RestartApplication(arg1:string):Promise<void>;
 
 export function SaveApplicationSelection(arg1:Array<string>):Promise<application.SetupStatus>;
 
+export function SetJellyfinLAN(arg1:boolean):Promise<application.SetupStatus>;
+
 export function SetStartAtLogin(arg1:boolean):Promise<application.SetupStatus>;
 
 export function StartApplication(arg1:string):Promise<void>;

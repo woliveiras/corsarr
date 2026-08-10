@@ -561,7 +561,6 @@ is insufficient.
 - Whether Windows NTFS/WSL and macOS shared mounts preserve acceptable hardlink
   behavior for the chosen runtime.
 - Whether hardware transcoding belongs in the first Jellyfin catalog profile.
-- Whether LAN access is limited to Jellyfin in the MVP.
 - How runtime background startup is packaged on each OS without making the
   desktop window open unnecessarily.
 - Which Podman result promotes it to default versus optional support.
@@ -654,6 +653,7 @@ claims must be rechecked during implementation and release validation.
 - [Bazarr configuration path and settings persistence](https://github.com/morpheus65535/bazarr/blob/master/bazarr/app/config.py)
 - [LinuxServer Radarr image, volumes, permissions, and hardlink warning](https://docs.linuxserver.io/images/docker-radarr/)
 - [Sonarr root folders, downloads, and hardlinks](https://wiki.servarr.com/en/sonarr/quick-start-guide)
+- [Jellyfin local networking and TCP 8096](https://jellyfin.org/docs/general/post-install/networking/)
 - [Archived Readarr repository](https://github.com/Readarr/Readarr)
 
 ### Application licenses
@@ -704,6 +704,9 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Made the bounded desktop install intent prepare/start and verify
   the runtime before container installation, with an additional confirmation
   before downloading an absent runtime.
+- 2026-08-10: Added explicit local-network access for Jellyfin TCP 8096 only;
+  all administrative ports remain loopback-bound and the setting cannot change
+  an existing container implicitly.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

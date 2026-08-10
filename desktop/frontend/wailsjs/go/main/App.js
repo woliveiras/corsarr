@@ -94,6 +94,10 @@ export function SaveApplicationSelection(arg1) {
   return window['go']['main']['App']['SaveApplicationSelection'](arg1);
 }
 
+export function SetJellyfinLAN(arg1) {
+  return window['go']['main']['App']['SetJellyfinLAN'](arg1);
+}
+
 export function SetStartAtLogin(arg1) {
   return window['go']['main']['App']['SetStartAtLogin'](arg1);
 }

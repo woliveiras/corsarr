@@ -22,6 +22,7 @@ type SetupStatus struct {
 	StartAtLogin                 bool     `json:"startAtLogin"`
 	StartAtLoginSupported        bool     `json:"startAtLoginSupported"`
 	StartAtLoginRequiresApproval bool     `json:"startAtLoginRequiresApproval"`
+	JellyfinLANEnabled           bool     `json:"jellyfinLanEnabled"`
 }
 
 const CurrentTermsVersion = "2026-08-10.2"
@@ -107,8 +108,30 @@ func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, e
 		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
 	}
 	desktopState.Applications = applications
+	if !containsApplication(applications, "jellyfin") {
+		desktopState.AllowJellyfinLAN = false
+	}
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save desktop applications: %w", err)
+	}
+	return s.status(desktopState)
+}
+
+func (s *SetupService) SetJellyfinLAN(enabled bool) (SetupStatus, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Applications = s.knownApplications(desktopState.Applications)
+	if enabled && !containsApplication(desktopState.Applications, "jellyfin") {
+		return SetupStatus{}, fmt.Errorf("Jellyfin must be selected before enabling LAN access")
+	}
+	desktopState.AllowJellyfinLAN = enabled
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save Jellyfin LAN access: %w", err)
 	}
 	return s.status(desktopState)
 }
@@ -219,5 +242,15 @@ func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Stat
 		StartAtLogin:                 loginStatus.Enabled || loginStatus.RequiresApproval,
 		StartAtLoginSupported:        loginStatus.Supported,
 		StartAtLoginRequiresApproval: loginStatus.RequiresApproval,
+		JellyfinLANEnabled:           desktopState.AllowJellyfinLAN,
 	}
+}
+
+func containsApplication(applications []string, expected string) bool {
+	for _, applicationID := range applications {
+		if applicationID == expected {
+			return true
+		}
+	}
+	return false
 }

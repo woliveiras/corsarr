@@ -12,9 +12,10 @@ import (
 const RuntimeCatalogVerifiedAt = "2026-08-10"
 
 type RuntimeOptions struct {
-	Timezone string
-	PUID     int
-	PGID     int
+	Timezone         string
+	PUID             int
+	PGID             int
+	AllowJellyfinLAN bool
 }
 
 type RuntimeManifest struct {
@@ -175,13 +176,18 @@ func (c *RuntimeCatalog) Resolve(
 		environment["WEBUI_PORT"] = strconv.Itoa(manifest.ContainerPort)
 	}
 
+	exposure := containerruntime.ExposureLoopback
+	if applicationID == "jellyfin" && options.AllowJellyfinLAN {
+		exposure = containerruntime.ExposureLAN
+	}
+
 	return containerruntime.ContainerSpec{
 		ApplicationID: applicationID,
 		Image:         manifest.Image,
 		Init:          manifest.RequiresInit,
 		Ports: []containerruntime.PortBinding{{
 			HostPort: manifest.HostPort, ContainerPort: manifest.ContainerPort,
-			Protocol: containerruntime.ProtocolTCP, Exposure: containerruntime.ExposureLoopback,
+			Protocol: containerruntime.ProtocolTCP, Exposure: exposure,
 		}},
 		Mounts: []containerruntime.BindMount{
 			{HostPath: filepath.Join(rootPath, "config", applicationID), ContainerPath: manifest.ConfigTarget},

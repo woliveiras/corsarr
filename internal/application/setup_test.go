@@ -187,6 +187,53 @@ func TestSetupServiceReportsNativeApprovalWithoutClaimingEnabled(t *testing.T) {
 	}
 }
 
+func TestSetupServiceAllowsExplicitJellyfinLANOnlyWhenSelected(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{"jellyfin"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.SetJellyfinLAN(true)
+	if err != nil {
+		t.Fatalf("enable Jellyfin LAN: %v", err)
+	}
+	if !status.JellyfinLANEnabled || !store.desktopState.AllowJellyfinLAN {
+		t.Fatalf("expected persisted LAN choice, status=%#v state=%#v", status, store.desktopState)
+	}
+
+	status, err = service.SaveApplications([]string{"radarr"})
+	if err != nil {
+		t.Fatalf("replace application selection: %v", err)
+	}
+	if status.JellyfinLANEnabled || store.desktopState.AllowJellyfinLAN {
+		t.Fatalf("LAN choice survived Jellyfin removal, status=%#v state=%#v", status, store.desktopState)
+	}
+}
+
+func TestSetupServiceRejectsJellyfinLANWithoutJellyfin(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{"radarr"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	if _, err := service.SetJellyfinLAN(true); err == nil {
+		t.Fatal("expected Jellyfin LAN without Jellyfin to be rejected")
+	}
+	if store.saveCalls != 0 {
+		t.Fatalf("rejected LAN choice changed state %d times", store.saveCalls)
+	}
+}
+
 type memoryStateStore struct {
 	desktopState statefile.DesktopState
 	loadErr      error

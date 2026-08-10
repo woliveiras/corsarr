@@ -121,6 +121,14 @@ configuration mount per application plus the single shared media mount. Web
 administration ports remain loopback-only in the default spec. Catalog refresh,
 review, and update policy remain separate from ordinary application startup.
 
+`RuntimeOptions.AllowJellyfinLAN` is the only MVP exception to the loopback
+default. It changes Jellyfin's approved TCP 8096 binding to explicit LAN
+exposure while every other application remains on loopback. The persisted
+choice is accepted only while Jellyfin is selected and before its container
+exists; changing it later requires removing only the container and reinstalling
+with the preserved configuration/media. The frontend asks for confirmation
+before enabling it.
+
 `internal/orchestrator.Installer` owns the first transactional application
 workflow: resolve and validate the approved spec, ensure the network, pull,
 create, start, and inspect. A failure after container creation removes only that
