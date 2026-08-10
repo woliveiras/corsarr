@@ -1,21 +1,21 @@
-# Corsarr CLI - Architecture and Planning
+# Corsarr CLI Architecture
 
 > 🏴‍☠️ Navigate the high seas of media automation
 
+> This document describes the current CLI and Docker Compose generator. The
+> accepted, not-yet-implemented Corsarr Desktop direction is documented in
+> [RFC 0001](rfcs/0001-corsarr-desktop.md). Durable desktop technology and
+> runtime choices are recorded under [decisions](decisions/).
+
 ## 📋 Overview
 
-Go CLI to simplify configuration and initialization of the *arr stack (Radarr, Sonarr, etc). Users can select desired services, configure environment variables interactively, and the CLI will automatically generate the correct `docker-compose.yml` and `.env` files.
+Corsarr currently ships as a Go CLI that simplifies configuration and
+initialization of the *arr stack. Users can select services, configure shared
+environment values, validate the result, and generate `docker-compose.yml` and
+`.env` files.
 
-### Current Problem
-
-- Multiple directories with different `docker-compose.yml` files (`vpn/`, `simple/`)
-- Difficult to maintain when adding new services
-- Users need to manually edit files to choose services
-- Manual environment variable configuration prone to errors
-
-### Proposed Solution
-
-Interactive CLI that:
+The CLI replaced the original model of maintaining separate hand-edited Compose
+files for VPN and non-VPN stacks. It currently:
 
 1. Allows visual service selection (checkboxes)
 2. Configures environment variables via prompts
@@ -41,18 +41,20 @@ corsarr/
 │   ├── services/
 │   │   ├── services.go   # Definition of all available services
 │   │   ├── categories.go # Service categorization
-│   │   └── registry.go   # Registry pattern to manage services
+│   │   ├── registry.go   # Registry pattern to manage services
+│   │   └── templates/    # Embedded YAML service definitions
 │   │
 │   ├── generator/
 │   │   ├── compose.go    # docker-compose.yml generation orchestrator
 │   │   ├── strategy.go   # Strategy Pattern (VPN/Bridge mode)
 │   │   ├── env.go        # .env file generation
-│   │   └── network.go    # Docker network configuration
+│   │   ├── network.go    # Docker network configuration
+│   │   └── templates/    # Embedded generation templates
 │   │
 │   ├── validator/
 │   │   ├── validator.go  # Configuration validations
-│   │   ├── ports.go      # Port conflict validation
-│   │   ├── dependencies.go # Service dependency validation
+│   │   ├── port.go       # Port conflict validation
+│   │   ├── dependency.go # Service dependency validation
 │   │   ├── path.go       # Path validation
 │   │   ├── path_unix.go  # Unix-specific disk space checking
 │   │   ├── path_windows.go # Windows-specific disk space checking
@@ -63,11 +65,11 @@ corsarr/
 │   │   └── config.go      # Environment variable config prompts
 │   │
 │   ├── profile/
-│   │   ├── profile.go     # Profile structure
-│   │   └── storage.go     # Profile persistence (JSON/YAML)
+│   │   └── profile.go     # Profile structure and persistence
 │   │
 │   └── i18n/
 │       ├── i18n.go        # Internationalization
+│       ├── language.go    # Language selection and normalization
 │       └── locales/       # Translation files
 │           ├── en.yaml    # English
 │           ├── pt-br.yaml # Brazilian Portuguese
@@ -136,42 +138,39 @@ corsarr/
 ### Service
 ```go
 type Service struct {
-    ID            string              // Unique identifier
-    Name          string              // Friendly name
-    Category      ServiceCategory     // Service category
-    Image         string              // Docker image
-    ContainerName string              // Container name
-    Hostname      string              // Container hostname
-    Ports         []PortMapping       // Port mappings
-    Volumes       []VolumeMapping     // Volume mappings
-    Environment   map[string]string   // Service-specific environment variables
-    Devices       []string            // Devices (e.g., /dev/dri)
-    RequiresVPN   bool                // Whether VPN is required
-    SupportsVPN   bool                // Whether VPN is supported (optional)
-    Dependencies  []string            // IDs of dependent services
-    Optional      bool                // Whether it's optional in configuration
-    Description   string              // User-facing description
+    ID            string
+    Name          string
+    Category      ServiceCategory
+    Description   string
+    Image         string
+    ContainerName string
+    Ports         []PortMapping
+    Volumes       []VolumeMapping
+    Environment   []string
+    Devices       []string
+    CapAdd        []string
+    Network       NetworkConfig
+    Restart       string
+    SupportsVPN   bool
+    RequiresVPN   bool
+    Dependencies  []string
+    Optional      bool
 }
 ```
 
-### Configuration
+### Profile
 
 ```go
-type Configuration struct {
-    UseVPN       bool                // Whether to use VPN
-    Services     []string            // IDs of selected services
-    Environment  map[string]string   // All environment variables
-    BasePath     string              // ARRPATH
-    OutputDir    string              // Where to generate files
-    BackupOld    bool                // Whether to backup old files
-}
-
 type Profile struct {
-    Name         string
-    Description  string
-    Configuration Configuration
-    CreatedAt    time.Time
-    UpdatedAt    time.Time
+    Name        string
+    Description string
+    CreatedAt   time.Time
+    UpdatedAt   time.Time
+    Version     string
+    VPN         VPNConfig
+    Services    []string
+    Environment map[string]string
+    OutputDir   string
 }
 ```
 
@@ -190,26 +189,26 @@ type Profile struct {
 ? Select the services you want to use:
   Download Managers:
     ☑ qBittorrent
-  
+
   Indexers:
     ☑ Prowlarr
     ☐ FlareSolverr (requires VPN)
-  
+
   Media Management:
     ☑ Sonarr (TV Shows)
     ☑ Radarr (Movies)
     ☐ Lidarr (Music)
     ☐ LazyLibrarian (Books)
-  
+
   Subtitles:
     ☑ Bazarr
-  
+
   Streaming:
     ☑ Jellyfin
-  
+
   Request Management:
     ☐ Jellyseerr (requires Jellyfin)
-  
+
   Transcoding:
     ☐ FileFlows
 
@@ -354,18 +353,15 @@ FileFlows → requires Jellyfin
 
 ---
 
-## 📦 Go Dependencies
+## 📦 Direct Go Dependencies
 
 ```go
 require (
-    github.com/spf13/cobra v1.8.0        // CLI framework
-    github.com/spf13/viper v1.18.2       // Configuration
-    github.com/charmbracelet/huh v0.8.0  // Interactive prompts
-    github.com/charmbracelet/bubbletea v1.3.10 // TUI framework
-    gopkg.in/yaml.v3 v3.0.1              // YAML parsing
-    github.com/fatih/color v1.16.0       // Terminal colors
-    github.com/olekukonko/tablewriter v0.0.5 // Tables
-    text/template                         // Native Go templates
+    github.com/charmbracelet/huh v0.8.0 // Interactive prompts
+    github.com/nicksnyder/go-i18n/v2 v2.4.0 // Internationalization
+    github.com/spf13/cobra v1.8.0 // CLI framework
+    golang.org/x/text v0.31.0 // Locale support
+    gopkg.in/yaml.v3 v3.0.1 // YAML parsing
 )
 ```
 

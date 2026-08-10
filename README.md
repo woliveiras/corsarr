@@ -29,6 +29,21 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 
 **The CLI handles all the complexity** - service dependencies, network configuration, environment variables, port management, and more.
 
+## 🧭 Project Direction
+
+Corsarr currently ships as the CLI documented below. An accepted proposal will
+evolve it into Corsarr Desktop: a focused visual application for non-technical
+users to install and operate the media stack on their personal computer while
+keeping Docker, Podman, WSL, and other runtime details out of the primary user
+experience.
+
+- [Documentation index](docs/README.md)
+- [Corsarr Desktop RFC](docs/rfcs/0001-corsarr-desktop.md)
+- [Accepted architecture decisions](docs/decisions/)
+
+The desktop proposal has not been implemented yet. The prerequisites and usage
+instructions below continue to describe the current CLI release.
+
 ## ⚡ Quick Start
 
 ### Prerequisites
