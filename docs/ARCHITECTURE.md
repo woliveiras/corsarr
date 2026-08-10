@@ -128,6 +128,11 @@ and descriptions come from the same reviewed translation keys already used by
 the CLI instead of being duplicated in TypeScript. Missing translation keys
 fall back to registry metadata.
 
+The desktop legal catalog applies the same locale to application names and
+purposes while retaining allowlisted official, source, image, support, and
+license URLs in Go. Runtime legal notices remain authored explicitly because
+they are not service-registry entries.
+
 `RuntimeOptions.AllowJellyfinLAN` is the only MVP exception to the loopback
 default. It changes Jellyfin's approved TCP 8096 binding to explicit LAN
 exposure while every other application remains on loopback. The persisted

@@ -201,7 +201,7 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
 	}
-	legalCatalog, err := legal.NewCatalog(registry, approvedCatalog)
+	legalCatalog, err := legal.NewLocalizedCatalog(registry, approvedCatalog, translator)
 	if err != nil {
 		return nil, fmt.Errorf("create legal catalog: %w", err)
 	}

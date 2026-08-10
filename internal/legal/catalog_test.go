@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -34,6 +35,39 @@ func TestCatalogHasCompleteNoticeForEveryDesktopApplication(t *testing.T) {
 	}
 	if applicationCount != 10 {
 		t.Fatalf("expected all 10 desktop applications, got %d", applicationCount)
+	}
+}
+
+func TestLocalizedCatalogTranslatesApplicationPurpose(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	runtimeCatalog, err := runtimecatalog.NewRuntimeCatalog(registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	translator, err := i18n.New("pt-br")
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalog, err := NewLocalizedCatalog(registry, runtimeCatalog, translator)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+	for _, notice := range catalog.ListNotices() {
+		if notice.ID != "radarr" {
+			continue
+		}
+		found = true
+		if notice.Purpose != "buscador e gerenciador de filmes" {
+			t.Fatalf("unexpected translated purpose %q", notice.Purpose)
+		}
+	}
+	if !found {
+		t.Fatal("expected Radarr legal notice")
 	}
 }
 

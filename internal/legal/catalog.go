@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -120,6 +121,22 @@ var applicationMetadata = map[string]legalMetadata{
 }
 
 func NewCatalog(registry *services.Registry, runtime *runtimecatalog.RuntimeCatalog) (*Catalog, error) {
+	return newCatalog(registry, runtime, nil)
+}
+
+func NewLocalizedCatalog(
+	registry *services.Registry,
+	runtime *runtimecatalog.RuntimeCatalog,
+	translator *i18n.I18n,
+) (*Catalog, error) {
+	return newCatalog(registry, runtime, translator)
+}
+
+func newCatalog(
+	registry *services.Registry,
+	runtime *runtimecatalog.RuntimeCatalog,
+	translator *i18n.I18n,
+) (*Catalog, error) {
 	catalog := &Catalog{links: make(map[string]map[string]string)}
 	for _, service := range registry.GetAllServices() {
 		if service.WebUI == nil {
@@ -144,8 +161,18 @@ func NewCatalog(registry *services.Registry, runtime *runtimecatalog.RuntimeCata
 		if metadata.supportURL != "" {
 			links[LinkSupport] = metadata.supportURL
 		}
+		name := service.Name
+		purpose := service.Description
+		if translator != nil {
+			if translated := translator.T(service.GetNameKey()); translated != service.GetNameKey() {
+				name = translated
+			}
+			if translated := translator.T(service.GetDescriptionKey()); translated != service.GetDescriptionKey() {
+				purpose = translated
+			}
+		}
 		if err := catalog.addNotice(Notice{
-			ID: service.ID, Name: service.Name, Purpose: service.Description,
+			ID: service.ID, Name: name, Purpose: purpose,
 			ComponentType: ComponentApplication, License: metadata.license,
 			CopyrightNotice: "Direitos autorais pertencem aos autores e contribuidores indicados pelo projeto oficial.",
 			ImageMaintainer: metadata.imageMaintainer, ApprovedImage: attribution.ApprovedImage,
