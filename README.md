@@ -152,6 +152,15 @@ CORSARR_DOCKER_CONTRACT_IMAGE='repository/name@sha256:<digest>' \
 To include real update and rollback replacement, also provide a different
 immutable local image through `CORSARR_DOCKER_ROLLBACK_IMAGE`. Both references
 are inspected locally and never pulled by the contract.
+
+Catalog maintainers can query every approved immutable OCI index without
+pulling layers and require both Linux AMD64 and ARM64 variants:
+
+```bash
+CORSARR_VERIFY_REMOTE_MANIFESTS=1 \
+  go test ./internal/catalog -run '^TestRuntimeCatalogRemotePlatformContract$' -v
+```
+
 Managed containers carry a SHA-256 fingerprint of their image-independent
 runtime contract. Automatic updates stop before backup, pull, or replacement
 when the installed ports, mounts, init flag, or environment no longer match the

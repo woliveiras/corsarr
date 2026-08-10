@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: reverified all ten immutable application indexes against their
+  configured OCI registries without pulling layers. Every digest advertised
+  both Linux AMD64 and ARM64; an opt-in remote contract now reproduces this
+  catalog-maintenance gate.
 - 2026-08-11: made update repeat the Mac host preflight after the selected
   storage check, covering free space on the runtime-cache filesystem before an
   image pull when media/configuration live on a different disk.

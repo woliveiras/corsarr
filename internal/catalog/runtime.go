@@ -9,7 +9,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
-const RuntimeCatalogVerifiedAt = "2026-08-10"
+const RuntimeCatalogVerifiedAt = "2026-08-11"
 
 type RuntimeOptions struct {
 	Timezone         string
