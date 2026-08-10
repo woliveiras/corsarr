@@ -615,6 +615,10 @@ claims must be rechecked during implementation and release validation.
 - [Radarr root-folder API controller and v3 contract](https://github.com/Radarr/Radarr/blob/develop/src/Radarr.Api.V3/RootFolders/RootFolderController.cs)
 - [Sonarr root-folder API controller and v3 contract](https://github.com/Sonarr/Sonarr/blob/develop/src/Sonarr.Api.V3/RootFolders/RootFolderController.cs)
 - [Lidarr root-folder API controller and v1 contract](https://github.com/Lidarr/Lidarr/blob/develop/src/Lidarr.Api.V1/RootFolders/RootFolderController.cs)
+- [Radarr provider schema, create/update, and connection-test behavior](https://github.com/Radarr/Radarr/blob/develop/src/Radarr.Api.V3/ProviderControllerBase.cs)
+- [Radarr qBittorrent settings contract](https://github.com/Radarr/Radarr/blob/develop/src/NzbDrone.Core/Download/Clients/QBittorrent/QBittorrentSettings.cs)
+- [Sonarr qBittorrent settings contract](https://github.com/Sonarr/Sonarr/blob/develop/src/NzbDrone.Core/Download/Clients/QBittorrent/QBittorrentSettings.cs)
+- [Lidarr qBittorrent settings contract](https://github.com/Lidarr/Lidarr/blob/develop/src/NzbDrone.Core/Download/Clients/QBittorrent/QBittorrentSettings.cs)
 - [qBittorrent WebUI API](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29)
 - [qBittorrent API key authentication](https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29)
 - [Jellyfin server API and local Swagger UI](https://github.com/jellyfin/jellyfin)
@@ -673,3 +677,5 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Automated qBittorrent temporary-password replacement, permanent
   Keychain storage, approved download paths/categories, and explicit native
   clipboard access without returning the password to TypeScript.
+- 2026-08-10: Connected qBittorrent to Radarr, Sonarr, and Lidarr from each
+  app's live provider schema while preserving user-created download clients.

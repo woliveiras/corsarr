@@ -113,17 +113,25 @@ func NewApp() (*App, error) {
 	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
 	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
 	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog, readiness)
-	arrProvisioner := provisioning.NewARRProvisioner(
-		provisioning.NewARRCredentialReader(),
-		provisioning.NewARRClient(catalog),
-	)
+	arrCredentials := provisioning.NewARRCredentialReader()
+	arrClient := provisioning.NewARRClient(catalog)
+	arrProvisioner := provisioning.NewARRProvisioner(arrCredentials, arrClient)
 	credentialStore := credentials.NewPlatformStore()
 	qbittorrentProvisioner := provisioning.NewQBittorrentProvisioner(
 		dockerManager,
 		credentialStore,
 		provisioning.NewQBittorrentClient(catalog),
 	)
-	provisioner := provisioning.NewChainProvisioner(arrProvisioner, qbittorrentProvisioner)
+	arrDownloadProvisioner := provisioning.NewARRDownloadClientProvisioner(
+		arrCredentials,
+		credentialStore,
+		arrClient,
+	)
+	provisioner := provisioning.NewChainProvisioner(
+		arrProvisioner,
+		qbittorrentProvisioner,
+		arrDownloadProvisioner,
+	)
 	installation := application.NewInstallationService(
 		setup,
 		storage.NewLayoutPreparer(),

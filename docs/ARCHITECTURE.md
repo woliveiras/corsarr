@@ -120,6 +120,14 @@ the non-secret username. Password retrieval remains in Go: an explicit
 `CopyQBittorrentPassword` intent writes it directly to the native clipboard and
 returns no secret to TypeScript.
 
+`internal/provisioning.ARRDownloadClientProvisioner` loads both secrets only in
+Go and asks `ARRClient` to reconcile the reserved `qBittorrent (Corsarr)`
+provider. The client first fetches the app's official live provider schema,
+requires every expected qBittorrent field, fills only the internal network
+alias, port, stored credentials, and app-specific category, then creates or
+updates only the exact reserved provider name. Other user providers are never
+selected. Radarr and Sonarr use API v3; Lidarr uses API v1.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

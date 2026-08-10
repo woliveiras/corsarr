@@ -57,8 +57,10 @@ folders idempotently through local authenticated APIs. qBittorrent's temporary
 administrator credential is replaced with a generated `corsarr` credential
 stored in the macOS Keychain; approved download paths and per-app categories are
 reconciled, and the user can copy the password explicitly from the desktop UI.
-Automatic runtime installation and cross-application connections are still
-pending. Installed
+Radarr, Sonarr, and Lidarr receive a dedicated `qBittorrent (Corsarr)` download
+client built from each app's live provider schema, without modifying providers
+created by the user. Automatic runtime installation plus Prowlarr, Bazarr, and
+media-server connections are still pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and
