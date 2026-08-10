@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/application"
@@ -12,6 +13,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/hostreadiness"
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
+	"github.com/woliveiras/corsarr/internal/services"
 	"github.com/woliveiras/corsarr/internal/storage"
 )
 
@@ -78,6 +80,35 @@ func TestChooseStorageLocationDoesNotInspectAfterCancel(t *testing.T) {
 	}
 	if inspector.calls != 0 {
 		t.Fatalf("expected no inspection after cancel, got %d", inspector.calls)
+	}
+}
+
+func TestSelectRecommendedApplicationsUsesBackendCatalogPreset(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create service registry: %v", err)
+	}
+	setup := &desktopSetupManager{}
+	app := &App{catalog: application.NewCatalog(registry), setup: setup}
+
+	status, err := app.SelectRecommendedApplications()
+	if err != nil {
+		t.Fatalf("select recommended applications: %v", err)
+	}
+	want := []string{
+		"bazarr",
+		"jellyfin",
+		"jellyseerr",
+		"prowlarr",
+		"qbittorrent",
+		"radarr",
+		"sonarr",
+	}
+	if !reflect.DeepEqual(status.Applications, want) {
+		t.Fatalf("expected backend preset %v, got %v", want, status.Applications)
+	}
+	if setup.saveApplicationsCalls != 1 {
+		t.Fatalf("expected one persisted selection, got %d", setup.saveApplicationsCalls)
 	}
 }
 
@@ -594,10 +625,11 @@ func (f *desktopStorageInspector) Inspect(path string) storage.Status {
 }
 
 type desktopSetupManager struct {
-	status            application.SetupStatus
-	savedStorage      string
-	startAtLoginCalls int
-	jellyfinLANCalls  int
+	status                application.SetupStatus
+	savedStorage          string
+	saveApplicationsCalls int
+	startAtLoginCalls     int
+	jellyfinLANCalls      int
 }
 
 func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
@@ -611,6 +643,7 @@ func (f *desktopSetupManager) SaveStorage(path string) (application.SetupStatus,
 }
 
 func (f *desktopSetupManager) SaveApplications(applicationIDs []string) (application.SetupStatus, error) {
+	f.saveApplicationsCalls++
 	f.status.Applications = applicationIDs
 	return f.status, nil
 }

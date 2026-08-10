@@ -102,6 +102,10 @@ export function SaveApplicationSelection(arg1) {
   return window['go']['main']['App']['SaveApplicationSelection'](arg1);
 }
 
+export function SelectRecommendedApplications() {
+  return window['go']['main']['App']['SelectRecommendedApplications']();
+}
+
 export function SetJellyfinLAN(arg1) {
   return window['go']['main']['App']['SetJellyfinLAN'](arg1);
 }

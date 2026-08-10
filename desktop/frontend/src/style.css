@@ -676,6 +676,25 @@ nav {
   font-size: 11px;
 }
 
+.section-help {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.catalog-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.recommended-button {
+  width: auto;
+  white-space: nowrap;
+}
+
 .message {
   min-height: 0;
   color: #79c9be;

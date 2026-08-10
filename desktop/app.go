@@ -353,6 +353,16 @@ func (a *App) ListApplications() []application.ApplicationSummary {
 	return a.catalog.ListApplications()
 }
 
+// SelectRecommendedApplications persists Corsarr's reviewed starter stack.
+func (a *App) SelectRecommendedApplications() (application.SetupStatus, error) {
+	applicationIDs, err := a.catalog.RecommendedApplicationIDs()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+
+	return a.setup.SaveApplications(applicationIDs)
+}
+
 func (a *App) ListLegalNotices() []legal.Notice {
 	return a.legal.ListNotices()
 }

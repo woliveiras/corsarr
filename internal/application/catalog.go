@@ -13,6 +13,16 @@ import (
 
 const localApplicationHost = "127.0.0.1"
 
+var recommendedApplicationIDs = []string{
+	"bazarr",
+	"jellyfin",
+	"jellyseerr",
+	"prowlarr",
+	"qbittorrent",
+	"radarr",
+	"sonarr",
+}
+
 // ApplicationSummary is the runtime-independent application data exposed to
 // presentation layers such as Corsarr Desktop.
 type ApplicationSummary struct {
@@ -137,6 +147,17 @@ func (c *Catalog) ListApplications() []ApplicationSummary {
 	applications := make([]ApplicationSummary, len(c.applications))
 	copy(applications, c.applications)
 	return applications
+}
+
+// RecommendedApplicationIDs returns the reviewed starter stack for people who
+// want movies and TV shows without choosing every supporting application.
+func (c *Catalog) RecommendedApplicationIDs() ([]string, error) {
+	applicationIDs := append([]string(nil), recommendedApplicationIDs...)
+	if _, err := c.InstallationOrder(applicationIDs); err != nil {
+		return nil, fmt.Errorf("recommended desktop applications are unavailable: %w", err)
+	}
+
+	return applicationIDs, nil
 }
 
 // ResolveApplicationURL returns an allowlisted local URL for a catalog ID.

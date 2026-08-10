@@ -1,6 +1,7 @@
 package application
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/i18n"
@@ -119,6 +120,43 @@ func TestCatalogRequiresArrApplicationsBeforeBazarr(t *testing.T) {
 	}
 	if _, err := catalog.InstallationOrder([]string{"bazarr"}); err == nil {
 		t.Fatal("expected Bazarr without Arr dependencies to be rejected")
+	}
+}
+
+func TestCatalogRecommendedApplicationsFormCompleteStarterStack(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	catalog := NewCatalog(registry)
+
+	recommended, err := catalog.RecommendedApplicationIDs()
+	if err != nil {
+		t.Fatalf("resolve recommended applications: %v", err)
+	}
+	want := []string{
+		"bazarr",
+		"jellyfin",
+		"jellyseerr",
+		"prowlarr",
+		"qbittorrent",
+		"radarr",
+		"sonarr",
+	}
+	if !reflect.DeepEqual(recommended, want) {
+		t.Fatalf("expected reviewed starter stack %v, got %v", want, recommended)
+	}
+	if _, err := catalog.InstallationOrder(recommended); err != nil {
+		t.Fatalf("recommended stack has incomplete dependencies: %v", err)
+	}
+
+	recommended[0] = "mutated"
+	again, err := catalog.RecommendedApplicationIDs()
+	if err != nil {
+		t.Fatalf("resolve recommended applications again: %v", err)
+	}
+	if again[0] != "bazarr" {
+		t.Fatalf("caller mutated catalog preset: %v", again)
 	}
 }
 
