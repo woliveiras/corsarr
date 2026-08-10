@@ -1080,6 +1080,14 @@ nav {
   .applications {
     grid-template-columns: 1fr;
   }
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .catalog-actions {
+    align-items: flex-start;
+  }
   .legal-notices {
     grid-template-columns: 1fr;
   }

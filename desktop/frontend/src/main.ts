@@ -299,6 +299,12 @@ function createApplicationCard(application: Application): HTMLElement {
     attention: 'Atenção',
   };
   metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}${managedStatus?.updateAvailable ? ' · Atualização disponível' : ''}`;
+  if ((managedStatus?.removalBlockedBy?.length ?? 0) > 0) {
+    const blockerNames = managedStatus?.removalBlockedBy?.map(
+      (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
+    );
+    metadata.textContent += ` · Remova primeiro: ${blockerNames?.join(', ')}`;
+  }
 
   information.append(title, description, metadata);
 
