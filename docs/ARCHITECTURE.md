@@ -54,6 +54,13 @@ configuration mount per application plus the single shared media mount. Web
 administration ports remain loopback-only in the default spec. Catalog refresh,
 review, and update policy remain separate from ordinary application startup.
 
+`internal/orchestrator.Installer` owns the first transactional application
+workflow: resolve and validate the approved spec, ensure the network, pull,
+create, start, and inspect. A failure after container creation removes only that
+owned incomplete container using a non-canceled cleanup context. Bind-mounted
+configuration and media are deliberately outside cleanup. The orchestrator is
+covered through the runtime interface and is not connected to Wails yet.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
