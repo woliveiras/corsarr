@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: made application-data confirmation show an approximate logical
+  size measured only from regular files below the selected application's config
+  directory. Nested links and special files fail closed; shared media and
+  downloads are never traversed by this inspection.
 - 2026-08-11: added a backend-owned recommended movie/TV preset, bounded
   per-application installation progress, dependency-safe removal, and desired
   state retention for installed apps. Runtime outages preserve only prior

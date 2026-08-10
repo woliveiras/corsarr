@@ -73,8 +73,9 @@ macOS Keychain, remote access disabled by default, and reserved movie, TV, and
 music libraries. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
-its container is gone; Corsarr moves it into a private recoverable trash and
-never targets the shared media or downloads tree. The prerequisites and usage
+its container is gone; Corsarr shows its approximate size, moves it into a
+private recoverable trash, and never targets the shared media or downloads tree.
+The prerequisites and usage
 instructions below describe the current CLI release.
 
 The desktop can export a user-selected JSON diagnostic snapshot containing

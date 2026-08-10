@@ -197,15 +197,45 @@ func TestApplicationDataManagerInspectsOnlyKnownApplicationDirectory(t *testing.
 	); err != nil {
 		t.Fatalf("write application config: %v", err)
 	}
+	nestedPath := filepath.Join(layout.RootPath, "config", "radarr", "Backups", "settings.db")
+	if err := os.MkdirAll(filepath.Dir(nestedPath), 0o700); err != nil {
+		t.Fatalf("create nested config directory: %v", err)
+	}
+	if err := os.WriteFile(nestedPath, []byte("database"), 0o600); err != nil {
+		t.Fatalf("write nested application config: %v", err)
+	}
+	mediaPath := filepath.Join(layout.RootPath, "media", "library", "movies", "large.mkv")
+	if err := os.WriteFile(mediaPath, []byte("shared media must not be measured"), 0o600); err != nil {
+		t.Fatalf("write media marker: %v", err)
+	}
 
 	status, err := NewApplicationDataManager().Inspect(baseDirectory, "radarr")
 	if err != nil {
 		t.Fatalf("inspect application data: %v", err)
 	}
-	if !status.Present || status.ApplicationID != "radarr" {
+	if !status.Present || status.ApplicationID != "radarr" || status.SizeBytes != 16 {
 		t.Fatalf("expected Radarr config present, got %#v", status)
 	}
 	if _, err := NewApplicationDataManager().Inspect(baseDirectory, "../movies"); err == nil {
 		t.Fatal("expected unsafe inspection target to be rejected")
+	}
+}
+
+func TestApplicationDataManagerRejectsSymlinkDuringSizeInspection(t *testing.T) {
+	baseDirectory := t.TempDir()
+	layout, err := NewLayoutPreparer().Prepare(baseDirectory, []string{"radarr"})
+	if err != nil {
+		t.Fatalf("prepare storage layout: %v", err)
+	}
+	target := filepath.Join(t.TempDir(), "outside.db")
+	if err := os.WriteFile(target, []byte("outside data"), 0o600); err != nil {
+		t.Fatalf("write outside data: %v", err)
+	}
+	if err := os.Symlink(target, filepath.Join(layout.RootPath, "config", "radarr", "linked.db")); err != nil {
+		t.Fatalf("create config symlink: %v", err)
+	}
+
+	if _, err := NewApplicationDataManager().Inspect(baseDirectory, "radarr"); err == nil {
+		t.Fatal("expected symlinked config entry to be rejected")
 	}
 }

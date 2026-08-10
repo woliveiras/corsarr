@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +19,7 @@ type ArchivedApplicationData struct {
 type ApplicationDataStatus struct {
 	ApplicationID string `json:"applicationId"`
 	Present       bool   `json:"present"`
+	SizeBytes     uint64 `json:"sizeBytes"`
 }
 
 // ApplicationDataManager moves a single Corsarr-owned application config directory
@@ -50,11 +52,40 @@ func (m *ApplicationDataManager) Inspect(
 	if !configInfo.IsDir() || configInfo.Mode()&os.ModeSymlink != 0 {
 		return status, fmt.Errorf("application config is not a regular directory")
 	}
-	entries, err := os.ReadDir(configPath)
+	err = filepath.WalkDir(configPath, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if path == configPath {
+			return nil
+		}
+		status.Present = true
+		if entry.Type()&os.ModeSymlink != 0 {
+			return fmt.Errorf("application config contains a symbolic link")
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		info, infoErr := entry.Info()
+		if infoErr != nil {
+			return infoErr
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("application config contains a special file")
+		}
+		fileSize := info.Size()
+		if fileSize < 0 || uint64(fileSize) > math.MaxUint64-status.SizeBytes {
+			return fmt.Errorf("application config size cannot be represented")
+		}
+		status.SizeBytes += uint64(fileSize)
+		return nil
+	})
 	if err != nil {
-		return status, fmt.Errorf("read application config: %w", err)
+		return ApplicationDataStatus{ApplicationID: applicationID}, fmt.Errorf(
+			"measure application config: %w",
+			err,
+		)
 	}
-	status.Present = len(entries) > 0
 	return status, nil
 }
 

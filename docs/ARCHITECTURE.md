@@ -332,7 +332,10 @@ applications.
 boundary. It requires the catalog application container to be absent, reloads
 the persisted storage location, and delegates only that application's config
 directory to `internal/storage.ApplicationDataManager`. The storage manager
-refuses unsafe IDs and symlink targets, then atomically moves configuration into
+refuses unsafe IDs and symlink targets. Its read-only status walk sums only
+regular files inside that application directory, rejects nested links and
+special files, and exposes the approximate byte count for the final desktop
+confirmation. It then atomically moves configuration into
 the private `<selected>/Corsarr/trash/config/<app>/` tree. It never receives or
 targets the shared media and downloads paths. qBittorrent and Jellyfin Keychain
 entries are removed only after their configuration becomes recoverable. If

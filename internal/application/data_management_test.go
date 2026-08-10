@@ -147,7 +147,10 @@ func TestDataManagementServiceListsConfigurationPresence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create registry: %v", err)
 	}
-	archiver := &dataArchiver{present: map[string]bool{"radarr": true}}
+	archiver := &dataArchiver{
+		present: map[string]bool{"radarr": true},
+		sizes:   map[string]uint64{"radarr": 42_000},
+	}
 	service := NewDataManagementService(
 		NewCatalog(registry),
 		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
@@ -159,7 +162,7 @@ func TestDataManagementServiceListsConfigurationPresence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list application data: %v", err)
 	}
-	if !findDataStatus(statuses, "radarr").Present {
+	if status := findDataStatus(statuses, "radarr"); !status.Present || status.SizeBytes != 42_000 {
 		t.Fatalf("expected Radarr data present, got %#v", statuses)
 	}
 	if findDataStatus(statuses, "sonarr").Present {
@@ -181,6 +184,7 @@ type dataArchiver struct {
 	basePath      string
 	applicationID string
 	present       map[string]bool
+	sizes         map[string]uint64
 	restoreCalls  int
 	restoredPath  string
 	restoreErr    error
@@ -226,6 +230,7 @@ func (a *dataArchiver) Inspect(_ string, applicationID string) (storage.Applicat
 	return storage.ApplicationDataStatus{
 		ApplicationID: applicationID,
 		Present:       a.present[applicationID],
+		SizeBytes:     a.sizes[applicationID],
 	}, nil
 }
 

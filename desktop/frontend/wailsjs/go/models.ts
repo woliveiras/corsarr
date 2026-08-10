@@ -439,6 +439,7 @@ export namespace storage {
 	export class ApplicationDataStatus {
 	    applicationId: string;
 	    present: boolean;
+	    sizeBytes: number;
 
 	    static createFrom(source: any = {}) {
 	        return new ApplicationDataStatus(source);
@@ -448,6 +449,7 @@ export namespace storage {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.applicationId = source["applicationId"];
 	        this.present = source["present"];
+	        this.sizeBytes = source["sizeBytes"];
 	    }
 	}
 	export class ArchivedApplicationData {

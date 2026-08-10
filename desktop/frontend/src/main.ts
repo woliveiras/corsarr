@@ -544,8 +544,10 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
   button.type = 'button';
   button.textContent = 'Remover dados';
   button.addEventListener('click', async () => {
+    const dataStatus = dataStatuses.get(target.id);
+    const approximateSize = formatApproximateBytes(dataStatus?.sizeBytes ?? 0);
     const confirmed = window.confirm(
-      `Remover as configurações de ${target.name}? A biblioteca e os downloads não serão alterados. A configuração será movida para a lixeira do Corsarr.`,
+      `Remover aproximadamente ${approximateSize} de configurações de ${target.name}? A biblioteca e os downloads não serão alterados. A configuração será movida para a lixeira do Corsarr e poderá ser recuperada manualmente.`,
     );
     if (!confirmed) return;
 
@@ -569,6 +571,18 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
     }
   });
   return button;
+}
+
+function formatApproximateBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = Math.max(0, bytes);
+  let unitIndex = 0;
+  while (value >= 1000 && unitIndex < units.length - 1) {
+    value /= 1000;
+    unitIndex += 1;
+  }
+  const maximumFractionDigits = unitIndex === 0 ? 0 : 1;
+  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(value)} ${units[unitIndex]}`;
 }
 
 function qbittorrentCredentialButton(): HTMLButtonElement {
