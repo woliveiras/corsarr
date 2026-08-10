@@ -248,6 +248,52 @@ func TestSetStartAtLoginUsesSetupBoundary(t *testing.T) {
 	}
 }
 
+func TestBackgroundRecoveryStartsRuntimeBeforeExistingApplications(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StartAtLogin: true, StartAtLoginSupported: true,
+	}}
+	runtime := &desktopRuntimePreparer{recoveryResult: onboarding.PreparationResult{Ready: true}}
+	recovery := &desktopBackgroundRecovery{result: application.RecoveryResult{Complete: true}}
+	events := &desktopEventPublisher{}
+	app := &App{
+		setup: setup, runtimeOnboarding: runtime, backgroundRecovery: recovery, events: events,
+	}
+
+	app.runBackgroundRecovery(context.Background())
+
+	if runtime.recoverCalls != 1 || recovery.calls != 1 {
+		t.Fatalf("unexpected recovery calls runtime=%d applications=%d", runtime.recoverCalls, recovery.calls)
+	}
+	if events.calls != 1 || events.name != backgroundRecoveryCompletedEvent {
+		t.Fatalf("unexpected recovery event %#v", events)
+	}
+	event, ok := events.data[0].(BackgroundRecoveryEvent)
+	if !ok || !event.Complete {
+		t.Fatalf("unexpected recovery payload %#v", events.data)
+	}
+}
+
+func TestBackgroundRecoveryDoesNothingWithoutEnabledNativeSetting(t *testing.T) {
+	for _, status := range []application.SetupStatus{
+		{},
+		{StartAtLogin: true, StartAtLoginSupported: true, StartAtLoginRequiresApproval: true},
+	} {
+		runtime := &desktopRuntimePreparer{}
+		recovery := &desktopBackgroundRecovery{}
+		events := &desktopEventPublisher{}
+		app := &App{
+			setup:             &desktopSetupManager{status: status},
+			runtimeOnboarding: runtime, backgroundRecovery: recovery, events: events,
+		}
+
+		app.runBackgroundRecovery(context.Background())
+
+		if runtime.recoverCalls != 0 || recovery.calls != 0 || events.calls != 0 {
+			t.Fatalf("disabled setting caused recovery for %#v", status)
+		}
+	}
+}
+
 func TestExportDiagnosticsWritesOnlyAfterNativeDestinationSelection(t *testing.T) {
 	picker := &desktopDiagnosticPicker{path: "/Users/test/corsarr-diagnostics.json"}
 	reporter := &desktopDiagnosticReporter{report: diagnostics.Report{
@@ -294,13 +340,21 @@ type desktopRuntimeProbe struct {
 }
 
 type desktopRuntimePreparer struct {
-	result onboarding.PreparationResult
-	calls  int
+	result         onboarding.PreparationResult
+	recoveryResult onboarding.PreparationResult
+	recoveryErr    error
+	calls          int
+	recoverCalls   int
 }
 
 func (p *desktopRuntimePreparer) Prepare(context.Context) (onboarding.PreparationResult, error) {
 	p.calls++
 	return p.result, nil
+}
+
+func (p *desktopRuntimePreparer) Recover(context.Context) (onboarding.PreparationResult, error) {
+	p.recoverCalls++
+	return p.recoveryResult, p.recoveryErr
 }
 
 func (f *desktopRuntimeProbe) Check(context.Context) runtimeenv.Status {
@@ -338,6 +392,29 @@ type desktopDiagnosticWriter struct {
 	report diagnostics.Report
 	err    error
 	calls  int
+}
+
+type desktopBackgroundRecovery struct {
+	result application.RecoveryResult
+	err    error
+	calls  int
+}
+
+func (r *desktopBackgroundRecovery) Recover(context.Context) (application.RecoveryResult, error) {
+	r.calls++
+	return r.result, r.err
+}
+
+type desktopEventPublisher struct {
+	name  string
+	data  []interface{}
+	calls int
+}
+
+func (p *desktopEventPublisher) Emit(_ context.Context, name string, data ...interface{}) {
+	p.calls++
+	p.name = name
+	p.data = data
 }
 
 func (w *desktopDiagnosticWriter) Write(path string, report diagnostics.Report) error {

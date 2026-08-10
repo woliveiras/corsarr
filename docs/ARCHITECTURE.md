@@ -64,6 +64,15 @@ An approval-required registration is represented separately from an enabled
 registration and offers a bounded action to open the correct System Settings
 panel.
 
+When that native setting is enabled, startup runs a non-installing recovery in
+the background. `DockerService.Recover` can start an existing Docker Desktop
+but has no installer path. `application.RecoveryService` then orders the saved
+selection by catalog dependencies and starts only stopped Corsarr containers
+that already exist. Missing containers are skipped; images are not pulled,
+containers are not created, provisioning is not rerun, and no resource is
+removed. A bounded Wails event asks the frontend to refresh status after the
+attempt without sending technical errors or secrets.
+
 `PrepareRuntime` is available only after the current versioned runtime consent
 has been persisted. The frontend supplies no URL, checksum, command, path,
 username, or installer argument. Windows and Linux return an explicit unsupported

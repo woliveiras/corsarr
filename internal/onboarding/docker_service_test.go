@@ -53,6 +53,41 @@ func TestDockerServiceFallsBackToOpeningInstalledApplication(t *testing.T) {
 	}
 }
 
+func TestDockerServiceRecoveryStartsExistingRuntimeWithoutInstalling(t *testing.T) {
+	probe := &preparationProbe{statuses: []containerruntime.Status{
+		{State: containerruntime.StateStopped}, {State: containerruntime.StateReady, Version: "29.7.2"},
+	}}
+	runner := &preparationRunner{dockerPath: "/usr/local/bin/docker"}
+	installer := &preparationInstaller{}
+	service := NewDockerService(probe, runner, installer, "darwin")
+	service.exists = func(string) bool { return true }
+	service.pollInterval = time.Millisecond
+
+	result, err := service.Recover(context.Background())
+	if err != nil || !result.Ready || !result.Started || result.Installed {
+		t.Fatalf("unexpected recovery result %#v, %v", result, err)
+	}
+	if installer.calls != 0 {
+		t.Fatalf("recovery must not invoke installer, got %d calls", installer.calls)
+	}
+}
+
+func TestDockerServiceRecoveryRefusesToInstallMissingRuntime(t *testing.T) {
+	probe := &preparationProbe{statuses: []containerruntime.Status{{
+		State: containerruntime.StateUnavailable,
+	}}}
+	installer := &preparationInstaller{}
+	service := NewDockerService(probe, &preparationRunner{}, installer, "darwin")
+	service.exists = func(string) bool { return false }
+
+	if _, err := service.Recover(context.Background()); err == nil {
+		t.Fatal("expected missing runtime recovery error")
+	}
+	if installer.calls != 0 {
+		t.Fatalf("recovery must not install missing runtime, got %d calls", installer.calls)
+	}
+}
+
 type preparationProbe struct {
 	statuses []containerruntime.Status
 	calls    int

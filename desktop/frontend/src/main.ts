@@ -29,6 +29,7 @@ import {
   UpdateApplication,
 } from '../wailsjs/go/main/App';
 import type { application, legal, storage } from '../wailsjs/go/models';
+import { EventsOn } from '../wailsjs/runtime/runtime';
 
 type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
@@ -1058,5 +1059,14 @@ async function loadInitialState(): Promise<void> {
     loadQBittorrentAccess(),
   ]);
 }
+
+EventsOn('corsarr:background-recovery-complete', () => {
+  void Promise.all([
+    loadEnvironment(),
+    loadApplicationStatuses(),
+    loadJellyfinAccess(),
+    loadQBittorrentAccess(),
+  ]);
+});
 
 void loadInitialState();

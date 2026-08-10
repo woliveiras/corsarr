@@ -72,13 +72,41 @@ func (s *DockerService) Prepare(ctx context.Context) (PreparationResult, error) 
 		return result, err
 	}
 	result.Started = true
+	return s.waitForReady(ctx, result)
+}
 
+// Recover starts only an already installed runtime. It is safe for login-time
+// recovery because it never invokes the installer or requests elevation.
+func (s *DockerService) Recover(ctx context.Context) (PreparationResult, error) {
+	status := s.probe.Check(ctx)
+	if status.State == containerruntime.StateReady {
+		return PreparationResult{Ready: true, Version: status.Version}, nil
+	}
+	if s.platform != "darwin" {
+		return PreparationResult{}, fmt.Errorf(
+			"automatic runtime recovery is not implemented for %s",
+			s.platform,
+		)
+	}
+	if !s.exists(s.dockerApp) {
+		return PreparationResult{}, fmt.Errorf("installed Docker Desktop was not found")
+	}
+	if err := s.start(ctx); err != nil {
+		return PreparationResult{}, err
+	}
+	return s.waitForReady(ctx, PreparationResult{Started: true})
+}
+
+func (s *DockerService) waitForReady(
+	ctx context.Context,
+	result PreparationResult,
+) (PreparationResult, error) {
 	waitContext, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	ticker := time.NewTicker(s.pollInterval)
 	defer ticker.Stop()
 	for {
-		status = s.probe.Check(waitContext)
+		status := s.probe.Check(waitContext)
 		if status.State == containerruntime.StateReady {
 			result.Ready = true
 			result.Version = status.Version

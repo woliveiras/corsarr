@@ -78,7 +78,8 @@ versions, runtime and application health, and storage capabilities. The file is
 written privately and atomically, redacts credential-shaped values, and never
 includes application logs, cookies, passwords, API keys, or runtime sockets.
 On macOS 13+, an explicit optional setting registers Corsarr through Apple's
-Service Management framework so it can start the existing services at login;
+Service Management framework. At login, Corsarr can start an already installed
+runtime and existing owned containers without installing new applications;
 pending approval remains visible in both Corsarr and System Settings.
 
 Seerr signs in through that local Jellyfin administrator, enables the discovered

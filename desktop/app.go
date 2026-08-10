@@ -88,6 +88,15 @@ type clipboardWriter interface {
 
 type runtimePreparer interface {
 	Prepare(ctx context.Context) (onboarding.PreparationResult, error)
+	Recover(ctx context.Context) (onboarding.PreparationResult, error)
+}
+
+type backgroundRecoveryManager interface {
+	Recover(ctx context.Context) (application.RecoveryResult, error)
+}
+
+type eventPublisher interface {
+	Emit(ctx context.Context, name string, data ...interface{})
 }
 
 type diagnosticFilePicker interface {
@@ -113,6 +122,12 @@ func (wailsClipboard) SetText(ctx context.Context, value string) error {
 	return wailsruntime.ClipboardSetText(ctx, value)
 }
 
+type wailsEventPublisher struct{}
+
+func (wailsEventPublisher) Emit(ctx context.Context, name string, data ...interface{}) {
+	wailsruntime.EventsEmit(ctx, name, data...)
+}
+
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	ctx                context.Context
@@ -133,6 +148,8 @@ type App struct {
 	diagnosticPicker   diagnosticFilePicker
 	diagnosticReporter diagnosticReporter
 	diagnosticWriter   diagnosticWriter
+	backgroundRecovery backgroundRecoveryManager
+	events             eventPublisher
 }
 
 func NewApp() (*App, error) {
@@ -243,6 +260,7 @@ func NewApp() (*App, error) {
 		corsarrBuildVersion(),
 		runtimecatalog.RuntimeCatalogVerifiedAt,
 	)
+	backgroundRecovery := application.NewRecoveryService(setup, catalog, dockerManager)
 
 	return &App{
 		catalog:            catalog,
@@ -262,11 +280,38 @@ func NewApp() (*App, error) {
 		diagnosticPicker:   wailsDiagnosticFilePicker{},
 		diagnosticReporter: diagnosticReporter,
 		diagnosticWriter:   diagnostics.NewFileWriter(),
+		backgroundRecovery: backgroundRecovery,
+		events:             wailsEventPublisher{},
 	}, nil
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	if a.backgroundRecovery != nil && a.runtimeOnboarding != nil && a.events != nil {
+		go a.runBackgroundRecovery(ctx)
+	}
+}
+
+const backgroundRecoveryCompletedEvent = "corsarr:background-recovery-complete"
+
+type BackgroundRecoveryEvent struct {
+	Complete bool `json:"complete"`
+}
+
+func (a *App) runBackgroundRecovery(ctx context.Context) {
+	setup, err := a.setup.Load()
+	if err != nil || !setup.StartAtLogin || !setup.StartAtLoginSupported ||
+		setup.StartAtLoginRequiresApproval {
+		return
+	}
+	event := BackgroundRecoveryEvent{}
+	defer func() { a.events.Emit(ctx, backgroundRecoveryCompletedEvent, event) }()
+	prepared, err := a.runtimeOnboarding.Recover(ctx)
+	if err != nil || !prepared.Ready {
+		return
+	}
+	result, err := a.backgroundRecovery.Recover(ctx)
+	event.Complete = err == nil && result.Complete
 }
 
 // ListApplications returns the user-facing applications known by Corsarr.
