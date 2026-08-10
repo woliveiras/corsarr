@@ -54,8 +54,16 @@ export function ListApplications() {
   return window['go']['main']['App']['ListApplications']();
 }
 
+export function ListLegalNotices() {
+  return window['go']['main']['App']['ListLegalNotices']();
+}
+
 export function OpenApplication(arg1) {
   return window['go']['main']['App']['OpenApplication'](arg1);
+}
+
+export function OpenLegalLink(arg1, arg2) {
+  return window['go']['main']['App']['OpenLegalLink'](arg1, arg2);
 }
 
 export function PrepareStorageLayout() {

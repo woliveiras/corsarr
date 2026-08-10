@@ -163,6 +163,132 @@ nav {
   overflow: hidden;
 }
 
+.licenses-view[hidden],
+#home-view[hidden] {
+  display: none;
+}
+
+.credits-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 18px;
+}
+
+.credits-header h1 {
+  margin: 0 0 8px;
+  font:
+    600 30px "Avenir Next",
+    sans-serif;
+}
+
+.credits-header p:not(.eyebrow) {
+  max-width: 720px;
+  margin: 0;
+  color: #789291;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.affiliation-note {
+  margin: 0 0 20px;
+  padding: 13px 15px;
+  color: #b6a978;
+  background: rgba(216, 200, 137, 0.07);
+  border: 1px solid rgba(216, 200, 137, 0.16);
+  border-radius: 11px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.legal-notices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.legal-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 17px;
+  background: rgba(12, 33, 39, 0.72);
+  border: 1px solid rgba(145, 193, 187, 0.09);
+  border-radius: 14px;
+}
+
+.legal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.legal-heading h2 {
+  margin: 0;
+  color: #dbecea;
+  font:
+    600 15px "Avenir Next",
+    sans-serif;
+}
+
+.legal-heading span {
+  color: #64bdb3;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.legal-card > p {
+  margin: 8px 0 0;
+  color: #789291;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.legal-card > strong {
+  margin-top: 10px;
+  color: #d8c889;
+  font-size: 11px;
+}
+
+.legal-card .legal-image {
+  overflow-wrap: anywhere;
+  color: #5daaa3;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 8px;
+}
+
+.legal-card .legal-affiliation {
+  color: #667f80;
+  font-size: 9px;
+}
+
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 13px;
+}
+
+.legal-links button {
+  padding: 6px 8px;
+  color: #8bd3ca;
+  background: rgba(78, 175, 165, 0.08);
+  border: 1px solid rgba(92, 191, 181, 0.16);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.legal-links button:disabled {
+  opacity: 0.45;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -879,6 +1005,9 @@ nav {
     right: -88px;
   }
   .applications {
+    grid-template-columns: 1fr;
+  }
+  .legal-notices {
     grid-template-columns: 1fr;
   }
   .installation-review {

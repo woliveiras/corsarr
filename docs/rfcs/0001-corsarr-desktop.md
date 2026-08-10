@@ -654,6 +654,11 @@ claims must be rechecked during implementation and release validation.
 - [Lidarr GPL-3.0](https://github.com/Lidarr/Lidarr/blob/develop/LICENSE.md)
 - [Bazarr GPL-3.0](https://github.com/morpheus65535/bazarr/blob/master/LICENSE)
 - [qBittorrent GPL licenses](https://github.com/qbittorrent/qBittorrent)
+- [Sonarr GPL-3.0](https://github.com/Sonarr/Sonarr/blob/develop/LICENSE.md)
+- [Jellyfin GPL-2.0](https://github.com/jellyfin/jellyfin/blob/master/LICENSE)
+- [Seerr MIT](https://github.com/seerr-team/seerr/blob/develop/LICENSE)
+- [LazyLibrarian GPL-3.0-or-later](https://gitlab.com/LazyLibrarian/LazyLibrarian/-/blob/master/LICENSE)
+- [FileFlows license tiers and personal-use terms](https://fileflows.com/pricing)
 
 ## Decision and implementation history
 

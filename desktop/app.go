@@ -10,6 +10,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/application"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
+	"github.com/woliveiras/corsarr/internal/legal"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
 	"github.com/woliveiras/corsarr/internal/provisioning"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
@@ -86,6 +87,7 @@ func (wailsClipboard) SetText(ctx context.Context, value string) error {
 type App struct {
 	ctx              context.Context
 	catalog          *application.Catalog
+	legal            *legal.Catalog
 	environment      *application.EnvironmentService
 	directoryPicker  directoryPicker
 	storageInspector storageInspector
@@ -120,6 +122,10 @@ func NewApp() (*App, error) {
 	approvedCatalog, err := runtimecatalog.NewRuntimeCatalog(registry)
 	if err != nil {
 		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
+	}
+	legalCatalog, err := legal.NewCatalog(registry, approvedCatalog)
+	if err != nil {
+		return nil, fmt.Errorf("create legal catalog: %w", err)
 	}
 	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
 	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
@@ -189,6 +195,7 @@ func NewApp() (*App, error) {
 
 	return &App{
 		catalog:          catalog,
+		legal:            legalCatalog,
 		environment:      environment,
 		directoryPicker:  wailsDirectoryPicker{},
 		storageInspector: storage.NewInspector(),
@@ -210,6 +217,21 @@ func (a *App) startup(ctx context.Context) {
 // ListApplications returns the user-facing applications known by Corsarr.
 func (a *App) ListApplications() []application.ApplicationSummary {
 	return a.catalog.ListApplications()
+}
+
+func (a *App) ListLegalNotices() []legal.Notice {
+	return a.legal.ListNotices()
+}
+
+// OpenLegalLink resolves an allowlisted link by component and semantic kind.
+// The frontend cannot submit a URL.
+func (a *App) OpenLegalLink(componentID, kind string) error {
+	link, err := a.legal.ResolveLink(componentID, kind)
+	if err != nil {
+		return err
+	}
+	wailsruntime.BrowserOpenURL(a.ctx, link)
+	return nil
 }
 
 // GetEnvironmentStatus performs a bounded, read-only host and runtime check.

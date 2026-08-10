@@ -193,6 +193,16 @@ as a structured result so the desktop can distinguish a restored previous image
 from an update that needs attention. The Wails surface cannot provide an image,
 backup path, mount, or runtime argument.
 
+`internal/legal.Catalog` is a build-time completeness gate and the single source
+for the desktop credits screen. Construction fails when a user-facing catalog
+application lacks legal metadata or approved-image attribution. Each entry
+contains the project purpose, license identification, copyright and
+non-affiliation notices, image maintainer, approved digest, and semantic link
+labels. URLs remain private to Go: `OpenLegalLink` accepts only a component ID
+plus an allowlisted link kind and resolves an HTTPS URL internally. Docker
+Desktop and the Podman candidate are listed explicitly alongside the managed
+applications.
+
 `internal/application.DataManagementService` is a distinct destructive-action
 boundary. It requires the catalog application container to be absent, reloads
 the persisted storage location, and delegates only that application's config

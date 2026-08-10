@@ -38,3 +38,8 @@ safe network default, and movie, TV, and music libraries. Seerr provisioning
 authenticates through Jellyfin and connects its discovered libraries plus
 Radarr and Sonarr. The RFC must not be read as a description of the current
 release: only milestones explicitly recorded as implemented have been delivered.
+
+The Desktop also includes a catalog-generated "Aplicativos e licenças" screen.
+It credits every offered application and image maintainer, identifies Docker and
+Podman separately, shows the installed or approved digest, and opens only
+backend-allowlisted official, source, license, image, and support links.

@@ -24,6 +24,12 @@ func TestNewAppExposesCatalogWithoutArbitraryURLs(t *testing.T) {
 	if err := app.OpenApplication("https://attacker.example"); err == nil {
 		t.Fatal("expected arbitrary URL to be rejected before reaching Wails runtime")
 	}
+	if len(app.ListLegalNotices()) < len(app.ListApplications()) {
+		t.Fatal("expected legal notices for the application catalog and runtimes")
+	}
+	if err := app.OpenLegalLink("radarr", "https://attacker.example"); err == nil {
+		t.Fatal("expected arbitrary legal URL to be rejected before reaching Wails runtime")
+	}
 }
 
 func TestChooseStorageLocationInspectsOnlyUserSelectedDirectory(t *testing.T) {

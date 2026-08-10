@@ -29,6 +29,11 @@ type RuntimeManifest struct {
 	SourceURL           string
 }
 
+type RuntimeAttribution struct {
+	ApprovedImage string
+	ImageSource   string
+}
+
 type RuntimeCatalog struct {
 	manifests map[string]RuntimeManifest
 }
@@ -132,6 +137,17 @@ func (c *RuntimeCatalog) ApprovedImage(applicationID string) (string, error) {
 		return "", fmt.Errorf("application is not approved for installation: %s", applicationID)
 	}
 	return manifest.Image, nil
+}
+
+func (c *RuntimeCatalog) Attribution(applicationID string) (RuntimeAttribution, error) {
+	manifest, exists := c.manifests[applicationID]
+	if !exists {
+		return RuntimeAttribution{}, fmt.Errorf("application is not approved for installation: %s", applicationID)
+	}
+	return RuntimeAttribution{
+		ApprovedImage: manifest.Image,
+		ImageSource:   manifest.SourceURL,
+	}, nil
 }
 
 func (c *RuntimeCatalog) Resolve(

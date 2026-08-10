@@ -13,7 +13,9 @@ import {
   GetSetupStatus,
   InstallSelectedApplications,
   ListApplications,
+  ListLegalNotices,
   OpenApplication,
+  OpenLegalLink,
   PrepareStorageLayout,
   RemoveApplication,
   RestartApplication,
@@ -22,11 +24,12 @@ import {
   StopApplication,
   UpdateApplication,
 } from '../wailsjs/go/main/App';
-import type { application, storage } from '../wailsjs/go/models';
+import type { application, legal, storage } from '../wailsjs/go/models';
 
 type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
 type DataStatus = storage.ApplicationDataStatus;
+type LegalNotice = legal.Notice;
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -42,9 +45,9 @@ root.innerHTML = [
   '      <span><strong>Corsarr</strong><small>Desktop preview</small></span>',
   '    </a>',
   '    <nav aria-label="Navegação principal">',
-  '      <button class="nav-item active" type="button"><span aria-hidden="true">⌂</span>Início</button>',
+  '      <button id="show-home" class="nav-item active" type="button"><span aria-hidden="true">⌂</span>Início</button>',
   '      <button class="nav-item" type="button" disabled><span aria-hidden="true">⊞</span>Aplicativos<small>em breve</small></button>',
-  '      <button class="nav-item" type="button" disabled><span aria-hidden="true">⚙</span>Ajustes<small>em breve</small></button>',
+  '      <button id="show-licenses" class="nav-item" type="button"><span aria-hidden="true">§</span>Licenças</button>',
   '    </nav>',
   '    <div class="sidebar-note">',
   '      <span class="status-dot"></span>',
@@ -52,6 +55,7 @@ root.innerHTML = [
   '    </div>',
   '  </aside>',
   '  <main class="content">',
+  '    <div id="home-view">',
   '    <header class="topbar">',
   '      <div><p class="eyebrow">SEU SERVIDOR DE MÍDIA</p><h1>Olá, William.</h1></div>',
   '      <div class="machine"><span class="machine-icon" aria-hidden="true">⌘</span><span><small id="platform-name">Verificando computador</small><strong id="architecture-name">Aguarde…</strong></span></div>',
@@ -108,6 +112,12 @@ root.innerHTML = [
   '        <button id="install-applications" class="prepare-button" type="button" disabled>Instalar aplicativos</button>',
   '      </div>',
   '    </section>',
+  '    </div>',
+  '    <section id="licenses-view" class="licenses-view" hidden aria-labelledby="licenses-title">',
+  '      <header class="credits-header"><div><p class="eyebrow">CRÉDITOS E TRANSPARÊNCIA</p><h1 id="licenses-title">Aplicativos e licenças</h1><p>O Corsarr existe graças a estes projetos e mantenedores. Cada componente mantém seus próprios termos, marcas e direitos autorais.</p></div><button id="licenses-back" class="secondary-button" type="button">Voltar ao início</button></header>',
+  '      <p class="affiliation-note">O Corsarr facilita a instalação e a administração, mas não é afiliado ou endossado pelos projetos listados, salvo indicação expressa.</p>',
+  '      <div id="legal-notices" class="legal-notices"><div class="loading-card"></div></div>',
+  '    </section>',
   '  </main>',
   '</div>',
 ].join('');
@@ -136,6 +146,12 @@ const prepareStorageButton = document.querySelector<HTMLButtonElement>('#prepare
 const installApplicationsButton =
   document.querySelector<HTMLButtonElement>('#install-applications');
 const acceptTermsCheckbox = document.querySelector<HTMLInputElement>('#accept-terms');
+const homeView = document.querySelector<HTMLElement>('#home-view');
+const licensesView = document.querySelector<HTMLElement>('#licenses-view');
+const showHomeButton = document.querySelector<HTMLButtonElement>('#show-home');
+const showLicensesButton = document.querySelector<HTMLButtonElement>('#show-licenses');
+const licensesBackButton = document.querySelector<HTMLButtonElement>('#licenses-back');
+const legalNoticesElement = document.querySelector<HTMLElement>('#legal-notices');
 
 let setupStatus: application.SetupStatus | undefined;
 let availableApplications: Application[] = [];
@@ -145,6 +161,20 @@ let managedStatuses = new Map<string, ManagedStatus>();
 let dataStatuses = new Map<string, DataStatus>();
 let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 let jellyfinAccess: application.ServiceAccessStatus | undefined;
+let legalNotices: LegalNotice[] = [];
+
+function showView(view: 'home' | 'licenses'): void {
+  const showHome = view === 'home';
+  if (homeView) homeView.hidden = !showHome;
+  if (licensesView) licensesView.hidden = showHome;
+  showHomeButton?.classList.toggle('active', showHome);
+  showLicensesButton?.classList.toggle('active', !showHome);
+  document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+showHomeButton?.addEventListener('click', () => showView('home'));
+showLicensesButton?.addEventListener('click', () => showView('licenses'));
+licensesBackButton?.addEventListener('click', () => showView('home'));
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -479,11 +509,81 @@ async function loadApplications(): Promise<void> {
   }
 }
 
+function renderLegalNotices(): void {
+  if (!legalNoticesElement) return;
+  legalNoticesElement.replaceChildren(
+    ...legalNotices.map((notice) => {
+      const card = document.createElement('article');
+      card.className = 'legal-card';
+
+      const heading = document.createElement('div');
+      heading.className = 'legal-heading';
+      const title = document.createElement('h2');
+      title.textContent = notice.name;
+      const kind = document.createElement('span');
+      kind.textContent = notice.componentType === 'runtime' ? 'Infraestrutura' : 'Aplicativo';
+      heading.append(title, kind);
+
+      const purpose = document.createElement('p');
+      purpose.textContent = notice.purpose;
+      const license = document.createElement('strong');
+      license.textContent = notice.license;
+      const copyright = document.createElement('p');
+      copyright.textContent = notice.copyrightNotice;
+
+      card.append(heading, purpose, license, copyright);
+      if (notice.imageMaintainer) {
+        const image = document.createElement('p');
+        image.className = 'legal-image';
+        const installedImage = managedStatuses.get(notice.id)?.image;
+        image.textContent = `Imagem mantida por ${notice.imageMaintainer} · ${installedImage ? 'Instalada' : 'Aprovada'}: ${installedImage ?? notice.approvedImage}`;
+        card.append(image);
+      }
+
+      const affiliation = document.createElement('p');
+      affiliation.className = 'legal-affiliation';
+      affiliation.textContent = notice.affiliationStatement;
+      card.append(affiliation);
+
+      const links = document.createElement('div');
+      links.className = 'legal-links';
+      for (const link of notice.links) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = link.label;
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try {
+            await OpenLegalLink(notice.id, link.kind);
+          } finally {
+            button.disabled = false;
+          }
+        });
+        links.append(button);
+      }
+      card.append(links);
+      return card;
+    }),
+  );
+}
+
+async function loadLegalNotices(): Promise<void> {
+  try {
+    legalNotices = await ListLegalNotices();
+    renderLegalNotices();
+  } catch {
+    if (legalNoticesElement) {
+      legalNoticesElement.textContent = 'Não foi possível carregar os créditos e licenças.';
+    }
+  }
+}
+
 async function loadApplicationStatuses(): Promise<void> {
   try {
     const statuses = await GetApplicationStatuses();
     managedStatuses = new Map(statuses.map((status) => [status.applicationId, status]));
     renderApplications();
+    renderLegalNotices();
   } catch {
     managedStatuses = new Map();
   }
@@ -807,7 +907,7 @@ installApplicationsButton?.addEventListener('click', () => void installApplicati
 
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);
-  await loadApplications();
+  await Promise.all([loadApplications(), loadLegalNotices()]);
   await Promise.all([
     loadApplicationStatuses(),
     loadApplicationDataStatuses(),
