@@ -31,6 +31,13 @@ distinguishes an unavailable client, a stopped runtime, a ready runtime, and an
 unexpected error. Raw runtime access remains inside Go; the frontend receives a
 bounded status object.
 
+The package also owns the validated `ContainerSpec` boundary used by future
+runtime adapters. A spec contains resolved values rather than templates or
+commands. It requires an immutable `sha256` image reference, a safe catalog ID,
+absolute bind mounts, valid ports, and an explicit loopback-or-LAN exposure for
+every published port. The Docker and Podman translation layers must consume this
+contract; it is not exposed as a general-purpose Wails method.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
