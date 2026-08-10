@@ -30,7 +30,7 @@ func (pv *PortValidator) Validate() *ValidationResult {
 			protocol string
 			owner    string
 		}
-		
+
 		if pv.config.VPNEnabled {
 			// In VPN mode, only Gluetun exposes ports
 			if service.ID == "gluetun" {
@@ -101,7 +101,7 @@ func (pv *PortValidator) isPortInUse(port string) bool {
 		// Port is in use
 		return true
 	}
-	defer listener.Close()
+	_ = listener.Close()
 	return false
 }
 

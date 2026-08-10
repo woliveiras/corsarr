@@ -99,7 +99,7 @@ func (c *BazarrClient) verifyARRConnections(
 	if !current.General.UseRadarr || !current.General.UseSonarr ||
 		!current.Radarr.matches("radarr", 7878, radarrKey) ||
 		!current.Sonarr.matches("sonarr", 8989, sonarrKey) {
-		return fmt.Errorf("Bazarr did not persist the approved Arr connections")
+		return fmt.Errorf("bazarr did not persist the approved Arr connections")
 	}
 	return nil
 }

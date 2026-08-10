@@ -127,7 +127,7 @@ func (s *SetupService) SetJellyfinLAN(enabled bool) (SetupStatus, error) {
 	}
 	desktopState.Applications = s.knownApplications(desktopState.Applications)
 	if enabled && !containsApplication(desktopState.Applications, "jellyfin") {
-		return SetupStatus{}, fmt.Errorf("Jellyfin must be selected before enabling LAN access")
+		return SetupStatus{}, fmt.Errorf("jellyfin must be selected before enabling LAN access")
 	}
 	desktopState.AllowJellyfinLAN = enabled
 	if err := s.store.Save(desktopState); err != nil {

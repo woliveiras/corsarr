@@ -570,7 +570,7 @@ func (a *App) CopyJellyfinNetworkURL(candidate string) error {
 			return a.clipboard.SetText(a.appContext(), allowed)
 		}
 	}
-	return fmt.Errorf("Jellyfin network URL is not currently available")
+	return fmt.Errorf("jellyfin network URL is not currently available")
 }
 
 // CopyJellyfinPassword reveals the secret only to the native clipboard after

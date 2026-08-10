@@ -37,7 +37,7 @@ func (m *BackupManager) Backup(rootPath, applicationID string) (result BackupRes
 		return result, fmt.Errorf("unsafe application ID: %q", applicationID)
 	}
 	if !filepath.IsAbs(rootPath) {
-		return result, fmt.Errorf("Corsarr root must be an absolute path")
+		return result, fmt.Errorf("corsarr root must be an absolute path")
 	}
 
 	sourcePath := filepath.Join(rootPath, "config", applicationID)

@@ -60,7 +60,7 @@ func (d *HTTPDownloader) Download(ctx context.Context, sourceURL, destination st
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("official installer download returned %s", response.Status)
 	}
@@ -107,7 +107,7 @@ func NewMacDockerInstaller(
 ) (*MacDockerInstaller, error) {
 	artifact, exists := DockerMacArtifacts[architecture]
 	if !exists {
-		return nil, fmt.Errorf("Docker Desktop has no approved macOS artifact for %s", architecture)
+		return nil, fmt.Errorf("docker Desktop has no approved macOS artifact for %s", architecture)
 	}
 	if !regexp.MustCompile(`^[A-Za-z0-9._-]+$`).MatchString(username) {
 		return nil, fmt.Errorf("macOS username contains unsupported characters")
@@ -131,7 +131,11 @@ func (i *MacDockerInstaller) Install(ctx context.Context) (resultErr error) {
 	if err != nil {
 		return fmt.Errorf("create installer workspace: %w", err)
 	}
-	defer os.RemoveAll(workPath)
+	defer func() {
+		if removeErr := os.RemoveAll(workPath); removeErr != nil {
+			resultErr = errorsJoin(resultErr, fmt.Errorf("remove installer workspace: %w", removeErr))
+		}
+	}()
 	diskImage := filepath.Join(workPath, "Docker.dmg")
 	if err := i.downloader.Download(ctx, i.artifact.URL, diskImage); err != nil {
 		return fmt.Errorf("download official Docker Desktop installer: %w", err)
@@ -165,7 +169,7 @@ func (i *MacDockerInstaller) Install(ctx context.Context) (resultErr error) {
 		return fmt.Errorf("verify Docker Desktop code signature: %w", err)
 	}
 	if !strings.Contains(identity, "TeamIdentifier="+dockerTeamIdentifier) {
-		return fmt.Errorf("Docker Desktop signer identity is not approved")
+		return fmt.Errorf("docker Desktop signer identity is not approved")
 	}
 	if _, err := i.runner.Run(ctx, i.codesign, "--verify", "--deep", "--strict", mountedApp); err != nil {
 		return fmt.Errorf("validate Docker Desktop signed contents: %w", err)
@@ -177,7 +181,7 @@ func (i *MacDockerInstaller) Install(ctx context.Context) (resultErr error) {
 	installer := filepath.Join(mountedApp, "Contents", "MacOS", "install")
 	installerInfo, err := os.Lstat(installer)
 	if err != nil || installerInfo.Mode()&os.ModeSymlink != 0 || !installerInfo.Mode().IsRegular() {
-		return fmt.Errorf("Docker Desktop installer executable is missing")
+		return fmt.Errorf("docker Desktop installer executable is missing")
 	}
 	command := shellQuote(installer) + " --accept-license --user=" + shellQuote(i.username)
 	appleScript := "do shell script " + strconv.Quote(command) + " with administrator privileges"
@@ -192,10 +196,14 @@ func verifyFileSHA256(path, expected string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return err
+	_, copyErr := io.Copy(hash, file)
+	closeErr := file.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	if closeErr != nil {
+		return closeErr
 	}
 	actual := hex.EncodeToString(hash.Sum(nil))
 	if actual != expected {

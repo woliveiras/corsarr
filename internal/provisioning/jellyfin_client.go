@@ -120,7 +120,7 @@ func (c *JellyfinClient) EnsureSetup(
 		return result, err
 	}
 	if !completed {
-		return result, fmt.Errorf("Jellyfin startup did not complete")
+		return result, fmt.Errorf("jellyfin startup did not complete")
 	}
 	return result, nil
 }
@@ -167,7 +167,7 @@ func (c *JellyfinClient) authenticate(
 		return credentials.Secret{}, false, fmt.Errorf("decode Jellyfin authentication: %w", err)
 	}
 	if !jellyfinTokenPattern.MatchString(result.AccessToken) {
-		return credentials.Secret{}, false, fmt.Errorf("Jellyfin returned an invalid access token")
+		return credentials.Secret{}, false, fmt.Errorf("jellyfin returned an invalid access token")
 	}
 	return credentials.NewSecret(result.AccessToken), true, nil
 }
@@ -251,12 +251,12 @@ func (c *JellyfinClient) do(
 	body io.Reader,
 ) (*http.Response, []byte, error) {
 	if c.baseURL == nil {
-		return nil, nil, fmt.Errorf("Jellyfin endpoint is not an approved loopback HTTP URL")
+		return nil, nil, fmt.Errorf("jellyfin endpoint is not an approved loopback HTTP URL")
 	}
 	endpoint := *c.baseURL
 	parsedPath, err := url.Parse(apiPath)
 	if err != nil || !strings.HasPrefix(parsedPath.Path, "/") || parsedPath.Host != "" {
-		return nil, nil, fmt.Errorf("Jellyfin API path is invalid")
+		return nil, nil, fmt.Errorf("jellyfin API path is invalid")
 	}
 	endpoint.Path = parsedPath.Path
 	endpoint.RawQuery = parsedPath.RawQuery

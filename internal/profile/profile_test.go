@@ -35,9 +35,7 @@ func TestNewProfile(t *testing.T) {
 func TestSaveAndLoadProfile(t *testing.T) {
 	// Create temporary directory for testing
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create test profile
 	p := NewProfile("test-save-load")
@@ -85,9 +83,7 @@ func TestSaveAndLoadProfile(t *testing.T) {
 
 func TestLoadNonExistentProfile(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	_, err := LoadProfile("nonexistent")
 	if err == nil {
@@ -97,9 +93,7 @@ func TestLoadNonExistentProfile(t *testing.T) {
 
 func TestListProfiles(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Initially no profiles
 	profiles, err := ListProfiles()
@@ -159,9 +153,7 @@ func TestListProfiles(t *testing.T) {
 
 func TestDeleteProfile(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create and save profile
 	p := NewProfile("test-delete")
@@ -193,9 +185,7 @@ func TestDeleteProfile(t *testing.T) {
 
 func TestExportProfile(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create profile
 	p := NewProfile("test-export")
@@ -229,9 +219,7 @@ func TestExportProfile(t *testing.T) {
 
 func TestImportProfile(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create and export a profile
 	p := NewProfile("test-import")
@@ -287,9 +275,7 @@ func TestImportProfile(t *testing.T) {
 
 func TestProfileExists(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Profile doesn't exist initially
 	if ProfileExists("nonexistent") {
@@ -308,9 +294,7 @@ func TestProfileExists(t *testing.T) {
 
 func TestGetMetadata(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create profile with full data
 	p := NewProfile("metadata-test")
@@ -349,9 +333,7 @@ func TestGetMetadata(t *testing.T) {
 
 func TestProfileTimestamps(t *testing.T) {
 	tmpDir := t.TempDir()
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	t.Setenv("HOME", tmpDir)
 
 	// Create profile
 	p := NewProfile("timestamp-test")

@@ -26,18 +26,18 @@ var (
 	saveProfile     bool
 	saveProfileName string
 	// Non-interactive mode flags
-	servicesList    string
-	configFile      string
-	arrPath         string
-	timezone        string
-	puid            string
-	pgid            string
-	umask           string
-	projectName     string
-	vpnProvider     string
-	vpnType         string
-	vpnUser         string
-	vpnPassword     string
+	servicesList string
+	configFile   string
+	arrPath      string
+	timezone     string
+	puid         string
+	pgid         string
+	umask        string
+	projectName  string
+	vpnProvider  string
+	vpnType      string
+	vpnUser      string
+	vpnPassword  string
 )
 
 // generateCmd represents the generate command
@@ -55,7 +55,7 @@ This command will guide you through an interactive process to:
 You can also use a saved profile or run in non-interactive mode.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		t := GetTranslator()
-		
+
 		if err := runGenerate(t); err != nil {
 			fmt.Fprintf(os.Stderr, "❌ %s: %v\n", t.T("errors.generation_failed"), err)
 			os.Exit(1)
@@ -74,7 +74,7 @@ func init() {
 	generateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be generated without creating files")
 	generateCmd.Flags().BoolVar(&saveProfile, "save-profile", false, "Save configuration as a profile after generation")
 	generateCmd.Flags().StringVar(&saveProfileName, "save-as", "", "Profile name when using --save-profile")
-	
+
 	// Non-interactive mode configuration
 	generateCmd.Flags().StringVar(&configFile, "config", "", "Load configuration from YAML/JSON file")
 	generateCmd.Flags().StringVar(&servicesList, "services", "", "Comma-separated list of services (e.g., 'radarr,sonarr,prowlarr')")
@@ -84,7 +84,7 @@ func init() {
 	generateCmd.Flags().StringVar(&pgid, "pgid", "", "Group ID for file permissions")
 	generateCmd.Flags().StringVar(&umask, "umask", "002", "File creation mask")
 	generateCmd.Flags().StringVar(&projectName, "project-name", "corsarr", "Docker Compose project name")
-	
+
 	// VPN configuration for non-interactive mode
 	generateCmd.Flags().StringVar(&vpnProvider, "vpn-provider", "", "VPN provider (nordvpn, protonvpn, etc.)")
 	generateCmd.Flags().StringVar(&vpnType, "vpn-type", "wireguard", "VPN type (wireguard or openvpn)")
@@ -103,13 +103,13 @@ func runGenerate(t *i18n.I18n) error {
 		if err != nil {
 			return fmt.Errorf("failed to load config file: %w", err)
 		}
-		
+
 		// Use outputDir from config file if flag wasn't explicitly set
 		if outputDir == "." && loadedProfile.OutputDir != "" {
 			outputDir = loadedProfile.OutputDir
 			fmt.Println(t.T("logs.output_directory_from_config", map[string]interface{}{"directory": outputDir}))
 		}
-		
+
 		fmt.Println(t.T("logs.configuration_loaded"))
 		fmt.Println()
 	}
@@ -125,13 +125,13 @@ func runGenerate(t *i18n.I18n) error {
 		if loadedProfile.Description != "" {
 			fmt.Printf("   %s\n", loadedProfile.Description)
 		}
-		
+
 		// Use outputDir from profile if flag wasn't explicitly set
 		if outputDir == "." && loadedProfile.OutputDir != "" {
 			outputDir = loadedProfile.OutputDir
 			fmt.Println(t.T("logs.output_directory_from_profile", map[string]interface{}{"directory": outputDir}))
 		}
-		
+
 		fmt.Println()
 	}
 
@@ -156,7 +156,7 @@ func runGenerate(t *i18n.I18n) error {
 	} else if !noInteractive && !dryRun && !useVPN {
 		vpnEnabled, err = prompts.AskVPN(t)
 		if err != nil {
-			return fmt.Errorf("VPN selection failed: %w", err)
+			return fmt.Errorf("vpn selection failed: %w", err)
 		}
 	}
 
@@ -205,20 +205,20 @@ func runGenerate(t *i18n.I18n) error {
 			PGID:               loadedProfile.Environment["PGID"],
 			UMASK:              loadedProfile.Environment["UMASK"],
 		}
-		
+
 		// Apply VPN config if present
 		if vpnEnabled && loadedProfile.VPN.Enabled {
 			envConfig.VPNConfig = &generator.VPNConfig{
-				ServiceProvider:      loadedProfile.VPN.Provider,
-				Type:                 "wireguard",
-				WireguardPrivateKey:  loadedProfile.VPN.Password,
-				WireguardAddresses:   "",
-				WireguardPublicKey:   "",
-				PortForwarding:       "off",
-				DNSAddress:           "1.1.1.1",
+				ServiceProvider:     loadedProfile.VPN.Provider,
+				Type:                "wireguard",
+				WireguardPrivateKey: loadedProfile.VPN.Password,
+				WireguardAddresses:  "",
+				WireguardPublicKey:  "",
+				PortForwarding:      "off",
+				DNSAddress:          "1.1.1.1",
 			}
 		}
-		
+
 		fmt.Println(t.T("logs.environment_from_profile"))
 	} else if noInteractive {
 		// Non-interactive: use flags
@@ -230,7 +230,7 @@ func runGenerate(t *i18n.I18n) error {
 			PGID:               pgid,
 			UMASK:              umask,
 		}
-		
+
 		// VPN config from flags
 		if vpnEnabled {
 			if vpnProvider == "" {
@@ -246,7 +246,7 @@ func runGenerate(t *i18n.I18n) error {
 				DNSAddress:          "1.1.1.1",
 			}
 		}
-		
+
 		fmt.Println(t.T("logs.environment_from_flags"))
 	} else {
 		envConfig, err = prompts.ConfigureEnvironment(t, vpnEnabled)
@@ -291,7 +291,7 @@ func runGenerate(t *i18n.I18n) error {
 	fmt.Println()
 	fmt.Println(t.T("logs.validating_configuration"))
 	validationResult := validateConfiguration(registry, selectedIDs, envConfig.ARRPath, outputDir, vpnEnabled)
-	
+
 	// Show warnings
 	if validationResult.HasWarnings() {
 		fmt.Println()
@@ -391,7 +391,7 @@ func previewGeneration(t *i18n.I18n, registry *services.Registry, selectedIDs []
 
 	// Preview docker-compose.yml
 	composeGen := generator.NewComposeGenerator(registry, outputDir)
-	
+
 	composePreview, err := composeGen.Preview(selectedIDs, vpnEnabled)
 	if err != nil {
 		return fmt.Errorf("compose preview failed: %w", err)
@@ -438,7 +438,7 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 
 	// Generate docker-compose.yml
 	composeGen := generator.NewComposeGenerator(registry, outputDir)
-	
+
 	if vpnEnabled {
 		fmt.Println(t.T("logs.vpn_mode_status"))
 	} else {
@@ -477,7 +477,7 @@ func generateFiles(t *i18n.I18n, registry *services.Registry, selectedIDs []stri
 // saveGeneratedProfile saves the current configuration as a profile
 func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generator.EnvConfig, vpnEnabled bool) error {
 	var name string
-	
+
 	if saveProfileName != "" {
 		name = saveProfileName
 	} else {
@@ -507,7 +507,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 	p := profile.NewProfile(name)
 	p.Services = selectedIDs
 	p.VPN.Enabled = vpnEnabled
-	
+
 	if vpnEnabled && envConfig.VPNConfig != nil {
 		p.VPN.Provider = envConfig.VPNConfig.ServiceProvider
 		p.VPN.Password = envConfig.VPNConfig.WireguardPrivateKey
@@ -522,7 +522,7 @@ func saveGeneratedProfile(t *i18n.I18n, selectedIDs []string, envConfig *generat
 		"PGID":                 envConfig.PGID,
 		"UMASK":                envConfig.UMASK,
 	}
-	
+
 	p.OutputDir = outputDir
 
 	// Prompt for description
@@ -553,7 +553,7 @@ func validateNonInteractiveMode(loadedProfile *profile.Profile) error {
 
 	// Check required flags
 	missing := []string{}
-	
+
 	if servicesList == "" {
 		missing = append(missing, "--services")
 	}
@@ -569,7 +569,7 @@ func validateNonInteractiveMode(loadedProfile *profile.Profile) error {
 	if pgid == "" {
 		missing = append(missing, "--pgid")
 	}
-	
+
 	if useVPN && vpnProvider == "" {
 		missing = append(missing, "--vpn-provider")
 	}
@@ -592,7 +592,7 @@ func loadConfigFile(path string) (*profile.Profile, error) {
 	}
 
 	var p profile.Profile
-	
+
 	// Try YAML first
 	if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
 		if err := yaml.Unmarshal(data, &p); err != nil {
@@ -611,50 +611,50 @@ func loadConfigFile(path string) (*profile.Profile, error) {
 // createServiceDirectories creates all necessary directories for service volumes
 func createServiceDirectories(t *i18n.I18n, registry *services.Registry, serviceIDs []string, arrPath string) error {
 	dirSet := make(map[string]bool)
-	
+
 	// Collect all unique directories from service volumes
 	for _, serviceID := range serviceIDs {
 		service, err := registry.GetService(serviceID)
 		if err != nil || service == nil {
 			continue
 		}
-		
+
 		for _, volume := range service.Volumes {
 			// Replace ${ARRPATH} with actual path
 			hostPath := strings.ReplaceAll(volume.Host, "${ARRPATH}", arrPath)
-			
+
 			// Skip if it's a file path (has extension) or absolute path that doesn't start with arrPath
 			if !strings.HasPrefix(hostPath, arrPath) {
 				continue
 			}
-			
+
 			dirSet[hostPath] = true
 		}
 	}
-	
+
 	// Create directories
 	createdDirs := []string{}
 	existingDirs := []string{}
-	
+
 	for dir := range dirSet {
 		// Check if directory already exists
 		if _, err := os.Stat(dir); err == nil {
 			existingDirs = append(existingDirs, dir)
 			continue
 		}
-		
+
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 		createdDirs = append(createdDirs, dir)
 	}
-	
+
 	if len(createdDirs) > 0 {
 		fmt.Println(t.T("logs.directories_created", map[string]interface{}{"count": len(createdDirs)}))
 	}
 	if len(existingDirs) > 0 {
 		fmt.Println(t.T("logs.directories_found", map[string]interface{}{"count": len(existingDirs)}))
 	}
-	
+
 	return nil
 }

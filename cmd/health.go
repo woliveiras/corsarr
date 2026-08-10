@@ -129,13 +129,13 @@ func runHealthCheck(t *i18n.I18n) error {
 }
 
 type ContainerInfo struct {
-	Name    string
-	Status  string
-	Health  string
-	Uptime  string
-	CPU     string
-	Memory  string
-	Ports   []string
+	Name   string
+	Status string
+	Health string
+	Uptime string
+	CPU    string
+	Memory string
+	Ports  []string
 }
 
 type composePSOutput struct {
@@ -253,28 +253,28 @@ func displayHealthStatus(t *i18n.I18n, containers []ContainerInfo) {
 
 	// Header
 	if healthDetailed {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			t.T("health.container"),
 			t.T("health.status"),
 			t.T("health.health"),
 			t.T("health.cpu"),
 			t.T("health.memory"))
 	} else {
-		fmt.Fprintf(w, "%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n",
 			t.T("health.container"),
 			t.T("health.status"),
 			t.T("health.health"))
 	}
 
-	fmt.Fprintf(w, "%s\t%s\t%s",
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s",
 		strings.Repeat("-", 20),
 		strings.Repeat("-", 15),
 		strings.Repeat("-", 15))
 
 	if healthDetailed {
-		fmt.Fprintf(w, "\t%s\t%s", strings.Repeat("-", 10), strings.Repeat("-", 15))
+		_, _ = fmt.Fprintf(w, "\t%s\t%s", strings.Repeat("-", 10), strings.Repeat("-", 15))
 	}
-	fmt.Fprintf(w, "\n")
+	_, _ = fmt.Fprintln(w)
 
 	// Rows
 	for _, c := range containers {
@@ -291,14 +291,14 @@ func displayHealthStatus(t *i18n.I18n, containers []ContainerInfo) {
 				mem = "N/A"
 			}
 
-			fmt.Fprintf(w, "%s\t%s %s\t%s %s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s %s\t%s %s\t%s\t%s\n",
 				c.Name,
 				statusIcon, c.Status,
 				healthIcon, getHealthText(c.Health),
 				cpu,
 				mem)
 		} else {
-			fmt.Fprintf(w, "%s\t%s %s\t%s %s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s %s\t%s %s\n",
 				c.Name,
 				statusIcon, c.Status,
 				healthIcon, getHealthText(c.Health))

@@ -153,10 +153,13 @@ func (c *ARRClient) request(
 }
 
 func boundedResponse(response *http.Response) ([]byte, error) {
-	defer response.Body.Close()
-	contents, err := io.ReadAll(io.LimitReader(response.Body, maxARRResponseSize+1))
-	if err != nil {
-		return nil, err
+	contents, readErr := io.ReadAll(io.LimitReader(response.Body, maxARRResponseSize+1))
+	closeErr := response.Body.Close()
+	if readErr != nil {
+		return nil, readErr
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("close application API response: %w", closeErr)
 	}
 	if len(contents) > maxARRResponseSize {
 		return nil, fmt.Errorf("response exceeds size limit")

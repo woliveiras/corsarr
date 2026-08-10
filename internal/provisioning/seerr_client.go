@@ -81,7 +81,7 @@ func (c *SeerrClient) EnsureSetup(
 			Initialized bool `json:"initialized"`
 		}
 		if json.Unmarshal(contents, &status) != nil || !status.Initialized {
-			return fmt.Errorf("Seerr did not persist initialization")
+			return fmt.Errorf("seerr did not persist initialization")
 		}
 	}
 	return nil
@@ -115,12 +115,12 @@ func (c *SeerrClient) enableJellyfinLibraries(ctx context.Context) error {
 	ids := make([]string, 0, len(libraries))
 	for _, library := range libraries {
 		if library.ID == "" || strings.ContainsAny(library.ID, ",&\r\n") {
-			return fmt.Errorf("Seerr returned an invalid Jellyfin library ID")
+			return fmt.Errorf("seerr returned an invalid Jellyfin library ID")
 		}
 		ids = append(ids, library.ID)
 	}
 	if len(ids) == 0 {
-		return fmt.Errorf("Seerr did not discover Jellyfin libraries")
+		return fmt.Errorf("seerr did not discover Jellyfin libraries")
 	}
 	sort.Strings(ids)
 	query := url.Values{"enable": {strings.Join(ids, ",")}}
@@ -157,7 +157,7 @@ func (c *SeerrClient) ensureARR(ctx context.Context, app string, apiKey APIKey) 
 	}
 	profileID, profileName, ok := selectSeerrProfile(options.Profiles)
 	if !ok || !hasSeerrRoot(options.RootFolders, root) {
-		return fmt.Errorf("Seerr %s connection lacks an approved profile or root folder", app)
+		return fmt.Errorf("seerr %s connection lacks an approved profile or root folder", app)
 	}
 	for key, value := range map[string]any{
 		"name": reservedName, "activeProfileId": profileID, "activeProfileName": profileName,
@@ -234,12 +234,12 @@ func (c *SeerrClient) jsonRequest(ctx context.Context, method, apiPath string, v
 		body = bytes.NewReader(contents)
 	}
 	if c.baseURL == nil {
-		return nil, fmt.Errorf("Seerr endpoint is not an approved loopback HTTP URL")
+		return nil, fmt.Errorf("seerr endpoint is not an approved loopback HTTP URL")
 	}
 	endpoint := *c.baseURL
 	parsed, err := url.Parse(apiPath)
 	if err != nil || !strings.HasPrefix(parsed.Path, "/api/v1/") || parsed.Host != "" {
-		return nil, fmt.Errorf("Seerr API path is invalid")
+		return nil, fmt.Errorf("seerr API path is invalid")
 	}
 	endpoint.Path, endpoint.RawQuery = parsed.Path, parsed.RawQuery
 	request, err := http.NewRequestWithContext(ctx, method, endpoint.String(), body)

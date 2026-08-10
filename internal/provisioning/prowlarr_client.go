@@ -37,7 +37,7 @@ func (c *ProwlarrClient) EnsureApplication(
 ) error {
 	target, supported := prowlarrTargets[applicationID]
 	if !supported {
-		return fmt.Errorf("Prowlarr application is not supported: %s", applicationID)
+		return fmt.Errorf("prowlarr application is not supported: %s", applicationID)
 	}
 	const basePath = "/api/v1/applications"
 	providers, err := c.api.getProviders(ctx, "prowlarr", prowlarrKey, basePath)
@@ -68,7 +68,7 @@ func (c *ProwlarrClient) EnsureApplication(
 			}
 		}
 		if provider == nil {
-			return fmt.Errorf("Prowlarr %s schema is unavailable", target.Name)
+			return fmt.Errorf("prowlarr %s schema is unavailable", target.Name)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (c *ProwlarrClient) EnsureApplication(
 	provider["syncLevel"] = "fullSync"
 	fields, ok := provider["fields"].([]any)
 	if !ok {
-		return fmt.Errorf("Prowlarr application schema has invalid fields")
+		return fmt.Errorf("prowlarr application schema has invalid fields")
 	}
 	values := map[string]any{
 		"prowlarrUrl":  "http://prowlarr:9696",
@@ -88,7 +88,7 @@ func (c *ProwlarrClient) EnsureApplication(
 	}
 	for name, value := range values {
 		if !setProviderField(fields, name, value) {
-			return fmt.Errorf("Prowlarr application schema is missing required field: %s", name)
+			return fmt.Errorf("prowlarr application schema is missing required field: %s", name)
 		}
 	}
 
@@ -97,7 +97,7 @@ func (c *ProwlarrClient) EnsureApplication(
 	if !creating {
 		id, ok := numericID(provider["id"])
 		if !ok || id < 1 {
-			return fmt.Errorf("Corsarr Prowlarr application has invalid ID")
+			return fmt.Errorf("corsarr Prowlarr application has invalid ID")
 		}
 		method = http.MethodPut
 		endpointPath += "/" + strconv.Itoa(id)

@@ -95,7 +95,7 @@ func (c *ARRClient) EnsureQBittorrentDownloadClient(
 	if !creating {
 		id, ok := numericID(provider["id"])
 		if !ok || id < 1 {
-			return fmt.Errorf("Corsarr qBittorrent download client has invalid ID")
+			return fmt.Errorf("corsarr qBittorrent download client has invalid ID")
 		}
 		method = http.MethodPut
 		endpointPath += "/" + strconv.Itoa(id)

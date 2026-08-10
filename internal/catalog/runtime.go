@@ -161,7 +161,7 @@ func (c *RuntimeCatalog) Resolve(
 		return containerruntime.ContainerSpec{}, fmt.Errorf("application is not approved for installation: %s", applicationID)
 	}
 	if !filepath.IsAbs(rootPath) {
-		return containerruntime.ContainerSpec{}, fmt.Errorf("Corsarr root path must be absolute")
+		return containerruntime.ContainerSpec{}, fmt.Errorf("corsarr root path must be absolute")
 	}
 	environment := make(map[string]string)
 	if options.Timezone != "" {

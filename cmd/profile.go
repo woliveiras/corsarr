@@ -105,12 +105,12 @@ var profileListCmd = &cobra.Command{
 		fmt.Printf("📋 %s (%d):\n\n", t.T("profile.saved_profiles"), len(profiles))
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			t.T("profile.name"),
 			t.T("profile.services_count"),
 			t.T("profile.updated_at"),
 			t.T("profile.description"))
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			strings.Repeat("-", 20),
 			strings.Repeat("-", 15),
 			strings.Repeat("-", 20),
@@ -123,7 +123,7 @@ var profileListCmd = &cobra.Command{
 			if len(description) > 30 {
 				description = description[:27] + "..."
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				p.Name, servicesCount, updatedAt, description)
 		}
 

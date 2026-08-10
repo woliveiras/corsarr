@@ -48,7 +48,7 @@ func (r *ARRCredentialReader) Read(rootPath string, applicationID string) (APIKe
 		return APIKey{}, fmt.Errorf("application does not expose a supported Arr API: %s", applicationID)
 	}
 	if !filepath.IsAbs(rootPath) {
-		return APIKey{}, fmt.Errorf("Corsarr root path must be absolute")
+		return APIKey{}, fmt.Errorf("corsarr root path must be absolute")
 	}
 
 	configDirectory := filepath.Join(rootPath, "config", applicationID)
@@ -76,10 +76,13 @@ func (r *ARRCredentialReader) Read(rootPath string, applicationID string) (APIKe
 	if err != nil {
 		return APIKey{}, fmt.Errorf("open application config: %w", err)
 	}
-	defer configFile.Close()
-	contents, err := io.ReadAll(io.LimitReader(configFile, maxARRConfigSize+1))
-	if err != nil {
-		return APIKey{}, fmt.Errorf("read application config: %w", err)
+	contents, readErr := io.ReadAll(io.LimitReader(configFile, maxARRConfigSize+1))
+	closeErr := configFile.Close()
+	if readErr != nil {
+		return APIKey{}, fmt.Errorf("read application config: %w", readErr)
+	}
+	if closeErr != nil {
+		return APIKey{}, fmt.Errorf("close application config: %w", closeErr)
 	}
 	if len(contents) > maxARRConfigSize {
 		return APIKey{}, fmt.Errorf("application config exceeds size limit")

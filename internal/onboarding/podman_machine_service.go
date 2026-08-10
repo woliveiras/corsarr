@@ -59,14 +59,14 @@ func (s *PodmanMachineService) Prepare(
 	}
 	if s.platform != "darwin" && s.platform != "windows" {
 		return PodmanMachinePreparationResult{}, fmt.Errorf(
-			"Podman Machine is not used for native runtime preparation on %s",
+			"podman Machine is not used for native runtime preparation on %s",
 			s.platform,
 		)
 	}
 
 	podmanPath, err := s.runner.LookPath("podman")
 	if err != nil {
-		return PodmanMachinePreparationResult{}, fmt.Errorf("find Podman client: %w", err)
+		return PodmanMachinePreparationResult{}, fmt.Errorf("find podman client: %w", err)
 	}
 	result := PodmanMachinePreparationResult{}
 	stateOutput, err := s.run(
@@ -125,7 +125,7 @@ func (s *PodmanMachineService) Prepare(
 		}
 		select {
 		case <-waitContext.Done():
-			return result, fmt.Errorf("Podman runtime did not become ready: %w", waitContext.Err())
+			return result, fmt.Errorf("podman runtime did not become ready: %w", waitContext.Err())
 		case <-ticker.C:
 		}
 	}

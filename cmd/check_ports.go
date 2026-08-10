@@ -253,14 +253,14 @@ func displayPortStatus(t *i18n.I18n, ports []PortInfo) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
 	// Header
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 		t.T("ports.service"),
 		t.T("ports.port"),
 		t.T("ports.protocol"),
 		t.T("ports.status"),
 		t.T("ports.used_by"))
 
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 		strings.Repeat("-", 20),
 		strings.Repeat("-", 8),
 		strings.Repeat("-", 10),
@@ -279,7 +279,7 @@ func displayPortStatus(t *i18n.I18n, ports []PortInfo) {
 			usedBy = p.UsedBy
 		}
 
-		fmt.Fprintf(w, "%s\t%d\t%s\t%s %s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%d\t%s\t%s %s\t%s\n",
 			p.Service,
 			p.Port,
 			strings.ToUpper(p.Protocol),

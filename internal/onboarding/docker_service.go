@@ -61,7 +61,7 @@ func (s *DockerService) Prepare(ctx context.Context) (PreparationResult, error) 
 	result := PreparationResult{}
 	if !s.exists(s.dockerApp) {
 		if s.installer == nil {
-			return result, fmt.Errorf("Docker Desktop installer is unavailable")
+			return result, fmt.Errorf("docker Desktop installer is unavailable")
 		}
 		if err := s.installer.Install(ctx); err != nil {
 			return result, err
