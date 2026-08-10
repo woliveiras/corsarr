@@ -73,6 +73,12 @@ replaced implicitly; that case is routed to the future update/rollback flow.
 the reviewed layout, orders dependencies before consumers, and returns a
 structured per-application result while preserving already completed apps.
 
+`internal/application.ManagementService` translates runtime inspection into
+`not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
+start, stop, restart, and remove intents validate the catalog ID before reaching
+the runtime. Remove deletes only the labeled container; the bind-mounted config
+and shared media tree are outside its authority.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
