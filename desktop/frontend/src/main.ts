@@ -270,7 +270,9 @@ function createApplicationCard(application: Application): HTMLElement {
   const card = document.createElement('article');
   card.className = 'application-card';
   const managedStatus = managedStatuses.get(application.id);
-  const installed = managedStatus?.state !== undefined && managedStatus.state !== 'not_installed';
+  const installed = managedStatus?.state === 'running' || managedStatus?.state === 'stopped';
+  const uncertainSelection =
+    managedStatus?.state === 'attention' && selectedApplicationIDs.has(application.id);
   const selected = selectedApplicationIDs.has(application.id) || installed;
   if (selected) card.classList.add('selected');
 
@@ -322,12 +324,18 @@ function createApplicationCard(application: Application): HTMLElement {
   selectButton.textContent = installed ? 'Instalado' : selected ? 'Selecionado' : 'Selecionar';
   selectButton.setAttribute('aria-pressed', String(selected));
   selectButton.setAttribute('aria-label', `Selecionar ${application.name} para instalação`);
-  selectButton.disabled = selectionSaving || installed;
+  selectButton.disabled = selectionSaving || installed || uncertainSelection;
   if (installed) {
     selectButton.title = 'Remova o aplicativo antes de retirá-lo da seleção.';
     selectButton.setAttribute(
       'aria-label',
       `${application.name} está instalado. Remova o aplicativo antes de retirá-lo da seleção.`,
+    );
+  } else if (uncertainSelection) {
+    selectButton.title = 'Verifique o ambiente antes de retirar este aplicativo da seleção.';
+    selectButton.setAttribute(
+      'aria-label',
+      `${application.name} continua selecionado enquanto o ambiente não pode ser verificado.`,
     );
   }
   selectButton.addEventListener('click', async () => {

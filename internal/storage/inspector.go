@@ -82,7 +82,11 @@ func (i *Inspector) Inspect(path string) Status {
 		status.TechnicalDetail = boundedStorageDetail(fmt.Errorf("hardlink check failed: %w", err))
 	}
 
-	if availableBytes, err := i.diskBytes(status.Path); err == nil {
+	diskBytes := i.diskBytes
+	if diskBytes == nil {
+		diskBytes = availableDiskBytes
+	}
+	if availableBytes, err := diskBytes(status.Path); err == nil {
 		status.AvailableBytes = availableBytes
 		if availableBytes < MinimumAvailableBytes {
 			status.State = StateInvalid

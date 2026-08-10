@@ -482,9 +482,22 @@ func (a *App) SaveApplicationSelection(applicationIDs []string) (application.Set
 func (a *App) saveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {
 	selected := append([]string(nil), applicationIDs...)
 	if a.management != nil {
+		current, err := a.setup.Load()
+		if err != nil {
+			return application.SetupStatus{}, err
+		}
+		currentlySelected := make(map[string]bool, len(current.Applications))
+		for _, applicationID := range current.Applications {
+			currentlySelected[applicationID] = true
+		}
 		for _, status := range a.management.ListStatuses(a.appContext()) {
-			if status.State != application.ManagedStateNotInstalled {
+			switch status.State {
+			case application.ManagedStateRunning, application.ManagedStateStopped:
 				selected = append(selected, status.ApplicationID)
+			case application.ManagedStateAttention:
+				if currentlySelected[status.ApplicationID] {
+					selected = append(selected, status.ApplicationID)
+				}
 			}
 		}
 	}

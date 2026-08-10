@@ -130,6 +130,24 @@ func TestSaveApplicationSelectionKeepsInstalledApplicationsSelected(t *testing.T
 	}
 }
 
+func TestSaveApplicationSelectionPreservesOnlyPriorChoicesDuringUncertainRuntimeState(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{Applications: []string{"jellyfin"}}}
+	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{
+		{ApplicationID: "jellyfin", State: application.ManagedStateAttention},
+		{ApplicationID: "radarr", State: application.ManagedStateAttention},
+	}}
+	app := &App{setup: setup, management: management}
+
+	status, err := app.SaveApplicationSelection([]string{"sonarr"})
+	if err != nil {
+		t.Fatalf("save selection during uncertain runtime state: %v", err)
+	}
+	want := []string{"sonarr", "jellyfin"}
+	if !reflect.DeepEqual(status.Applications, want) {
+		t.Fatalf("expected prior uncertain choice without unrelated apps %v, got %v", want, status.Applications)
+	}
+}
+
 func TestPrepareStorageLayoutUsesOnlyPersistedSetup(t *testing.T) {
 	setup := &desktopSetupManager{status: application.SetupStatus{
 		StoragePath:  "/Users/test/Media",
