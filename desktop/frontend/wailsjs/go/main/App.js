@@ -70,6 +70,10 @@ export function OpenLegalLink(arg1, arg2) {
   return window['go']['main']['App']['OpenLegalLink'](arg1, arg2);
 }
 
+export function OpenStartAtLoginSettings() {
+  return window['go']['main']['App']['OpenStartAtLoginSettings']();
+}
+
 export function PrepareRuntime() {
   return window['go']['main']['App']['PrepareRuntime']();
 }
@@ -88,6 +92,10 @@ export function RestartApplication(arg1) {
 
 export function SaveApplicationSelection(arg1) {
   return window['go']['main']['App']['SaveApplicationSelection'](arg1);
+}
+
+export function SetStartAtLogin(arg1) {
+  return window['go']['main']['App']['SetStartAtLogin'](arg1);
 }
 
 export function StartApplication(arg1) {

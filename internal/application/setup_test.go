@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/woliveiras/corsarr/internal/autostart"
 	"github.com/woliveiras/corsarr/internal/services"
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
@@ -135,12 +136,91 @@ func TestSetupServiceRequiresExplicitCurrentTermsForInstallation(t *testing.T) {
 	}
 }
 
+func TestSetupServicePersistsExplicitStartAtLoginPreference(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{},
+	}}
+	login := &fakeAutostartManager{status: autostart.Status{Supported: true}}
+	service := NewSetupService(NewCatalog(registry), store, login)
+
+	status, err := service.SetStartAtLogin(true)
+	if err != nil {
+		t.Fatalf("enable start at login: %v", err)
+	}
+	if !status.StartAtLogin || !status.StartAtLoginSupported || !store.desktopState.StartAtLogin {
+		t.Fatalf("unexpected enabled setup %#v state=%#v", status, store.desktopState)
+	}
+	if login.setCalls != 1 || !login.lastEnabled {
+		t.Fatalf("expected one native enable, got %#v", login)
+	}
+}
+
+func TestSetupServiceReportsNativeApprovalWithoutClaimingEnabled(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{},
+	}}
+	login := &fakeAutostartManager{
+		status:         autostart.Status{Supported: true},
+		statusAfterSet: autostart.Status{Supported: true, RequiresApproval: true},
+	}
+	service := NewSetupService(NewCatalog(registry), store, login)
+
+	status, err := service.SetStartAtLogin(true)
+	if err != nil {
+		t.Fatalf("request start at login: %v", err)
+	}
+	if !status.StartAtLogin || !status.StartAtLoginRequiresApproval {
+		t.Fatalf("expected approval-required preference, got %#v", status)
+	}
+	if !store.desktopState.StartAtLogin {
+		t.Fatal("expected requested preference to persist while approval is pending")
+	}
+}
+
 type memoryStateStore struct {
 	desktopState statefile.DesktopState
 	loadErr      error
 	saveErr      error
 	saveCalls    int
 }
+
+type fakeAutostartManager struct {
+	status         autostart.Status
+	statusAfterSet autostart.Status
+	setErr         error
+	setCalls       int
+	lastEnabled    bool
+}
+
+func (m *fakeAutostartManager) Status() (autostart.Status, error) {
+	return m.status, nil
+}
+
+func (m *fakeAutostartManager) SetEnabled(enabled bool) (autostart.Status, error) {
+	m.setCalls++
+	m.lastEnabled = enabled
+	if m.setErr != nil {
+		return m.status, m.setErr
+	}
+	if m.statusAfterSet.Supported {
+		m.status = m.statusAfterSet
+	} else {
+		m.status.Enabled = enabled
+	}
+	return m.status, nil
+}
+
+func (m *fakeAutostartManager) OpenSystemSettings() error { return nil }
 
 type slowMemoryStateStore struct {
 	memoryStateStore

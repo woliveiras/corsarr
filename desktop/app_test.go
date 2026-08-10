@@ -235,6 +235,19 @@ func TestPrepareRuntimeUsesBoundedOnboardingAfterConsent(t *testing.T) {
 	}
 }
 
+func TestSetStartAtLoginUsesSetupBoundary(t *testing.T) {
+	setup := &desktopSetupManager{}
+	app := &App{setup: setup}
+
+	status, err := app.SetStartAtLogin(true)
+	if err != nil {
+		t.Fatalf("enable start at login: %v", err)
+	}
+	if !status.StartAtLogin || setup.startAtLoginCalls != 1 {
+		t.Fatalf("unexpected start-at-login result %#v setup=%#v", status, setup)
+	}
+}
+
 func TestExportDiagnosticsWritesOnlyAfterNativeDestinationSelection(t *testing.T) {
 	picker := &desktopDiagnosticPicker{path: "/Users/test/corsarr-diagnostics.json"}
 	reporter := &desktopDiagnosticReporter{report: diagnostics.Report{
@@ -351,8 +364,9 @@ func (f *desktopStorageInspector) Inspect(path string) storage.Status {
 }
 
 type desktopSetupManager struct {
-	status       application.SetupStatus
-	savedStorage string
+	status            application.SetupStatus
+	savedStorage      string
+	startAtLoginCalls int
 }
 
 func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
@@ -375,6 +389,14 @@ func (f *desktopSetupManager) AcceptCurrentTerms() (application.SetupStatus, err
 	f.status.CanInstall = f.status.CanPrepare
 	return f.status, nil
 }
+
+func (f *desktopSetupManager) SetStartAtLogin(enabled bool) (application.SetupStatus, error) {
+	f.startAtLoginCalls++
+	f.status.StartAtLogin = enabled
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) OpenStartAtLoginSettings() error { return nil }
 
 type desktopLayoutPreparer struct {
 	status         storage.LayoutStatus

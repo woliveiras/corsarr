@@ -694,6 +694,9 @@ claims must be rechecked during implementation and release validation.
   The private atomic JSON contains bounded environment, application, and
   storage facts, redacts credential-shaped values, and excludes logs and
   secrets by construction.
+- 2026-08-10: Added an explicit macOS 13+ start-at-login setting backed by
+  `SMAppService.mainAppService`, including native approval status and a bounded
+  link to the Login Items panel. No registration occurs by default.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

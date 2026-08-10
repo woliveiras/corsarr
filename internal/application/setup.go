@@ -1,35 +1,49 @@
 package application
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/woliveiras/corsarr/internal/autostart"
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
 
 type SetupStatus struct {
-	StoragePath   string   `json:"storagePath,omitempty"`
-	Applications  []string `json:"applications"`
-	CanPrepare    bool     `json:"canPrepare"`
-	CanInstall    bool     `json:"canInstall"`
-	TermsVersion  string   `json:"termsVersion"`
-	TermsAccepted bool     `json:"termsAccepted"`
+	StoragePath                  string   `json:"storagePath,omitempty"`
+	Applications                 []string `json:"applications"`
+	CanPrepare                   bool     `json:"canPrepare"`
+	CanInstall                   bool     `json:"canInstall"`
+	TermsVersion                 string   `json:"termsVersion"`
+	TermsAccepted                bool     `json:"termsAccepted"`
+	StartAtLogin                 bool     `json:"startAtLogin"`
+	StartAtLoginSupported        bool     `json:"startAtLoginSupported"`
+	StartAtLoginRequiresApproval bool     `json:"startAtLoginRequiresApproval"`
 }
 
 const CurrentTermsVersion = "2026-08-10.2"
 
 type SetupService struct {
-	catalog *Catalog
-	store   statefile.Store
-	mu      sync.Mutex
-	now     func() time.Time
+	catalog   *Catalog
+	store     statefile.Store
+	mu        sync.Mutex
+	now       func() time.Time
+	autostart autostart.Manager
 }
 
-func NewSetupService(catalog *Catalog, store statefile.Store) *SetupService {
-	return &SetupService{catalog: catalog, store: store, now: time.Now}
+func NewSetupService(
+	catalog *Catalog,
+	store statefile.Store,
+	autostartManagers ...autostart.Manager,
+) *SetupService {
+	manager := autostart.NewPlatformManager("unsupported")
+	if len(autostartManagers) > 0 && autostartManagers[0] != nil {
+		manager = autostartManagers[0]
+	}
+	return &SetupService{catalog: catalog, store: store, now: time.Now, autostart: manager}
 }
 
 func (s *SetupService) AcceptCurrentTerms() (SetupStatus, error) {
@@ -46,7 +60,7 @@ func (s *SetupService) AcceptCurrentTerms() (SetupStatus, error) {
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save runtime consent: %w", err)
 	}
-	return setupStatus(desktopState), nil
+	return s.status(desktopState)
 }
 
 func (s *SetupService) Load() (SetupStatus, error) {
@@ -58,7 +72,7 @@ func (s *SetupService) Load() (SetupStatus, error) {
 		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
 	}
 	desktopState.Applications = s.knownApplications(desktopState.Applications)
-	return setupStatus(desktopState), nil
+	return s.status(desktopState)
 }
 
 func (s *SetupService) SaveStorage(path string) (SetupStatus, error) {
@@ -77,7 +91,7 @@ func (s *SetupService) SaveStorage(path string) (SetupStatus, error) {
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save desktop storage: %w", err)
 	}
-	return setupStatus(desktopState), nil
+	return s.status(desktopState)
 }
 
 func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, error) {
@@ -96,7 +110,38 @@ func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, e
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save desktop applications: %w", err)
 	}
-	return setupStatus(desktopState), nil
+	return s.status(desktopState)
+}
+
+func (s *SetupService) SetStartAtLogin(enabled bool) (SetupStatus, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	before, err := s.autostart.Status()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("inspect start-at-login setting: %w", err)
+	}
+	after, err := s.autostart.SetEnabled(enabled)
+	if err != nil {
+		return SetupStatus{}, err
+	}
+	desktopState.StartAtLogin = after.Enabled || after.RequiresApproval
+	if err := s.store.Save(desktopState); err != nil {
+		_, rollbackErr := s.autostart.SetEnabled(before.Enabled || before.RequiresApproval)
+		return SetupStatus{}, errors.Join(
+			fmt.Errorf("save start-at-login setting: %w", err),
+			rollbackErr,
+		)
+	}
+	return setupStatus(desktopState, after), nil
+}
+
+func (s *SetupService) OpenStartAtLoginSettings() error {
+	return s.autostart.OpenSystemSettings()
 }
 
 func (s *SetupService) validatedApplications(applicationIDs []string) ([]string, error) {
@@ -152,16 +197,27 @@ func (s *SetupService) knownApplications(applicationIDs []string) []string {
 	return known
 }
 
-func setupStatus(desktopState statefile.DesktopState) SetupStatus {
+func (s *SetupService) status(desktopState statefile.DesktopState) (SetupStatus, error) {
+	loginStatus, err := s.autostart.Status()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("inspect start-at-login setting: %w", err)
+	}
+	return setupStatus(desktopState, loginStatus), nil
+}
+
+func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Status) SetupStatus {
 	canPrepare := desktopState.StoragePath != "" && len(desktopState.Applications) > 0
 	termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
 		desktopState.RuntimeConsentAcceptedAt != ""
 	return SetupStatus{
-		StoragePath:   desktopState.StoragePath,
-		Applications:  desktopState.Applications,
-		CanPrepare:    canPrepare,
-		CanInstall:    canPrepare && termsAccepted,
-		TermsVersion:  CurrentTermsVersion,
-		TermsAccepted: termsAccepted,
+		StoragePath:                  desktopState.StoragePath,
+		Applications:                 desktopState.Applications,
+		CanPrepare:                   canPrepare,
+		CanInstall:                   canPrepare && termsAccepted,
+		TermsVersion:                 CurrentTermsVersion,
+		TermsAccepted:                termsAccepted,
+		StartAtLogin:                 loginStatus.Enabled || loginStatus.RequiresApproval,
+		StartAtLoginSupported:        loginStatus.Supported,
+		StartAtLoginRequiresApproval: loginStatus.RequiresApproval,
 	}
 }

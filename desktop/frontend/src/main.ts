@@ -17,11 +17,13 @@ import {
   ListLegalNotices,
   OpenApplication,
   OpenLegalLink,
+  OpenStartAtLoginSettings,
   PrepareRuntime,
   PrepareStorageLayout,
   RemoveApplication,
   RestartApplication,
   SaveApplicationSelection,
+  SetStartAtLogin,
   StartApplication,
   StopApplication,
   UpdateApplication,
@@ -109,6 +111,7 @@ root.innerHTML = [
   '        <h2 id="installation-title">Revise sua preparação</h2>',
   '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
   '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a instalar e usar o Docker Desktop, baixar as imagens aprovadas e criar os serviços selecionados. Aceito os termos do Docker Desktop e entendo que o uso pessoal é gratuito, enquanto empresas maiores e entidades governamentais podem precisar de assinatura. Cada aplicação mantém sua própria licença.</span></label>',
+  '        <div id="start-at-login-setting" class="start-at-login-setting" hidden><label><input id="start-at-login" type="checkbox"> <span>Iniciar meus serviços automaticamente quando eu entrar no Mac.</span></label><button id="open-login-settings" class="legal-link-button" type="button" hidden>Abrir Ajustes do Sistema</button></div>',
   '        <p id="installation-result" class="installation-result"></p>',
   '      </div>',
   '      <div class="installation-actions">',
@@ -151,6 +154,9 @@ const prepareStorageButton = document.querySelector<HTMLButtonElement>('#prepare
 const installApplicationsButton =
   document.querySelector<HTMLButtonElement>('#install-applications');
 const acceptTermsCheckbox = document.querySelector<HTMLInputElement>('#accept-terms');
+const startAtLoginSetting = document.querySelector<HTMLElement>('#start-at-login-setting');
+const startAtLoginCheckbox = document.querySelector<HTMLInputElement>('#start-at-login');
+const openLoginSettingsButton = document.querySelector<HTMLButtonElement>('#open-login-settings');
 const homeView = document.querySelector<HTMLElement>('#home-view');
 const licensesView = document.querySelector<HTMLElement>('#licenses-view');
 const showHomeButton = document.querySelector<HTMLButtonElement>('#show-home');
@@ -682,6 +688,14 @@ function applySetupStatus(status: application.SetupStatus): void {
   }
   if (prepareStorageButton) prepareStorageButton.disabled = !status.canPrepare;
   if (acceptTermsCheckbox) acceptTermsCheckbox.checked = status.termsAccepted;
+  if (startAtLoginSetting) startAtLoginSetting.hidden = !status.startAtLoginSupported;
+  if (startAtLoginCheckbox) {
+    startAtLoginCheckbox.checked = status.startAtLogin;
+    startAtLoginCheckbox.disabled = false;
+  }
+  if (openLoginSettingsButton) {
+    openLoginSettingsButton.hidden = !status.startAtLoginRequiresApproval;
+  }
   updateInstallAuthority();
 }
 
@@ -949,6 +963,39 @@ async function prepareStorage(): Promise<void> {
 
 prepareStorageButton?.addEventListener('click', () => void prepareStorage());
 acceptTermsCheckbox?.addEventListener('change', updateInstallAuthority);
+
+startAtLoginCheckbox?.addEventListener('change', async () => {
+  if (!startAtLoginCheckbox) return;
+  const requested = startAtLoginCheckbox.checked;
+  startAtLoginCheckbox.disabled = true;
+  try {
+    const status = await SetStartAtLogin(requested);
+    applySetupStatus(status);
+    if (messageElement) {
+      messageElement.textContent = status.startAtLoginRequiresApproval
+        ? 'O macOS precisa da sua aprovação em Ajustes do Sistema para iniciar o Corsarr no login.'
+        : requested
+          ? 'O Corsarr iniciará seus serviços quando você entrar neste Mac.'
+          : 'O Corsarr não iniciará automaticamente no próximo login.';
+      messageElement.classList.remove('error');
+    }
+  } catch {
+    applySetupStatus(await GetSetupStatus());
+    if (messageElement) {
+      messageElement.textContent = 'Não foi possível alterar o início automático.';
+      messageElement.classList.add('error');
+    }
+  }
+});
+
+openLoginSettingsButton?.addEventListener('click', async () => {
+  openLoginSettingsButton.disabled = true;
+  try {
+    await OpenStartAtLoginSettings();
+  } finally {
+    openLoginSettingsButton.disabled = false;
+  }
+});
 
 async function installApplications(): Promise<void> {
   if (!installApplicationsButton || !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked) {

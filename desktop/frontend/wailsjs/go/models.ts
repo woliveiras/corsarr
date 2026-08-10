@@ -215,6 +215,9 @@ export namespace application {
 	    canInstall: boolean;
 	    termsVersion: string;
 	    termsAccepted: boolean;
+	    startAtLogin: boolean;
+	    startAtLoginSupported: boolean;
+	    startAtLoginRequiresApproval: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new SetupStatus(source);
@@ -228,6 +231,9 @@ export namespace application {
 	        this.canInstall = source["canInstall"];
 	        this.termsVersion = source["termsVersion"];
 	        this.termsAccepted = source["termsAccepted"];
+	        this.startAtLogin = source["startAtLogin"];
+	        this.startAtLoginSupported = source["startAtLoginSupported"];
+	        this.startAtLoginRequiresApproval = source["startAtLoginRequiresApproval"];
 	    }
 	}
 

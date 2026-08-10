@@ -97,3 +97,19 @@ func TestFileStoreMigratesSchemaOneSetupWithoutInventingConsent(t *testing.T) {
 		t.Fatalf("expected consent to remain absent, got %#v", loaded)
 	}
 }
+
+func TestFileStoreMigratesSchemaTwoWithoutInventingStartAtLogin(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":2,"storagePath":"/Users/test/Media","applications":["radarr"],"runtimeConsentVersion":"2026-08-10.2","runtimeConsentAcceptedAt":"2026-08-10T18:30:00Z"}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write legacy state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load schema two state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.StartAtLogin {
+		t.Fatalf("unexpected migrated state %#v", loaded)
+	}
+}

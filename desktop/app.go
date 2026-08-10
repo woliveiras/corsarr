@@ -12,6 +12,7 @@ import (
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/woliveiras/corsarr/internal/application"
+	"github.com/woliveiras/corsarr/internal/autostart"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
@@ -38,6 +39,8 @@ type setupManager interface {
 	SaveStorage(path string) (application.SetupStatus, error)
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
 	AcceptCurrentTerms() (application.SetupStatus, error)
+	SetStartAtLogin(enabled bool) (application.SetupStatus, error)
+	OpenStartAtLoginSettings() error
 }
 
 type storageLayoutPreparer interface {
@@ -149,7 +152,11 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	setup := application.NewSetupService(catalog, statefile.NewFileStore(statePath))
+	setup := application.NewSetupService(
+		catalog,
+		statefile.NewFileStore(statePath),
+		autostart.NewPlatformManager(goruntime.GOOS),
+	)
 	runtimeOnboarding, err := newRuntimeOnboarding(dockerDetector)
 	if err != nil {
 		return nil, fmt.Errorf("create runtime onboarding: %w", err)
@@ -360,6 +367,14 @@ func (a *App) SaveApplicationSelection(applicationIDs []string) (application.Set
 
 func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
 	return a.setup.AcceptCurrentTerms()
+}
+
+func (a *App) SetStartAtLogin(enabled bool) (application.SetupStatus, error) {
+	return a.setup.SetStartAtLogin(enabled)
+}
+
+func (a *App) OpenStartAtLoginSettings() error {
+	return a.setup.OpenStartAtLoginSettings()
 }
 
 func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {

@@ -57,6 +57,13 @@ administrator rights, or register anything until the user enables the option.
 Other platforms remain unsupported until they have native, separately tested
 adapters.
 
+The preference is stored in desktop-state schema 3 only after Service
+Management accepts the change. UI state is reconciled from the native service
+status, so a change made in System Settings is not falsely reported as active.
+An approval-required registration is represented separately from an enabled
+registration and offers a bounded action to open the correct System Settings
+panel.
+
 `PrepareRuntime` is available only after the current versioned runtime consent
 has been persisted. The frontend supplies no URL, checksum, command, path,
 username, or installer argument. Windows and Linux return an explicit unsupported

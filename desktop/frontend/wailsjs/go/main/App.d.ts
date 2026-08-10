@@ -40,6 +40,8 @@ export function OpenApplication(arg1:string):Promise<void>;
 
 export function OpenLegalLink(arg1:string,arg2:string):Promise<void>;
 
+export function OpenStartAtLoginSettings():Promise<void>;
+
 export function PrepareRuntime():Promise<onboarding.PreparationResult>;
 
 export function PrepareStorageLayout():Promise<storage.LayoutStatus>;
@@ -49,6 +51,8 @@ export function RemoveApplication(arg1:string):Promise<void>;
 export function RestartApplication(arg1:string):Promise<void>;
 
 export function SaveApplicationSelection(arg1:Array<string>):Promise<application.SetupStatus>;
+
+export function SetStartAtLogin(arg1:boolean):Promise<application.SetupStatus>;
 
 export function StartApplication(arg1:string):Promise<void>;
 

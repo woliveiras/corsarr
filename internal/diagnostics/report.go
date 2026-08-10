@@ -41,10 +41,12 @@ type StorageReader interface {
 }
 
 type SetupReport struct {
-	StoragePath   string   `json:"storagePath,omitempty"`
-	Applications  []string `json:"applications"`
-	TermsVersion  string   `json:"termsVersion"`
-	TermsAccepted bool     `json:"termsAccepted"`
+	StoragePath                  string   `json:"storagePath,omitempty"`
+	Applications                 []string `json:"applications"`
+	TermsVersion                 string   `json:"termsVersion"`
+	TermsAccepted                bool     `json:"termsAccepted"`
+	StartAtLogin                 bool     `json:"startAtLogin"`
+	StartAtLoginRequiresApproval bool     `json:"startAtLoginRequiresApproval"`
 }
 
 type Report struct {
@@ -112,10 +114,12 @@ func (r *Reporter) Build(ctx context.Context) (Report, error) {
 		CatalogVerifiedAt: r.catalogVerifiedAt,
 		Environment:       environmentStatus,
 		Setup: SetupReport{
-			StoragePath:   setupStatus.StoragePath,
-			Applications:  append([]string(nil), setupStatus.Applications...),
-			TermsVersion:  setupStatus.TermsVersion,
-			TermsAccepted: setupStatus.TermsAccepted,
+			StoragePath:                  setupStatus.StoragePath,
+			Applications:                 append([]string(nil), setupStatus.Applications...),
+			TermsVersion:                 setupStatus.TermsVersion,
+			TermsAccepted:                setupStatus.TermsAccepted,
+			StartAtLogin:                 setupStatus.StartAtLogin,
+			StartAtLoginRequiresApproval: setupStatus.StartAtLoginRequiresApproval,
 		},
 		Applications: applicationStatuses,
 	}
