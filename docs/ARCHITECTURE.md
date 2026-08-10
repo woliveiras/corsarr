@@ -13,8 +13,9 @@
 The first native shell lives under `desktop/` and is a second `main` package in
 the existing Go module. Wails v2 embeds the production frontend and exposes a
 small Go-bound method surface. The frontend can list catalog applications and
-request that an application be opened by ID; it cannot submit a URL, runtime
-command, or container operation.
+request that an application be opened by ID. It can request predefined,
+read-only environment diagnostics, but cannot submit a URL, shell command,
+runtime command, or container operation.
 
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,
@@ -22,6 +23,19 @@ excludes infrastructure-only services without web UI metadata, and resolves
 only allowlisted loopback URLs. The CLI remains unchanged and continues to use
 the existing generator directly while reusable application services are
 extracted incrementally.
+
+`internal/runtime` defines the runtime-neutral probe contract and the first
+Docker detector. It resolves the executable through the host, runs only fixed
+`docker --version` and `docker info` checks under a five-second deadline, and
+distinguishes an unavailable client, a stopped runtime, a ready runtime, and an
+unexpected error. Raw runtime access remains inside Go; the frontend receives a
+bounded status object.
+
+`internal/storage` inspects only a directory returned by the native Wails folder
+picker. It verifies that the path already exists and is a directory, creates
+temporary write and hardlink probes, reports available space, and removes all
+probe artifacts. Selecting a directory does not create the Corsarr media layout
+or persist a configuration yet.
 
 ## 📋 Overview
 

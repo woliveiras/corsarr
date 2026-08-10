@@ -19,6 +19,7 @@ surface, and the accepted direction that has not been delivered yet.
 - [ADR 0002: Runtime strategy](decisions/0002-docker-first-runtime-with-podman-gate.md)
   records the Docker-first MVP and the evidence gate for promoting Podman.
 
-Phase 1 implementation has started with the reusable application catalog and a
-Wails v2 shell. The RFC must not be read as a description of the current release:
+Phase 1 provides the reusable application catalog and Wails v2 shell. Early
+Phase 2 work adds read-only Docker diagnostics and native storage-folder
+inspection. The RFC must not be read as a description of the current release:
 only milestones explicitly recorded as implemented have been delivered.

@@ -1,5 +1,10 @@
 import './style.css';
-import { ListApplications, OpenApplication } from '../wailsjs/go/main/App';
+import {
+  ChooseStorageLocation,
+  GetEnvironmentStatus,
+  ListApplications,
+  OpenApplication,
+} from '../wailsjs/go/main/App';
 import type { application } from '../wailsjs/go/models';
 
 type Application = application.ApplicationSummary;
@@ -30,7 +35,7 @@ root.innerHTML = [
   '  <main class="content">',
   '    <header class="topbar">',
   '      <div><p class="eyebrow">SEU SERVIDOR DE MÍDIA</p><h1>Olá, William.</h1></div>',
-  '      <div class="machine"><span class="machine-icon" aria-hidden="true">⌘</span><span><small>Executando neste Mac</small><strong>Apple Silicon</strong></span></div>',
+  '      <div class="machine"><span class="machine-icon" aria-hidden="true">⌘</span><span><small id="platform-name">Verificando computador</small><strong id="architecture-name">Aguarde…</strong></span></div>',
   '    </header>',
   '    <section class="hero" aria-labelledby="hero-title">',
   '      <div>',
@@ -39,6 +44,29 @@ root.innerHTML = [
   '        <p>O Corsarr está preparando uma experiência única para instalar e cuidar dos seus aplicativos de mídia.</p>',
   '      </div>',
   '      <div class="radar" aria-hidden="true"><span></span><span></span><i></i><b>C</b></div>',
+  '    </section>',
+  '    <section class="environment-card" aria-labelledby="environment-title">',
+  '      <span class="environment-icon" aria-hidden="true">◎</span>',
+  '      <div class="environment-copy">',
+  '        <p class="eyebrow">ESTE COMPUTADOR</p>',
+  '        <h2 id="environment-title">Verificando o ambiente…</h2>',
+  '        <p id="environment-description">O Corsarr está conferindo os componentes necessários.</p>',
+  '        <details id="environment-details"><summary>Detalhes técnicos</summary><code id="environment-technical">Executando diagnóstico…</code></details>',
+  '      </div>',
+  '      <span id="environment-badge" class="runtime-badge checking">Verificando</span>',
+  '      <button id="refresh-environment" class="refresh-button" type="button" aria-label="Verificar ambiente novamente">↻</button>',
+  '    </section>',
+  '    <section class="storage-card" aria-labelledby="storage-title">',
+  '      <span class="storage-icon" aria-hidden="true">▱</span>',
+  '      <div class="storage-copy">',
+  '        <p class="eyebrow">ARMAZENAMENTO</p>',
+  '        <h2 id="storage-title">Escolha onde guardar sua mídia</h2>',
+  '        <p id="storage-description">O Corsarr verificará espaço, permissão de escrita e suporte a hardlinks.</p>',
+  '        <p id="storage-path" class="storage-path"></p>',
+  '        <p id="storage-facts" class="storage-facts"></p>',
+  '      </div>',
+  '      <span id="storage-badge" class="runtime-badge checking">Não verificado</span>',
+  '      <button id="choose-storage" class="choose-storage-button" type="button">Escolher pasta</button>',
   '    </section>',
   '    <section class="section-heading">',
   '      <div><p class="eyebrow">CATÁLOGO DETECTADO</p><h2>Seus aplicativos</h2></div>',
@@ -55,6 +83,21 @@ root.innerHTML = [
 const applicationsElement = document.querySelector<HTMLElement>('#applications');
 const countElement = document.querySelector<HTMLElement>('#catalog-count');
 const messageElement = document.querySelector<HTMLElement>('#message');
+const platformElement = document.querySelector<HTMLElement>('#platform-name');
+const architectureElement = document.querySelector<HTMLElement>('#architecture-name');
+const environmentTitleElement = document.querySelector<HTMLElement>('#environment-title');
+const environmentDescriptionElement = document.querySelector<HTMLElement>(
+  '#environment-description',
+);
+const environmentTechnicalElement = document.querySelector<HTMLElement>('#environment-technical');
+const environmentBadgeElement = document.querySelector<HTMLElement>('#environment-badge');
+const refreshEnvironmentButton = document.querySelector<HTMLButtonElement>('#refresh-environment');
+const storageTitleElement = document.querySelector<HTMLElement>('#storage-title');
+const storageDescriptionElement = document.querySelector<HTMLElement>('#storage-description');
+const storagePathElement = document.querySelector<HTMLElement>('#storage-path');
+const storageFactsElement = document.querySelector<HTMLElement>('#storage-facts');
+const storageBadgeElement = document.querySelector<HTMLElement>('#storage-badge');
+const chooseStorageButton = document.querySelector<HTMLButtonElement>('#choose-storage');
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -138,4 +181,154 @@ async function loadApplications(): Promise<void> {
   }
 }
 
+const platformNames: Record<string, string> = {
+  darwin: 'macOS',
+  linux: 'Linux',
+  windows: 'Windows',
+};
+
+const architectureNames: Record<string, string> = {
+  arm64: 'Apple Silicon / ARM64',
+  amd64: 'Intel / AMD64',
+};
+
+const runtimeMessages: Record<string, { title: string; description: string; badge: string }> = {
+  ready: {
+    title: 'Ambiente pronto',
+    description: 'Este computador está pronto para receber os aplicativos do Corsarr.',
+    badge: 'Pronto',
+  },
+  unavailable: {
+    title: 'Preparação necessária',
+    description:
+      'Os componentes necessários ainda não estão instalados. A instalação guiada será habilitada no próximo marco.',
+    badge: 'Não preparado',
+  },
+  stopped: {
+    title: 'Ambiente pausado',
+    description: 'O componente necessário está instalado, mas precisa ser iniciado.',
+    badge: 'Parado',
+  },
+  error: {
+    title: 'Não foi possível verificar',
+    description: 'Tente novamente. Os detalhes técnicos podem ajudar no diagnóstico.',
+    badge: 'Atenção',
+  },
+};
+
+async function loadEnvironment(): Promise<void> {
+  refreshEnvironmentButton?.setAttribute('disabled', 'true');
+
+  try {
+    const environment = await GetEnvironmentStatus();
+    const runtimeMessage = runtimeMessages[environment.runtime.state] ?? runtimeMessages.error;
+
+    if (platformElement) {
+      platformElement.textContent = platformNames[environment.platform] ?? environment.platform;
+    }
+    if (architectureElement) {
+      architectureElement.textContent =
+        architectureNames[environment.architecture] ?? environment.architecture;
+    }
+    if (environmentTitleElement) environmentTitleElement.textContent = runtimeMessage.title;
+    if (environmentDescriptionElement) {
+      environmentDescriptionElement.textContent = runtimeMessage.description;
+    }
+    if (environmentBadgeElement) {
+      environmentBadgeElement.textContent = runtimeMessage.badge;
+      environmentBadgeElement.className = `runtime-badge ${environment.runtime.state}`;
+    }
+    if (environmentTechnicalElement) {
+      const details = [
+        `Provedor: ${environment.runtime.provider}`,
+        `Estado: ${environment.runtime.state}`,
+      ];
+      if (environment.runtime.version) details.push(`Versão: ${environment.runtime.version}`);
+      if (environment.runtime.technicalDetail) {
+        details.push(`Diagnóstico: ${environment.runtime.technicalDetail}`);
+      }
+      environmentTechnicalElement.textContent = details.join('\n');
+    }
+  } catch {
+    if (environmentTitleElement) environmentTitleElement.textContent = 'Não foi possível verificar';
+    if (environmentDescriptionElement) {
+      environmentDescriptionElement.textContent = 'Tente novamente em alguns instantes.';
+    }
+    if (environmentBadgeElement) {
+      environmentBadgeElement.textContent = 'Atenção';
+      environmentBadgeElement.className = 'runtime-badge error';
+    }
+  } finally {
+    refreshEnvironmentButton?.removeAttribute('disabled');
+  }
+}
+
+refreshEnvironmentButton?.addEventListener('click', () => void loadEnvironment());
+
+function formatAvailableSpace(bytes: number): string {
+  if (bytes <= 0) return 'Espaço disponível não identificado';
+  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(
+    bytes / 1024 ** 3,
+  )} GB disponíveis`;
+}
+
+async function chooseStorage(): Promise<void> {
+  if (!chooseStorageButton) return;
+  chooseStorageButton.disabled = true;
+  chooseStorageButton.textContent = 'Verificando…';
+
+  try {
+    const storage = await ChooseStorageLocation();
+    if (storage.state === 'canceled') return;
+
+    if (storage.state === 'ready') {
+      if (storageTitleElement) storageTitleElement.textContent = 'Armazenamento pronto';
+      if (storageDescriptionElement) {
+        storageDescriptionElement.textContent = storage.hardlinks
+          ? 'A pasta é gravável e suporta organização eficiente sem duplicar arquivos.'
+          : 'A pasta é gravável, mas não oferece hardlinks. Algumas importações poderão copiar arquivos.';
+      }
+      if (storagePathElement) storagePathElement.textContent = storage.path;
+      if (storageFactsElement) {
+        storageFactsElement.textContent = `${formatAvailableSpace(storage.availableBytes ?? 0)} · ${
+          storage.hardlinks ? 'Hardlinks disponíveis' : 'Sem hardlinks'
+        }`;
+      }
+      if (storageBadgeElement) {
+        storageBadgeElement.textContent = storage.hardlinks ? 'Pronto' : 'Compatível';
+        storageBadgeElement.className = `runtime-badge ${storage.hardlinks ? 'ready' : 'stopped'}`;
+      }
+      chooseStorageButton.textContent = 'Trocar pasta';
+      return;
+    }
+
+    if (storageTitleElement) storageTitleElement.textContent = 'Esta pasta não pode ser usada';
+    if (storageDescriptionElement) {
+      storageDescriptionElement.textContent =
+        storage.technicalDetail ?? 'Escolha uma pasta existente com permissão de escrita.';
+    }
+    if (storagePathElement) storagePathElement.textContent = storage.path;
+    if (storageFactsElement) storageFactsElement.textContent = '';
+    if (storageBadgeElement) {
+      storageBadgeElement.textContent = 'Atenção';
+      storageBadgeElement.className = 'runtime-badge error';
+    }
+  } catch {
+    if (storageTitleElement) storageTitleElement.textContent = 'Não foi possível verificar a pasta';
+    if (storageDescriptionElement) storageDescriptionElement.textContent = 'Tente novamente.';
+    if (storageBadgeElement) {
+      storageBadgeElement.textContent = 'Atenção';
+      storageBadgeElement.className = 'runtime-badge error';
+    }
+  } finally {
+    chooseStorageButton.disabled = false;
+    if (chooseStorageButton.textContent === 'Verificando…') {
+      chooseStorageButton.textContent = 'Escolher pasta';
+    }
+  }
+}
+
+chooseStorageButton?.addEventListener('click', () => void chooseStorage());
+
 void loadApplications();
+void loadEnvironment();

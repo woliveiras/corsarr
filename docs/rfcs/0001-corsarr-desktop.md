@@ -636,3 +636,5 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Deferred Readarr/replacements and remote-host management.
 - 2026-08-10: Started Phase 1 with a reusable application catalog and Wails v2
   shell; built and visually smoke-tested the first self-signed macOS arm64 app.
+- 2026-08-10: Started Phase 2 with bounded read-only Docker diagnostics and a
+  native storage picker that checks writing, hardlinks, and available space.

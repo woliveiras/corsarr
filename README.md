@@ -41,11 +41,13 @@ experience.
 - [Corsarr Desktop RFC](docs/rfcs/0001-corsarr-desktop.md)
 - [Accepted architecture decisions](docs/decisions/)
 
-The first development milestone provides a native Wails shell backed by the
-existing Go service catalog. It lists user-facing applications and opens their
-allowlisted local web interfaces. Runtime installation, container lifecycle,
-and application provisioning are the next milestones; the prerequisites and
-usage instructions below still describe the current CLI release.
+The current development build provides a native Wails shell backed by the
+existing Go service catalog. It lists user-facing applications, opens their
+allowlisted local web interfaces, detects the local Docker runtime without
+mutating it, and validates a user-selected storage folder for free space,
+writing, and hardlink support. Runtime installation, container lifecycle, and
+application provisioning are the next milestones; the prerequisites and usage
+instructions below still describe the current CLI release.
 
 ### Run Corsarr Desktop from source
 
