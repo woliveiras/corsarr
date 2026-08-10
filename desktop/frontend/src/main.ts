@@ -2,8 +2,11 @@ import './style.css';
 import {
   ChooseStorageLocation,
   GetEnvironmentStatus,
+  GetSetupStatus,
   ListApplications,
   OpenApplication,
+  PrepareStorageLayout,
+  SaveApplicationSelection,
 } from '../wailsjs/go/main/App';
 import type { application } from '../wailsjs/go/models';
 
@@ -76,6 +79,15 @@ root.innerHTML = [
   '    <section id="applications" class="applications" aria-label="Aplicativos disponíveis">',
   '      <div class="loading-card"></div><div class="loading-card"></div><div class="loading-card"></div>',
   '    </section>',
+  '    <section class="installation-review" aria-labelledby="installation-title">',
+  '      <div>',
+  '        <p class="eyebrow">PRÓXIMA ETAPA</p>',
+  '        <h2 id="installation-title">Revise sua preparação</h2>',
+  '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
+  '        <p id="installation-result" class="installation-result"></p>',
+  '      </div>',
+  '      <button id="prepare-storage" class="prepare-button" type="button" disabled>Criar estrutura de pastas</button>',
+  '    </section>',
   '  </main>',
   '</div>',
 ].join('');
@@ -98,6 +110,14 @@ const storagePathElement = document.querySelector<HTMLElement>('#storage-path');
 const storageFactsElement = document.querySelector<HTMLElement>('#storage-facts');
 const storageBadgeElement = document.querySelector<HTMLElement>('#storage-badge');
 const chooseStorageButton = document.querySelector<HTMLButtonElement>('#choose-storage');
+const installationSummaryElement = document.querySelector<HTMLElement>('#installation-summary');
+const installationResultElement = document.querySelector<HTMLElement>('#installation-result');
+const prepareStorageButton = document.querySelector<HTMLButtonElement>('#prepare-storage');
+
+let setupStatus: application.SetupStatus | undefined;
+let availableApplications: Application[] = [];
+let selectedApplicationIDs = new Set<string>();
+let selectionSaving = false;
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -115,6 +135,7 @@ const symbols: Record<string, string> = {
 function createApplicationCard(application: Application): HTMLElement {
   const card = document.createElement('article');
   card.className = 'application-card';
+  if (selectedApplicationIDs.has(application.id)) card.classList.add('selected');
 
   const icon = document.createElement('div');
   icon.className = `application-icon ${application.id}`;
@@ -136,13 +157,52 @@ function createApplicationCard(application: Application): HTMLElement {
 
   information.append(title, description, metadata);
 
-  const button = document.createElement('button');
-  button.className = 'open-button';
-  button.type = 'button';
-  button.textContent = 'Abrir';
-  button.setAttribute('aria-label', `Abrir ${application.name} no navegador`);
-  button.addEventListener('click', async () => {
-    button.disabled = true;
+  const actions = document.createElement('div');
+  actions.className = 'application-actions';
+
+  const selectButton = document.createElement('button');
+  selectButton.className = 'select-button';
+  selectButton.type = 'button';
+  selectButton.textContent = selectedApplicationIDs.has(application.id)
+    ? 'Selecionado'
+    : 'Selecionar';
+  selectButton.setAttribute('aria-pressed', String(selectedApplicationIDs.has(application.id)));
+  selectButton.setAttribute('aria-label', `Selecionar ${application.name} para instalação`);
+  selectButton.disabled = selectionSaving;
+  selectButton.addEventListener('click', async () => {
+    if (selectionSaving) return;
+    const previousSelection = new Set(selectedApplicationIDs);
+    if (selectedApplicationIDs.has(application.id)) {
+      selectedApplicationIDs.delete(application.id);
+    } else {
+      selectedApplicationIDs.add(application.id);
+    }
+    selectionSaving = true;
+    renderApplications();
+
+    try {
+      const status = await SaveApplicationSelection([...selectedApplicationIDs]);
+      applySetupStatus(status);
+      messageElement?.classList.remove('error');
+    } catch {
+      selectedApplicationIDs = previousSelection;
+      if (messageElement) {
+        messageElement.textContent = 'Não foi possível salvar sua seleção de aplicativos.';
+        messageElement.classList.add('error');
+      }
+    } finally {
+      selectionSaving = false;
+      renderApplications();
+    }
+  });
+
+  const openButton = document.createElement('button');
+  openButton.className = 'open-button';
+  openButton.type = 'button';
+  openButton.textContent = 'Abrir';
+  openButton.setAttribute('aria-label', `Abrir ${application.name} no navegador`);
+  openButton.addEventListener('click', async () => {
+    openButton.disabled = true;
     messageElement?.classList.remove('error');
     if (messageElement) messageElement.textContent = `Abrindo ${application.name}…`;
 
@@ -156,21 +216,26 @@ function createApplicationCard(application: Application): HTMLElement {
         messageElement.classList.add('error');
       }
     } finally {
-      button.disabled = false;
+      openButton.disabled = false;
     }
   });
 
-  card.append(icon, information, button);
+  actions.append(selectButton, openButton);
+  card.append(icon, information, actions);
   return card;
+}
+
+function renderApplications(): void {
+  applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
 }
 
 async function loadApplications(): Promise<void> {
   if (!applicationsElement || !countElement) return;
 
   try {
-    const applications = await ListApplications();
-    applicationsElement.replaceChildren(...applications.map(createApplicationCard));
-    countElement.textContent = `${applications.length} disponíveis`;
+    availableApplications = await ListApplications();
+    renderApplications();
+    countElement.textContent = `${availableApplications.length} disponíveis`;
   } catch {
     applicationsElement.replaceChildren();
     countElement.textContent = 'Indisponível';
@@ -178,6 +243,55 @@ async function loadApplications(): Promise<void> {
       messageElement.textContent = 'Não foi possível carregar o catálogo do Corsarr.';
       messageElement.classList.add('error');
     }
+  }
+}
+
+function applySetupStatus(status: application.SetupStatus): void {
+  setupStatus = status;
+  selectedApplicationIDs = new Set(status.applications);
+
+  if (status.storagePath) {
+    if (storageTitleElement) storageTitleElement.textContent = 'Pasta salva';
+    if (storageDescriptionElement) {
+      storageDescriptionElement.textContent =
+        'O Corsarr verificará novamente esta pasta antes de preparar os aplicativos.';
+    }
+    if (storagePathElement) storagePathElement.textContent = status.storagePath;
+    if (storageFactsElement) storageFactsElement.textContent = '';
+    if (storageBadgeElement) {
+      storageBadgeElement.textContent = 'Salva';
+      storageBadgeElement.className = 'runtime-badge ready';
+    }
+    if (chooseStorageButton) chooseStorageButton.textContent = 'Trocar pasta';
+  }
+
+  if (installationSummaryElement) {
+    if (status.canInstall) {
+      const applicationLabel =
+        status.applications.length === 1
+          ? '1 aplicativo selecionado'
+          : `${status.applications.length} aplicativos selecionados`;
+      installationSummaryElement.textContent = `${applicationLabel}. As dependências necessárias são incluídas automaticamente.`;
+    } else if (!status.storagePath && status.applications.length === 0) {
+      installationSummaryElement.textContent = 'Escolha uma pasta e ao menos um aplicativo.';
+    } else if (!status.storagePath) {
+      installationSummaryElement.textContent = 'Agora escolha a pasta onde a mídia será guardada.';
+    } else {
+      installationSummaryElement.textContent = 'Agora escolha ao menos um aplicativo.';
+    }
+  }
+  if (prepareStorageButton) prepareStorageButton.disabled = !status.canInstall;
+}
+
+async function loadSetup(): Promise<void> {
+  try {
+    applySetupStatus(await GetSetupStatus());
+  } catch {
+    if (installationSummaryElement) {
+      installationSummaryElement.textContent =
+        'Não foi possível recuperar a preparação salva neste computador.';
+    }
+    if (prepareStorageButton) prepareStorageButton.disabled = true;
   }
 }
 
@@ -282,6 +396,7 @@ async function chooseStorage(): Promise<void> {
     if (storage.state === 'canceled') return;
 
     if (storage.state === 'ready') {
+      applySetupStatus(await GetSetupStatus());
       if (storageTitleElement) storageTitleElement.textContent = 'Armazenamento pronto';
       if (storageDescriptionElement) {
         storageDescriptionElement.textContent = storage.hardlinks
@@ -330,5 +445,39 @@ async function chooseStorage(): Promise<void> {
 
 chooseStorageButton?.addEventListener('click', () => void chooseStorage());
 
-void loadApplications();
-void loadEnvironment();
+async function prepareStorage(): Promise<void> {
+  if (!prepareStorageButton || !setupStatus?.canInstall) return;
+
+  prepareStorageButton.disabled = true;
+  prepareStorageButton.textContent = 'Preparando…';
+  if (installationResultElement) {
+    installationResultElement.textContent = 'Criando somente as pastas revisadas acima…';
+    installationResultElement.classList.remove('error');
+  }
+
+  try {
+    const layout = await PrepareStorageLayout();
+    if (installationResultElement) {
+      installationResultElement.textContent = `Estrutura pronta em ${layout.rootPath}. Nenhum aplicativo foi instalado ainda.`;
+    }
+    prepareStorageButton.textContent = 'Estrutura pronta';
+  } catch {
+    if (installationResultElement) {
+      installationResultElement.textContent =
+        'Não foi possível criar as pastas. Sua seleção foi preservada para uma nova tentativa.';
+      installationResultElement.classList.add('error');
+    }
+    prepareStorageButton.textContent = 'Tentar novamente';
+  } finally {
+    prepareStorageButton.disabled = !setupStatus?.canInstall;
+  }
+}
+
+prepareStorageButton?.addEventListener('click', () => void prepareStorage());
+
+async function loadInitialState(): Promise<void> {
+  await Promise.all([loadEnvironment(), loadSetup()]);
+  await loadApplications();
+}
+
+void loadInitialState();

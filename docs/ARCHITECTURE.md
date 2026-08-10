@@ -34,8 +34,25 @@ bounded status object.
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
-probe artifacts. Selecting a directory does not create the Corsarr media layout
-or persist a configuration yet.
+probe artifacts. A ready selection is persisted through
+`internal/application.SetupService` and `internal/state.FileStore`; rejected or
+canceled selections are not persisted. The state file contains only the storage
+path and approved application IDs, uses the operating system's user
+configuration directory, and is written with private file permissions where the
+platform supports them.
+
+Application selection is validated against the presentation-safe catalog.
+Required catalog dependencies are included recursively and the deterministic
+selection is persisted. The frontend cannot provide an arbitrary directory name
+to the layout operation: it can only request preparation from the persisted,
+reviewed setup.
+
+`internal/storage.LayoutPreparer` validates all application IDs before writing
+and idempotently creates `<selected>/Corsarr/config/<app>` plus one shared media
+tree for downloads and libraries. Configuration directories are private; an
+existing selected folder and unrelated files are preserved. This slice creates
+directories only. It does not pull images, create containers, or provision an
+application.
 
 ## 📋 Overview
 

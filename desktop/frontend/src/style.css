@@ -591,6 +591,11 @@ nav {
   background: rgba(14, 39, 45, 0.84);
   border-color: rgba(91, 202, 189, 0.19);
 }
+.application-card.selected {
+  background: rgba(16, 51, 55, 0.86);
+  border-color: rgba(91, 202, 189, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(91, 202, 189, 0.06);
+}
 .application-icon {
   display: grid;
   place-items: center;
@@ -646,7 +651,14 @@ nav {
   letter-spacing: 0.06em;
 }
 
-.open-button {
+.application-actions {
+  display: grid;
+  gap: 6px;
+  min-width: 76px;
+}
+
+.open-button,
+.select-button {
   padding: 7px 11px;
   color: #7acbc1;
   background: rgba(78, 175, 165, 0.07);
@@ -656,13 +668,80 @@ nav {
   font-weight: 700;
   cursor: pointer;
 }
-.open-button:hover {
+.open-button:hover,
+.select-button:hover {
   color: #b9f1e9;
   background: rgba(78, 175, 165, 0.14);
 }
-.open-button:disabled {
+.open-button:disabled,
+.select-button:disabled {
   opacity: 0.45;
   cursor: wait;
+}
+
+.select-button[aria-pressed="true"] {
+  color: #092126;
+  background: #5ccdbf;
+  border-color: #5ccdbf;
+}
+
+.installation-review {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 22px;
+  padding: 21px 23px;
+  background: linear-gradient(110deg, rgba(14, 48, 52, 0.8), rgba(11, 32, 38, 0.72));
+  border: 1px solid rgba(102, 194, 184, 0.14);
+  border-radius: 15px;
+}
+
+.installation-review h2 {
+  margin: 0 0 5px;
+  color: #dbecea;
+  font:
+    600 17px "Avenir Next",
+    sans-serif;
+}
+
+.installation-review p:not(.eyebrow) {
+  margin: 0;
+  color: #789291;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.installation-review .installation-result {
+  margin-top: 7px;
+  color: #65c6b9;
+}
+
+.installation-review .installation-result.error {
+  color: #ee9b8f;
+}
+
+.prepare-button {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  color: #092126;
+  background: #5ccdbf;
+  border: 1px solid #5ccdbf;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.prepare-button:hover:not(:disabled) {
+  background: #75ddcf;
+}
+
+.prepare-button:disabled {
+  color: #64807f;
+  background: rgba(100, 128, 127, 0.08);
+  border-color: rgba(100, 128, 127, 0.13);
+  cursor: not-allowed;
 }
 
 .loading-card {
@@ -702,6 +781,13 @@ nav {
   }
   .applications {
     grid-template-columns: 1fr;
+  }
+  .installation-review {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .prepare-button {
+    width: 100%;
   }
 }
 

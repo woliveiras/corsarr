@@ -21,5 +21,9 @@ surface, and the accepted direction that has not been delivered yet.
 
 Phase 1 provides the reusable application catalog and Wails v2 shell. Early
 Phase 2 work adds read-only Docker diagnostics and native storage-folder
-inspection. The RFC must not be read as a description of the current release:
-only milestones explicitly recorded as implemented have been delivered.
+inspection. The current slice persists the reviewed folder and application
+selection in the operating system's user configuration directory and creates
+the Corsarr-owned storage layout on explicit request. It does not install or
+manage containers. The RFC must not be read as a description of the current
+release: only milestones explicitly recorded as implemented have been
+delivered.

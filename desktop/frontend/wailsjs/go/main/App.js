@@ -10,10 +10,22 @@ export function GetEnvironmentStatus() {
   return window['go']['main']['App']['GetEnvironmentStatus']();
 }
 
+export function GetSetupStatus() {
+  return window['go']['main']['App']['GetSetupStatus']();
+}
+
 export function ListApplications() {
   return window['go']['main']['App']['ListApplications']();
 }
 
 export function OpenApplication(arg1) {
   return window['go']['main']['App']['OpenApplication'](arg1);
+}
+
+export function PrepareStorageLayout() {
+  return window['go']['main']['App']['PrepareStorageLayout']();
+}
+
+export function SaveApplicationSelection(arg1) {
+  return window['go']['main']['App']['SaveApplicationSelection'](arg1);
 }

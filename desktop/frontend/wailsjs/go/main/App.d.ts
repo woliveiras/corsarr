@@ -7,6 +7,12 @@ export function ChooseStorageLocation():Promise<storage.Status>;
 
 export function GetEnvironmentStatus():Promise<application.EnvironmentStatus>;
 
+export function GetSetupStatus():Promise<application.SetupStatus>;
+
 export function ListApplications():Promise<Array<application.ApplicationSummary>>;
 
 export function OpenApplication(arg1:string):Promise<void>;
+
+export function PrepareStorageLayout():Promise<storage.LayoutStatus>;
+
+export function SaveApplicationSelection(arg1:Array<string>):Promise<application.SetupStatus>;

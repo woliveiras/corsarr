@@ -32,7 +32,8 @@ func TestChooseStorageLocationInspectsOnlyUserSelectedDirectory(t *testing.T) {
 		Writable:  true,
 		Hardlinks: true,
 	}}
-	app := &App{directoryPicker: picker, storageInspector: inspector}
+	setup := &desktopSetupManager{}
+	app := &App{directoryPicker: picker, storageInspector: inspector, setup: setup}
 
 	status, err := app.ChooseStorageLocation()
 	if err != nil {
@@ -43,6 +44,9 @@ func TestChooseStorageLocationInspectsOnlyUserSelectedDirectory(t *testing.T) {
 	}
 	if inspector.inspectedPath != picker.path {
 		t.Fatalf("expected selected path %q to be inspected, got %q", picker.path, inspector.inspectedPath)
+	}
+	if setup.savedStorage != picker.path {
+		t.Fatalf("expected selected path %q to be persisted, got %q", picker.path, setup.savedStorage)
 	}
 }
 
@@ -62,6 +66,46 @@ func TestChooseStorageLocationDoesNotInspectAfterCancel(t *testing.T) {
 	}
 	if inspector.calls != 0 {
 		t.Fatalf("expected no inspection after cancel, got %d", inspector.calls)
+	}
+}
+
+func TestPrepareStorageLayoutUsesOnlyPersistedSetup(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath:  "/Users/test/Media",
+		Applications: []string{"prowlarr", "radarr"},
+		CanInstall:   true,
+	}}
+	layout := &desktopLayoutPreparer{status: storage.LayoutStatus{
+		RootPath: "/Users/test/Media/Corsarr",
+	}}
+	app := &App{setup: setup, layoutPreparer: layout}
+
+	status, err := app.PrepareStorageLayout()
+	if err != nil {
+		t.Fatalf("prepare storage layout: %v", err)
+	}
+	if status.RootPath != layout.status.RootPath {
+		t.Fatalf("expected root %q, got %q", layout.status.RootPath, status.RootPath)
+	}
+	if layout.basePath != setup.status.StoragePath {
+		t.Fatalf("expected persisted base path %q, got %q", setup.status.StoragePath, layout.basePath)
+	}
+}
+
+func TestPrepareStorageLayoutRejectsIncompleteSetupWithoutWriting(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media",
+		CanInstall:  false,
+	}}
+	layout := &desktopLayoutPreparer{}
+	app := &App{setup: setup, layoutPreparer: layout}
+
+	_, err := app.PrepareStorageLayout()
+	if err == nil {
+		t.Fatal("expected incomplete setup to be rejected")
+	}
+	if layout.prepareCalls != 0 {
+		t.Fatalf("expected no layout write, got %d calls", layout.prepareCalls)
 	}
 }
 
@@ -114,4 +158,41 @@ func (f *desktopStorageInspector) Inspect(path string) storage.Status {
 	f.calls++
 	f.inspectedPath = path
 	return f.status
+}
+
+type desktopSetupManager struct {
+	status       application.SetupStatus
+	savedStorage string
+}
+
+func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) SaveStorage(path string) (application.SetupStatus, error) {
+	f.savedStorage = path
+	f.status.StoragePath = path
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) SaveApplications(applicationIDs []string) (application.SetupStatus, error) {
+	f.status.Applications = applicationIDs
+	return f.status, nil
+}
+
+type desktopLayoutPreparer struct {
+	status         storage.LayoutStatus
+	basePath       string
+	applicationIDs []string
+	prepareCalls   int
+}
+
+func (f *desktopLayoutPreparer) Prepare(
+	basePath string,
+	applicationIDs []string,
+) (storage.LayoutStatus, error) {
+	f.prepareCalls++
+	f.basePath = basePath
+	f.applicationIDs = applicationIDs
+	return f.status, nil
 }

@@ -7,6 +7,7 @@ export namespace application {
 	    category: string;
 	    url: string;
 	    optional: boolean;
+	    dependencies: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new ApplicationSummary(source);
@@ -20,6 +21,7 @@ export namespace application {
 	        this.category = source["category"];
 	        this.url = source["url"];
 	        this.optional = source["optional"];
+	        this.dependencies = source["dependencies"];
 	    }
 	}
 	export class EnvironmentStatus {
@@ -56,6 +58,22 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class SetupStatus {
+	    storagePath?: string;
+	    applications: string[];
+	    canInstall: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new SetupStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.storagePath = source["storagePath"];
+	        this.applications = source["applications"];
+	        this.canInstall = source["canInstall"];
+	    }
+	}
 
 }
 
@@ -84,6 +102,20 @@ export namespace runtime {
 
 export namespace storage {
 
+	export class LayoutStatus {
+	    rootPath: string;
+	    directories: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new LayoutStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rootPath = source["rootPath"];
+	        this.directories = source["directories"];
+	    }
+	}
 	export class Status {
 	    path: string;
 	    state: string;
