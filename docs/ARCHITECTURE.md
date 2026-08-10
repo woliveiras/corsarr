@@ -100,6 +100,12 @@ only when the desired path is absent. `ARRProvisioner` connects this client to
 installation after readiness, making retries idempotent. Unsupported apps are
 left unchanged for their dedicated provisioners.
 
+`internal/credentials.Store` is the boundary for generated service secrets.
+The first platform adapter uses the macOS Keychain with a fixed service name
+and allowlisted account keys. Secret values redact default formatting and JSON,
+never enter desktop state, and are not exposed by Wails. Other platforms return
+an explicit unsupported error until their native secure-store adapters ship.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

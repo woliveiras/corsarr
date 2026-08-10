@@ -668,3 +668,5 @@ claims must be rechecked during implementation and release validation.
   Sonarr, and Lidarr library root folders after readiness.
 - 2026-08-10: Added ownership-checked, bounded backend log access for secret
   bootstrap without exposing a general log method to the frontend.
+- 2026-08-10: Added an allowlisted macOS Keychain adapter for generated service
+  secrets; non-macOS platforms fail closed until native adapters are added.
