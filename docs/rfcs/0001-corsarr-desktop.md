@@ -671,6 +671,11 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: the existing tag-triggered CLI release began installing pinned
+  Syft 1.50.0 and asking GoReleaser for SPDX JSON SBOMs of every archive and the
+  source artifact. Runtime-downloaded application images remain separately
+  attributed by the desktop legal catalog and are not misrepresented as
+  packaged dependencies.
 - 2026-08-11: CI began reading Go 1.25 from `go.mod`, validating the pnpm/Biome
   frontend, running a fixed golangci-lint version, retaining revision-named
   coverage/build evidence, using read-only permissions, and pinning actions by

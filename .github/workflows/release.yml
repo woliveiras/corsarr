@@ -27,6 +27,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install pinned Syft for release SBOMs
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          syft-version: v1.50.0
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7.0.0
         with:

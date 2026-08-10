@@ -26,11 +26,13 @@ builds:
 
 archives:
   - id: corsarr
-    format: tar.gz
+    formats:
+      - tar.gz
     name_template: "corsarr_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - LICENSE
       - README.md
@@ -38,6 +40,12 @@ archives:
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
+
+sboms:
+  - id: archives
+    artifacts: archive
+  - id: source
+    artifacts: source
 
 changelog:
   sort: asc

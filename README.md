@@ -126,6 +126,12 @@ matrix. CI reads the Go version from `go.mod`, installs pnpm from the pinned
 `packageManager` field, grants only repository read access, and pins every
 third-party action to a reviewed commit SHA.
 
+Tag-triggered CLI releases install a pinned Syft binary and use GoReleaser to
+attach an SPDX JSON software bill of materials for every archive and for the
+source artifact. These SBOMs describe software actually packaged by the
+release; media applications and container images downloaded later remain
+identified separately in the desktop credits screen.
+
 ## ⚡ Quick Start
 
 ### Prerequisites
