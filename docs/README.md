@@ -9,6 +9,8 @@ platform gates.
 - [Architecture](ARCHITECTURE.md) describes the existing Go CLI/Compose
   generator and the implemented Desktop modules.
 - [Troubleshooting](TROUBLESHOOTING.md) covers current operational failures.
+- [Desktop acceptance](DESKTOP_ACCEPTANCE.md) separates repeatable first-Mac
+  evidence from human acceptance and external release gates.
 
 ## Accepted product direction
 
