@@ -6,8 +6,16 @@ export function AcceptCurrentTerms() {
   return window['go']['main']['App']['AcceptCurrentTerms']();
 }
 
+export function ArchiveApplicationData(arg1) {
+  return window['go']['main']['App']['ArchiveApplicationData'](arg1);
+}
+
 export function ChooseStorageLocation() {
   return window['go']['main']['App']['ChooseStorageLocation']();
+}
+
+export function GetApplicationDataStatuses() {
+  return window['go']['main']['App']['GetApplicationDataStatuses']();
 }
 
 export function GetApplicationStatuses() {

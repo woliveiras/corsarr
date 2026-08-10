@@ -50,6 +50,11 @@ type applicationManager interface {
 	Remove(ctx context.Context, applicationID string) error
 }
 
+type applicationDataManager interface {
+	ListStatuses() ([]storage.ApplicationDataStatus, error)
+	Archive(ctx context.Context, applicationID string) (storage.ArchivedApplicationData, error)
+}
+
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	ctx              context.Context
@@ -61,6 +66,7 @@ type App struct {
 	layoutPreparer   storageLayoutPreparer
 	installation     installationManager
 	management       applicationManager
+	applicationData  applicationDataManager
 }
 
 func NewApp() (*App, error) {
@@ -94,6 +100,12 @@ func NewApp() (*App, error) {
 		installer,
 	)
 	management := application.NewManagementService(catalog, dockerManager)
+	applicationData := application.NewDataManagementService(
+		catalog,
+		setup,
+		dockerManager,
+		storage.NewApplicationDataManager(),
+	)
 
 	return &App{
 		catalog:          catalog,
@@ -104,6 +116,7 @@ func NewApp() (*App, error) {
 		layoutPreparer:   storage.NewLayoutPreparer(),
 		installation:     installation,
 		management:       management,
+		applicationData:  applicationData,
 	}, nil
 }
 
@@ -187,6 +200,14 @@ func (a *App) RestartApplication(id string) error {
 
 func (a *App) RemoveApplication(id string) error {
 	return a.management.Remove(a.appContext(), id)
+}
+
+func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, error) {
+	return a.applicationData.ListStatuses()
+}
+
+func (a *App) ArchiveApplicationData(id string) (storage.ArchivedApplicationData, error) {
+	return a.applicationData.Archive(a.appContext(), id)
 }
 
 func (a *App) appContext() context.Context {

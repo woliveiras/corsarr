@@ -124,6 +124,22 @@ func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) 
 	}
 }
 
+func TestArchiveApplicationDataUsesBoundedApplicationService(t *testing.T) {
+	data := &desktopApplicationDataManager{result: storage.ArchivedApplicationData{
+		ApplicationID: "radarr",
+		Archived:      true,
+	}}
+	app := &App{applicationData: data}
+
+	result, err := app.ArchiveApplicationData("radarr")
+	if err != nil {
+		t.Fatalf("archive application data: %v", err)
+	}
+	if !result.Archived || data.applicationID != "radarr" || data.calls != 1 {
+		t.Fatalf("expected one bounded archive call, result=%#v manager=%#v", result, data)
+	}
+}
+
 func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
 		Provider: runtimeenv.ProviderDocker,
@@ -211,6 +227,25 @@ type desktopLayoutPreparer struct {
 type desktopInstallationManager struct {
 	result application.InstallationResult
 	calls  int
+}
+
+type desktopApplicationDataManager struct {
+	result        storage.ArchivedApplicationData
+	applicationID string
+	calls         int
+}
+
+func (m *desktopApplicationDataManager) ListStatuses() ([]storage.ApplicationDataStatus, error) {
+	return nil, nil
+}
+
+func (m *desktopApplicationDataManager) Archive(
+	_ context.Context,
+	applicationID string,
+) (storage.ArchivedApplicationData, error) {
+	m.calls++
+	m.applicationID = applicationID
+	return m.result, nil
 }
 
 func (m *desktopInstallationManager) InstallSelected(

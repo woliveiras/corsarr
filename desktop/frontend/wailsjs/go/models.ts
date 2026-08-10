@@ -212,6 +212,36 @@ export namespace runtime {
 
 export namespace storage {
 
+	export class ApplicationDataStatus {
+	    applicationId: string;
+	    present: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ApplicationDataStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.applicationId = source["applicationId"];
+	        this.present = source["present"];
+	    }
+	}
+	export class ArchivedApplicationData {
+	    applicationId: string;
+	    archived: boolean;
+	    archivePath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ArchivedApplicationData(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.applicationId = source["applicationId"];
+	        this.archived = source["archived"];
+	        this.archivePath = source["archivePath"];
+	    }
+	}
 	export class LayoutStatus {
 	    rootPath: string;
 	    directories: string[];

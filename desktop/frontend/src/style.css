@@ -690,6 +690,22 @@ nav {
   font-size: 9px;
 }
 
+.data-removal-button {
+  padding: 6px 9px;
+  color: #f19b9b;
+  background: rgba(238, 125, 125, 0.08);
+  border: 1px solid rgba(238, 125, 125, 0.35);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.data-removal-button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
 .select-button[aria-pressed="true"] {
   color: #092126;
   background: #5ccdbf;

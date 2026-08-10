@@ -5,7 +5,11 @@ import {storage} from '../models';
 
 export function AcceptCurrentTerms():Promise<application.SetupStatus>;
 
+export function ArchiveApplicationData(arg1:string):Promise<storage.ArchivedApplicationData>;
+
 export function ChooseStorageLocation():Promise<storage.Status>;
+
+export function GetApplicationDataStatuses():Promise<Array<storage.ApplicationDataStatus>>;
 
 export function GetApplicationStatuses():Promise<Array<application.ManagedApplicationStatus>>;
 

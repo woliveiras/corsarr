@@ -1,7 +1,9 @@
 import './style.css';
 import {
   AcceptCurrentTerms,
+  ArchiveApplicationData,
   ChooseStorageLocation,
+  GetApplicationDataStatuses,
   GetApplicationStatuses,
   GetEnvironmentStatus,
   GetSetupStatus,
@@ -15,10 +17,11 @@ import {
   StartApplication,
   StopApplication,
 } from '../wailsjs/go/main/App';
-import type { application } from '../wailsjs/go/models';
+import type { application, storage } from '../wailsjs/go/models';
 
 type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
+type DataStatus = storage.ApplicationDataStatus;
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -134,6 +137,7 @@ let availableApplications: Application[] = [];
 let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
 let managedStatuses = new Map<string, ManagedStatus>();
+let dataStatuses = new Map<string, DataStatus>();
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -256,6 +260,11 @@ function createApplicationCard(application: Application): HTMLElement {
       lifecycleButton('Iniciar', () => StartApplication(application.id)),
       lifecycleButton('Remover', () => removeApplication(application)),
     );
+  } else if (
+    managedStatus?.state === 'not_installed' &&
+    dataStatuses.get(application.id)?.present
+  ) {
+    actions.append(dataRemovalButton(application));
   }
   card.append(icon, information, actions);
   return card;
@@ -291,6 +300,39 @@ async function removeApplication(target: Application): Promise<void> {
   await RemoveApplication(target.id);
 }
 
+function dataRemovalButton(target: Application): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'data-removal-button';
+  button.type = 'button';
+  button.textContent = 'Remover dados';
+  button.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      `Remover as configurações de ${target.name}? A biblioteca e os downloads não serão alterados. A configuração será movida para a lixeira do Corsarr.`,
+    );
+    if (!confirmed) return;
+
+    button.disabled = true;
+    try {
+      const archived = await ArchiveApplicationData(target.id);
+      if (messageElement) {
+        messageElement.textContent = archived.archived
+          ? `As configurações de ${target.name} foram movidas para a lixeira do Corsarr.`
+          : `${target.name} não possui configurações para remover.`;
+        messageElement.classList.remove('error');
+      }
+      await loadApplicationDataStatuses();
+    } catch {
+      if (messageElement) {
+        messageElement.textContent = `Não foi possível remover as configurações de ${target.name}. Confirme que o aplicativo já foi removido.`;
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
 function renderApplications(): void {
   applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
 }
@@ -319,6 +361,16 @@ async function loadApplicationStatuses(): Promise<void> {
     renderApplications();
   } catch {
     managedStatuses = new Map();
+  }
+}
+
+async function loadApplicationDataStatuses(): Promise<void> {
+  try {
+    const statuses = await GetApplicationDataStatuses();
+    dataStatuses = new Map(statuses.map((status) => [status.applicationId, status]));
+    renderApplications();
+  } catch {
+    dataStatuses = new Map();
   }
 }
 
@@ -580,7 +632,7 @@ async function installApplications(): Promise<void> {
         installationResultElement.textContent = `${result.items.length} aplicativos instalados e iniciados.`;
       }
       installApplicationsButton.textContent = 'Aplicativos instalados';
-      await loadApplicationStatuses();
+      await Promise.all([loadApplicationStatuses(), loadApplicationDataStatuses()]);
     } else {
       const failed = result.items.find((item) => item.error);
       if (installationResultElement) {
@@ -608,7 +660,7 @@ installApplicationsButton?.addEventListener('click', () => void installApplicati
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);
   await loadApplications();
-  await loadApplicationStatuses();
+  await Promise.all([loadApplicationStatuses(), loadApplicationDataStatuses()]);
 }
 
 void loadInitialState();

@@ -53,8 +53,10 @@ can now record explicit consent and install the selected, digest-pinned
 containers through the ownership-safe runtime boundary. Automatic runtime
 installation and cross-application provisioning are still pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
-that preserve data. The prerequisites and usage instructions below describe
-the current CLI release.
+that preserve data. Application configuration can be removed separately after
+its container is gone; Corsarr moves it into a private recoverable trash and
+never targets the shared media or downloads tree. The prerequisites and usage
+instructions below describe the current CLI release.
 
 ### Run Corsarr Desktop from source
 

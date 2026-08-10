@@ -14,8 +14,9 @@ The first native shell lives under `desktop/` and is a second `main` package in
 the existing Go module. Wails v2 embeds the production frontend and exposes a
 small Go-bound method surface. The frontend can list catalog applications and
 request that an application be opened by ID. It can request predefined,
-read-only environment diagnostics, but cannot submit a URL, shell command,
-runtime command, or container operation.
+read-only environment diagnostics and bounded catalog application intents, but
+cannot submit a URL, shell command, runtime argument, image, mount, or container
+name.
 
 The Wails surface now also exposes explicit current-terms acceptance and one
 bounded `InstallSelectedApplications` intent. That method reads only persisted,
@@ -48,8 +49,8 @@ fixed Docker CLI operations with argument arrays, creates a labeled bridge
 network, translates validated specs into labeled containers, and supports
 inspect/start/stop/restart/remove. Lifecycle changes verify Corsarr ownership
 before touching an existing container; a resource with the expected name but
-without matching labels is rejected. The adapter is not wired to an install
-button yet, so this boundary alone does not create runtime resources.
+without matching labels is rejected. Application services call this adapter
+only after catalog, reviewed-setup, and consent checks.
 
 `internal/catalog.RuntimeCatalog` is the approved desktop translation from the
 existing service registry to `ContainerSpec`. Its image references are pinned
@@ -64,7 +65,8 @@ workflow: resolve and validate the approved spec, ensure the network, pull,
 create, start, and inspect. A failure after container creation removes only that
 owned incomplete container using a non-canceled cleanup context. Bind-mounted
 configuration and media are deliberately outside cleanup. The orchestrator is
-covered through the runtime interface and is not connected to Wails yet.
+covered through the runtime interface and reached from Wails only through the
+bounded `InstallSelectedApplications` intent.
 
 Installation is reconciliatory: a matching running container is reused, and a
 matching stopped container is started. A differently pinned image is never
@@ -78,6 +80,14 @@ structured per-application result while preserving already completed apps.
 start, stop, restart, and remove intents validate the catalog ID before reaching
 the runtime. Remove deletes only the labeled container; the bind-mounted config
 and shared media tree are outside its authority.
+
+`internal/application.DataManagementService` is a distinct destructive-action
+boundary. It requires the catalog application container to be absent, reloads
+the persisted storage location, and delegates only that application's config
+directory to `internal/storage.ApplicationDataManager`. The storage manager
+refuses unsafe IDs and symlink targets, then atomically moves configuration into
+the private `<selected>/Corsarr/trash/config/<app>/` tree. It never receives or
+targets the shared media and downloads paths.
 
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
@@ -105,8 +115,8 @@ reviewed setup.
 and idempotently creates `<selected>/Corsarr/config/<app>` plus one shared media
 tree for downloads and libraries. Configuration directories are private; an
 existing selected folder and unrelated files are preserved. This slice creates
-directories only. It does not pull images, create containers, or provision an
-application.
+directories only; installation, lifecycle, and recoverable configuration
+removal live behind the separate application services described above.
 
 ## 📋 Overview
 

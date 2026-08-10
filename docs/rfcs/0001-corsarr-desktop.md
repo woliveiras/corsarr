@@ -651,3 +651,5 @@ claims must be rechecked during implementation and release validation.
   application provisioning and runtime onboarding remain pending.
 - 2026-08-10: Exposed catalog-scoped application status and start, stop,
   restart, and remove-preserving-data actions in Corsarr Desktop.
+- 2026-08-10: Separated container removal from recoverable application-data
+  removal; shared media and downloads are never deletion targets.
