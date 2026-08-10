@@ -80,6 +80,13 @@ HTTP or a bounded timeout expires. A newly created container that never becomes
 ready is removed while its bind-mounted data remains available for diagnosis;
 an existing container is never removed by this check.
 
+`internal/provisioning.ARRCredentialReader` reads the generated `ApiKey` only
+from a fixed `config/<known-arr>/config.xml` beneath the reviewed Corsarr root.
+It rejects unknown apps, symlinked paths, oversized XML, and malformed keys.
+The returned credential redacts default formatting and JSON serialization and
+is never part of the Wails API; only the Go provisioning layer may explicitly
+reveal it for an allowlisted loopback API request.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

@@ -608,6 +608,10 @@ claims must be rechecked during implementation and release validation.
 
 - [Prowlarr application connections and synchronization](https://wiki.servarr.com/en/prowlarr/quick-start-guide)
 - [Radarr authentication and API key](https://wiki.servarr.com/radarr/settings#security)
+- [Radarr generated API-key configuration source](https://github.com/Radarr/Radarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
+- [Sonarr generated API-key configuration source](https://github.com/Sonarr/Sonarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
+- [Prowlarr generated API-key configuration source](https://github.com/Prowlarr/Prowlarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
+- [Lidarr generated API-key configuration source](https://github.com/Lidarr/Lidarr/blob/develop/src/NzbDrone.Core/Configuration/ConfigFileProvider.cs)
 - [qBittorrent WebUI API](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29)
 - [qBittorrent API key authentication](https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29)
 - [Jellyfin server API and local Swagger UI](https://github.com/jellyfin/jellyfin)
@@ -655,3 +659,5 @@ claims must be rechecked during implementation and release validation.
   removal; shared media and downloads are never deletion targets.
 - 2026-08-10: Added bounded, redirect-free readiness checks against catalog
   loopback endpoints before installation advances to dependent applications.
+- 2026-08-10: Added bounded, symlink-safe local discovery of generated Arr API
+  keys with redacted formatting and no frontend exposure.
