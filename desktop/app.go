@@ -371,7 +371,7 @@ func (a *App) SelectRecommendedApplications() (application.SetupStatus, error) {
 		return application.SetupStatus{}, err
 	}
 
-	return a.setup.SaveApplications(applicationIDs)
+	return a.saveApplicationSelection(applicationIDs)
 }
 
 func (a *App) ListLegalNotices() []legal.Notice {
@@ -476,7 +476,19 @@ func (a *App) GetSetupStatus() (application.SetupStatus, error) {
 }
 
 func (a *App) SaveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {
-	return a.setup.SaveApplications(applicationIDs)
+	return a.saveApplicationSelection(applicationIDs)
+}
+
+func (a *App) saveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {
+	selected := append([]string(nil), applicationIDs...)
+	if a.management != nil {
+		for _, status := range a.management.ListStatuses(a.appContext()) {
+			if status.State != application.ManagedStateNotInstalled {
+				selected = append(selected, status.ApplicationID)
+			}
+		}
+	}
+	return a.setup.SaveApplications(selected)
 }
 
 func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {

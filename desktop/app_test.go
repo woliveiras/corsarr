@@ -112,6 +112,24 @@ func TestSelectRecommendedApplicationsUsesBackendCatalogPreset(t *testing.T) {
 	}
 }
 
+func TestSaveApplicationSelectionKeepsInstalledApplicationsSelected(t *testing.T) {
+	setup := &desktopSetupManager{}
+	management := &desktopApplicationManager{statuses: []application.ManagedApplicationStatus{
+		{ApplicationID: "radarr", State: application.ManagedStateRunning},
+		{ApplicationID: "sonarr", State: application.ManagedStateNotInstalled},
+	}}
+	app := &App{setup: setup, management: management}
+
+	status, err := app.SaveApplicationSelection([]string{"jellyfin"})
+	if err != nil {
+		t.Fatalf("save application selection: %v", err)
+	}
+	want := []string{"jellyfin", "radarr"}
+	if !reflect.DeepEqual(status.Applications, want) {
+		t.Fatalf("expected installed application preserved %v, got %v", want, status.Applications)
+	}
+}
+
 func TestPrepareStorageLayoutUsesOnlyPersistedSetup(t *testing.T) {
 	setup := &desktopSetupManager{status: application.SetupStatus{
 		StoragePath:  "/Users/test/Media",

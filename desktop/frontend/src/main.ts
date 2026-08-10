@@ -269,7 +269,10 @@ const symbols: Record<string, string> = {
 function createApplicationCard(application: Application): HTMLElement {
   const card = document.createElement('article');
   card.className = 'application-card';
-  if (selectedApplicationIDs.has(application.id)) card.classList.add('selected');
+  const managedStatus = managedStatuses.get(application.id);
+  const installed = managedStatus?.state !== undefined && managedStatus.state !== 'not_installed';
+  const selected = selectedApplicationIDs.has(application.id) || installed;
+  if (selected) card.classList.add('selected');
 
   const icon = document.createElement('div');
   icon.className = `application-icon ${application.id}`;
@@ -287,7 +290,6 @@ function createApplicationCard(application: Application): HTMLElement {
 
   const metadata = document.createElement('div');
   metadata.className = 'metadata';
-  const managedStatus = managedStatuses.get(application.id);
   const stateLabels: Record<string, string> = {
     not_installed: 'Não instalado',
     running: 'Em execução',
@@ -317,12 +319,17 @@ function createApplicationCard(application: Application): HTMLElement {
   const selectButton = document.createElement('button');
   selectButton.className = 'select-button';
   selectButton.type = 'button';
-  selectButton.textContent = selectedApplicationIDs.has(application.id)
-    ? 'Selecionado'
-    : 'Selecionar';
-  selectButton.setAttribute('aria-pressed', String(selectedApplicationIDs.has(application.id)));
+  selectButton.textContent = installed ? 'Instalado' : selected ? 'Selecionado' : 'Selecionar';
+  selectButton.setAttribute('aria-pressed', String(selected));
   selectButton.setAttribute('aria-label', `Selecionar ${application.name} para instalação`);
-  selectButton.disabled = selectionSaving;
+  selectButton.disabled = selectionSaving || installed;
+  if (installed) {
+    selectButton.title = 'Remova o aplicativo antes de retirá-lo da seleção.';
+    selectButton.setAttribute(
+      'aria-label',
+      `${application.name} está instalado. Remova o aplicativo antes de retirá-lo da seleção.`,
+    );
+  }
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
     const previousSelection = new Set(selectedApplicationIDs);
