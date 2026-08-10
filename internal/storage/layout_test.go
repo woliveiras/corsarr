@@ -129,6 +129,45 @@ func TestApplicationDataManagerRejectsUnsafeTarget(t *testing.T) {
 	}
 }
 
+func TestApplicationDataManagerRestoresOnlyItsOwnArchive(t *testing.T) {
+	baseDirectory := t.TempDir()
+	layout, err := NewLayoutPreparer().Prepare(baseDirectory, []string{"qbittorrent"})
+	if err != nil {
+		t.Fatalf("prepare storage layout: %v", err)
+	}
+	markerPath := filepath.Join(layout.RootPath, "config", "qbittorrent", "config.ini")
+	if err := os.WriteFile(markerPath, []byte("settings"), 0o600); err != nil {
+		t.Fatalf("write application config: %v", err)
+	}
+	manager := NewApplicationDataManager()
+	archived, err := manager.Archive(baseDirectory, "qbittorrent")
+	if err != nil {
+		t.Fatalf("archive application config: %v", err)
+	}
+
+	if err := manager.Restore(baseDirectory, "qbittorrent", archived.ArchivePath); err != nil {
+		t.Fatalf("restore application config: %v", err)
+	}
+	restored, err := os.ReadFile(markerPath)
+	if err != nil || string(restored) != "settings" {
+		t.Fatalf("expected restored config marker, data=%q err=%v", restored, err)
+	}
+	if _, err := os.Stat(archived.ArchivePath); !os.IsNotExist(err) {
+		t.Fatalf("expected consumed archive to be absent, got %v", err)
+	}
+}
+
+func TestApplicationDataManagerRejectsRestoreOutsideApplicationTrash(t *testing.T) {
+	baseDirectory := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "archive")
+	if err := os.MkdirAll(outside, 0o700); err != nil {
+		t.Fatalf("create outside archive: %v", err)
+	}
+	if err := NewApplicationDataManager().Restore(baseDirectory, "radarr", outside); err == nil {
+		t.Fatal("expected outside archive to be rejected")
+	}
+}
+
 func TestApplicationDataManagerReportsMissingConfigurationWithoutCreatingTrash(t *testing.T) {
 	baseDirectory := t.TempDir()
 	manager := NewApplicationDataManager()

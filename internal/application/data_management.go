@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/woliveiras/corsarr/internal/credentials"
 	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/storage"
 )
@@ -14,6 +15,7 @@ var ErrApplicationStillInstalled = errors.New("remove the application before rem
 type ApplicationDataArchiver interface {
 	Archive(basePath string, applicationID string) (storage.ArchivedApplicationData, error)
 	Inspect(basePath string, applicationID string) (storage.ApplicationDataStatus, error)
+	Restore(basePath, applicationID, archivePath string) error
 }
 
 func (s *DataManagementService) ListStatuses() ([]storage.ApplicationDataStatus, error) {
@@ -41,6 +43,7 @@ type DataManagementService struct {
 	setup    InstallationSetup
 	runtime  containerruntime.Manager
 	archiver ApplicationDataArchiver
+	secrets  credentials.Store
 }
 
 func NewDataManagementService(
@@ -48,12 +51,14 @@ func NewDataManagementService(
 	setup InstallationSetup,
 	runtime containerruntime.Manager,
 	archiver ApplicationDataArchiver,
+	credentialStores ...credentials.Store,
 ) *DataManagementService {
+	var secrets credentials.Store
+	if len(credentialStores) > 0 {
+		secrets = credentialStores[0]
+	}
 	return &DataManagementService{
-		catalog:  catalog,
-		setup:    setup,
-		runtime:  runtime,
-		archiver: archiver,
+		catalog: catalog, setup: setup, runtime: runtime, archiver: archiver, secrets: secrets,
 	}
 }
 
@@ -88,5 +93,43 @@ func (s *DataManagementService) Archive(
 	if err != nil {
 		return storage.ArchivedApplicationData{}, fmt.Errorf("archive application data: %w", err)
 	}
+	if err := s.deleteApplicationCredentials(ctx, applicationID); err != nil {
+		if !archived.Archived {
+			return archived, err
+		}
+		restoreErr := s.archiver.Restore(
+			setup.StoragePath,
+			applicationID,
+			archived.ArchivePath,
+		)
+		if restoreErr == nil {
+			archived.Archived = false
+			archived.ArchivePath = ""
+		}
+		return archived, errors.Join(err, restoreErr)
+	}
 	return archived, nil
+}
+
+func (s *DataManagementService) deleteApplicationCredentials(
+	ctx context.Context,
+	applicationID string,
+) error {
+	if s.secrets == nil {
+		return nil
+	}
+
+	var keys []credentials.Key
+	switch applicationID {
+	case "jellyfin":
+		keys = []credentials.Key{credentials.KeyJellyfinPassword}
+	case "qbittorrent":
+		keys = []credentials.Key{credentials.KeyQBitTorrentPassword}
+	}
+	for _, key := range keys {
+		if err := s.secrets.Delete(ctx, key); err != nil {
+			return fmt.Errorf("remove archived %s credential: %w", applicationID, err)
+		}
+	}
+	return nil
 }

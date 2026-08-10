@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -101,4 +102,38 @@ func (m *ApplicationDataManager) Archive(
 	result.Archived = true
 	result.ArchivePath = archivePath
 	return result, nil
+}
+
+// Restore moves an archive produced by Archive back to the application's
+// configuration path. It is used only to roll back a failed credential cleanup.
+func (m *ApplicationDataManager) Restore(basePath, applicationID, archivePath string) error {
+	if !safeApplicationIDPattern.MatchString(applicationID) {
+		return fmt.Errorf("unsafe application ID: %q", applicationID)
+	}
+	rootPath := filepath.Join(basePath, "Corsarr")
+	archiveParent := filepath.Join(rootPath, "trash", "config", applicationID)
+	relativeArchive, err := filepath.Rel(archiveParent, archivePath)
+	if err != nil || relativeArchive == "." || relativeArchive == ".." ||
+		strings.HasPrefix(relativeArchive, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("application archive is outside the Corsarr trash")
+	}
+	archiveInfo, err := os.Lstat(archivePath)
+	if err != nil {
+		return fmt.Errorf("inspect application archive: %w", err)
+	}
+	if !archiveInfo.IsDir() || archiveInfo.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("application archive is not a regular directory")
+	}
+
+	destinationPath := filepath.Join(rootPath, "config", applicationID)
+	if _, err := os.Lstat(destinationPath); !errors.Is(err, os.ErrNotExist) {
+		if err == nil {
+			return fmt.Errorf("application config already exists")
+		}
+		return fmt.Errorf("inspect application config destination: %w", err)
+	}
+	if err := os.Rename(archivePath, destinationPath); err != nil {
+		return fmt.Errorf("restore application config: %w", err)
+	}
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/woliveiras/corsarr/internal/credentials"
 	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/services"
 	"github.com/woliveiras/corsarr/internal/storage"
@@ -61,6 +62,86 @@ func TestDataManagementServiceArchivesKnownRemovedApplication(t *testing.T) {
 	}
 }
 
+func TestDataManagementServiceRemovesCredentialAfterArchivingConfiguration(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{result: storage.ArchivedApplicationData{
+		ApplicationID: "qbittorrent", Archived: true,
+	}}
+	secrets := &dataCredentialStore{archiver: archiver}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	if _, err := service.Archive(context.Background(), "qbittorrent"); err != nil {
+		t.Fatalf("archive qBittorrent data: %v", err)
+	}
+	if len(secrets.deleted) != 1 || secrets.deleted[0] != credentials.KeyQBitTorrentPassword {
+		t.Fatalf("expected only qBittorrent credential removal, got %v", secrets.deleted)
+	}
+	if secrets.deletedBeforeArchive {
+		t.Fatal("credential was removed before configuration became recoverable")
+	}
+}
+
+func TestDataManagementServicePreservesCredentialWhenArchiveFails(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{err: errors.New("archive failed")}
+	secrets := &dataCredentialStore{archiver: archiver}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	if _, err := service.Archive(context.Background(), "jellyfin"); err == nil {
+		t.Fatal("expected archive failure")
+	}
+	if len(secrets.deleted) != 0 {
+		t.Fatalf("archive failure removed credentials: %v", secrets.deleted)
+	}
+}
+
+func TestDataManagementServiceRestoresConfigurationWhenCredentialRemovalFails(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{result: storage.ArchivedApplicationData{
+		ApplicationID: "jellyfin", Archived: true, ArchivePath: "/media/archive",
+	}}
+	secrets := &dataCredentialStore{archiver: archiver, deleteErr: errors.New("keychain locked")}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	result, err := service.Archive(context.Background(), "jellyfin")
+	if err == nil {
+		t.Fatal("expected credential removal failure")
+	}
+	if result.Archived || result.ArchivePath != "" {
+		t.Fatalf("expected rolled-back archive result, got %#v", result)
+	}
+	if archiver.restoreCalls != 1 || archiver.restoredPath != "/media/archive" {
+		t.Fatalf("expected configuration restore, got %#v", archiver)
+	}
+}
+
 func TestDataManagementServiceListsConfigurationPresence(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {
@@ -100,6 +181,38 @@ type dataArchiver struct {
 	basePath      string
 	applicationID string
 	present       map[string]bool
+	restoreCalls  int
+	restoredPath  string
+	restoreErr    error
+}
+
+func (a *dataArchiver) Restore(_, _, archivePath string) error {
+	a.restoreCalls++
+	a.restoredPath = archivePath
+	return a.restoreErr
+}
+
+type dataCredentialStore struct {
+	archiver             *dataArchiver
+	deleted              []credentials.Key
+	deletedBeforeArchive bool
+	deleteErr            error
+}
+
+func (s *dataCredentialStore) Save(context.Context, credentials.Key, credentials.Secret) error {
+	return nil
+}
+
+func (s *dataCredentialStore) Load(context.Context, credentials.Key) (credentials.Secret, error) {
+	return credentials.Secret{}, credentials.ErrCredentialNotFound
+}
+
+func (s *dataCredentialStore) Delete(_ context.Context, key credentials.Key) error {
+	if s.archiver.calls == 0 {
+		s.deletedBeforeArchive = true
+	}
+	s.deleted = append(s.deleted, key)
+	return s.deleteErr
 }
 
 func (a *dataArchiver) Archive(basePath string, applicationID string) (storage.ArchivedApplicationData, error) {

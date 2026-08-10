@@ -286,6 +286,7 @@ func NewApp() (*App, error) {
 		setup,
 		dockerManager,
 		storage.NewApplicationDataManager(),
+		credentialStore,
 	)
 	storageInspector := storage.NewInspector()
 	diagnosticReporter := diagnostics.NewReporter(
