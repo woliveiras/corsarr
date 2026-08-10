@@ -641,3 +641,6 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Added persistent reviewed setup, automatic catalog dependencies,
   and explicit idempotent creation of the shared storage layout. Container
   installation and service provisioning remain pending.
+- 2026-08-10: Added the validated runtime contract, ownership-safe Docker
+  lifecycle adapter, and the first multi-architecture image-digest catalog.
+  These boundaries are not exposed as an install action yet.

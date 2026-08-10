@@ -46,6 +46,14 @@ before touching an existing container; a resource with the expected name but
 without matching labels is rejected. The adapter is not wired to an install
 button yet, so this boundary alone does not create runtime resources.
 
+`internal/catalog.RuntimeCatalog` is the approved desktop translation from the
+existing service registry to `ContainerSpec`. Its image references are pinned
+to multi-architecture OCI index digests verified on 2026-08-10, and each entry
+keeps the image maintainer's installation source. It resolves one private
+configuration mount per application plus the single shared media mount. Web
+administration ports remain loopback-only in the default spec. Catalog refresh,
+review, and update policy remain separate from ordinary application startup.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
