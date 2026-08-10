@@ -142,6 +142,11 @@ func NewApp() (*App, error) {
 		credentialStore,
 		provisioning.NewJellyfinClient(catalog),
 	)
+	seerrProvisioner := provisioning.NewSeerrProvisioner(
+		credentialStore,
+		arrCredentials,
+		provisioning.NewSeerrClient(catalog),
+	)
 	provisioner := provisioning.NewChainProvisioner(
 		arrProvisioner,
 		qbittorrentProvisioner,
@@ -149,6 +154,7 @@ func NewApp() (*App, error) {
 		prowlarrProvisioner,
 		bazarrProvisioner,
 		jellyfinProvisioner,
+		seerrProvisioner,
 	)
 	installation := application.NewInstallationService(
 		setup,

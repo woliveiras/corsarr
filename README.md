@@ -72,6 +72,11 @@ its container is gone; Corsarr moves it into a private recoverable trash and
 never targets the shared media or downloads tree. The prerequisites and usage
 instructions below describe the current CLI release.
 
+Seerr signs in through that local Jellyfin administrator, enables the discovered
+Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles
+only the reserved `Radarr (Corsarr)` and `Sonarr (Corsarr)` instances before
+marking its first-run setup complete.
+
 ### Run Corsarr Desktop from source
 
 Development currently targets macOS on Apple Silicon first and requires Go

@@ -635,6 +635,10 @@ claims must be rechecked during implementation and release validation.
 - [Seerr official Docker image](https://docs.seerr.dev/getting-started/docker)
 - [Seerr migration from Jellyseerr](https://docs.seerr.dev/migration-guide)
 - [Seerr v3.4.1 release](https://github.com/seerr-team/seerr/releases/tag/v3.4.1)
+- [Seerr Jellyfin authentication route](https://github.com/seerr-team/seerr/blob/develop/server/routes/auth.ts)
+- [Seerr settings and initialization routes](https://github.com/seerr-team/seerr/blob/develop/server/routes/settings/index.ts)
+- [Seerr Radarr connection routes](https://github.com/seerr-team/seerr/blob/develop/server/routes/settings/radarr.ts)
+- [Seerr Sonarr connection routes](https://github.com/seerr-team/seerr/blob/develop/server/routes/settings/sonarr.ts)
 - [Bazarr supported container images](https://wiki.bazarr.media/Getting-Started/Installation/Docker/docker/)
 - [Bazarr API-key authentication contract](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/utils.py)
 - [Bazarr system settings API](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/system/settings.py)
@@ -704,3 +708,5 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Replaced the retired Jellyseerr image with the signed official
   Seerr 3.4.1 multi-architecture image while preserving the internal
   `jellyseerr` ID/config path for automatic data migration and compatibility.
+- 2026-08-10: Automated Seerr's Jellyfin login/library discovery, tested
+  Radarr/Sonarr connections, reserved default instances, and initialization.

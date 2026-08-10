@@ -34,6 +34,8 @@ supports_vpn: true
 requires_vpn: false
 dependencies:
   - jellyfin
+  - radarr
+  - sonarr
 optional: true
 
 web_ui:

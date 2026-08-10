@@ -157,6 +157,16 @@ The HTTP client is loopback-only, proxy-free, redirect-free, and response
 bounded. The desktop can copy the stored password directly to the native
 clipboard without returning it to TypeScript.
 
+`internal/provisioning.SeerrProvisioner` runs after its Jellyfin, Radarr, and
+Sonarr dependencies. It loads their credentials only in Go, authenticates Seerr
+through the official Jellyfin login route, and retains the resulting HTTP-only
+session in a private cookie jar. `SeerrClient` discovers/enables Jellyfin
+libraries, tests both Arr connections to obtain live profiles and root folders,
+prefers the `Any` quality profile (or the lowest returned ID), and reconciles
+only the reserved `<App> (Corsarr)` entries with safe defaults. It initializes
+Seerr only after every connection succeeds. The client is loopback-only,
+proxy-free, redirect-free, and response-bounded.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

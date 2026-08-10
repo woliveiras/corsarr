@@ -34,11 +34,11 @@ func TestDependencyValidator(t *testing.T) {
 			errorCount:   2, // Missing qbittorrent and prowlarr
 		},
 		{
-			name:         "Missing dependency - Jellyseerr without Jellyfin",
-			serviceIDs:   []string{"jellyseerr"}, // Depends on jellyfin
+			name:         "Missing dependencies - Seerr without media stack",
+			serviceIDs:   []string{"jellyseerr"}, // Depends on jellyfin, radarr, and sonarr
 			vpnEnabled:   false,
 			expectErrors: true,
-			errorCount:   1, // Missing jellyfin
+			errorCount:   3,
 		},
 		{
 			name:         "VPN enabled without Gluetun",
@@ -94,7 +94,7 @@ func TestGetMissingDependencies(t *testing.T) {
 	}
 
 	missing := GetMissingDependencies(config)
-	
+
 	if len(missing) == 0 {
 		t.Error("Expected missing dependencies for Radarr")
 	}
@@ -114,16 +114,16 @@ func TestSuggestDependencies(t *testing.T) {
 		t.Fatalf("Failed to create registry: %v", err)
 	}
 
-	// Jellyseerr depends on jellyfin
+	// Seerr depends on Jellyfin, Radarr, and Sonarr.
 	config, err := NewConfig(registry, []string{"jellyseerr"}, "/data", "/output", false)
 	if err != nil {
 		t.Fatalf("Failed to create config: %v", err)
 	}
 
 	suggestions := SuggestDependencies(config)
-	
+
 	if len(suggestions) == 0 {
-		t.Error("Expected dependency suggestions for Jellyseerr")
+		t.Error("Expected dependency suggestions for Seerr")
 	}
 
 	// Should suggest Jellyfin
