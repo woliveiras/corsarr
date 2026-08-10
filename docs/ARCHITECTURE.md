@@ -181,6 +181,16 @@ refuses unsafe IDs and symlink targets, then atomically moves configuration into
 the private `<selected>/Corsarr/trash/config/<app>/` tree. It never receives or
 targets the shared media and downloads paths.
 
+`internal/storage.BackupManager` is the update workflow's recovery boundary. It
+accepts only a reviewed Corsarr root plus a safe catalog application ID and
+archives exactly `config/<application>` into a private `tar.gz` below
+`backups/config/<application>`. It refuses symlinks and special files, streams
+the archive without loading it into memory, computes SHA-256 over the compressed
+artifact, and publishes it atomically with mode `0600`. Media paths are not part
+of this API. Creating this recovery point does not claim that an older container
+can reverse an application database migration; the later update workflow must
+surface that limitation independently.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all
