@@ -10,6 +10,10 @@ export function ChooseStorageLocation() {
   return window['go']['main']['App']['ChooseStorageLocation']();
 }
 
+export function GetApplicationStatuses() {
+  return window['go']['main']['App']['GetApplicationStatuses']();
+}
+
 export function GetEnvironmentStatus() {
   return window['go']['main']['App']['GetEnvironmentStatus']();
 }
@@ -34,6 +38,22 @@ export function PrepareStorageLayout() {
   return window['go']['main']['App']['PrepareStorageLayout']();
 }
 
+export function RemoveApplication(arg1) {
+  return window['go']['main']['App']['RemoveApplication'](arg1);
+}
+
+export function RestartApplication(arg1) {
+  return window['go']['main']['App']['RestartApplication'](arg1);
+}
+
 export function SaveApplicationSelection(arg1) {
   return window['go']['main']['App']['SaveApplicationSelection'](arg1);
+}
+
+export function StartApplication(arg1) {
+  return window['go']['main']['App']['StartApplication'](arg1);
+}
+
+export function StopApplication(arg1) {
+  return window['go']['main']['App']['StopApplication'](arg1);
 }

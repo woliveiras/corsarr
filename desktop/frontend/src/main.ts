@@ -2,17 +2,23 @@ import './style.css';
 import {
   AcceptCurrentTerms,
   ChooseStorageLocation,
+  GetApplicationStatuses,
   GetEnvironmentStatus,
   GetSetupStatus,
   InstallSelectedApplications,
   ListApplications,
   OpenApplication,
   PrepareStorageLayout,
+  RemoveApplication,
+  RestartApplication,
   SaveApplicationSelection,
+  StartApplication,
+  StopApplication,
 } from '../wailsjs/go/main/App';
 import type { application } from '../wailsjs/go/models';
 
 type Application = application.ApplicationSummary;
+type ManagedStatus = application.ManagedApplicationStatus;
 
 const root = document.querySelector<HTMLDivElement>('#app');
 
@@ -127,6 +133,7 @@ let setupStatus: application.SetupStatus | undefined;
 let availableApplications: Application[] = [];
 let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
+let managedStatuses = new Map<string, ManagedStatus>();
 
 const symbols: Record<string, string> = {
   bazarr: 'Bz',
@@ -162,7 +169,14 @@ function createApplicationCard(application: Application): HTMLElement {
 
   const metadata = document.createElement('div');
   metadata.className = 'metadata';
-  metadata.textContent = application.optional ? 'Opcional' : 'Aplicativo principal';
+  const managedStatus = managedStatuses.get(application.id);
+  const stateLabels: Record<string, string> = {
+    not_installed: 'Não instalado',
+    running: 'Em execução',
+    stopped: 'Parado',
+    attention: 'Atenção',
+  };
+  metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}`;
 
   information.append(title, description, metadata);
 
@@ -209,6 +223,7 @@ function createApplicationCard(application: Application): HTMLElement {
   openButton.className = 'open-button';
   openButton.type = 'button';
   openButton.textContent = 'Abrir';
+  openButton.disabled = managedStatus?.state !== 'running';
   openButton.setAttribute('aria-label', `Abrir ${application.name} no navegador`);
   openButton.addEventListener('click', async () => {
     openButton.disabled = true;
@@ -230,8 +245,50 @@ function createApplicationCard(application: Application): HTMLElement {
   });
 
   actions.append(selectButton, openButton);
+  if (managedStatus?.state === 'running') {
+    actions.append(
+      lifecycleButton('Reiniciar', () => RestartApplication(application.id)),
+      lifecycleButton('Parar', () => StopApplication(application.id)),
+      lifecycleButton('Remover', () => removeApplication(application)),
+    );
+  } else if (managedStatus?.state === 'stopped') {
+    actions.append(
+      lifecycleButton('Iniciar', () => StartApplication(application.id)),
+      lifecycleButton('Remover', () => removeApplication(application)),
+    );
+  }
   card.append(icon, information, actions);
   return card;
+}
+
+function lifecycleButton(label: string, operation: () => Promise<void>): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'lifecycle-button';
+  button.type = 'button';
+  button.textContent = label;
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await operation();
+      await loadApplicationStatuses();
+    } catch {
+      if (messageElement) {
+        messageElement.textContent = `Não foi possível ${label.toLocaleLowerCase('pt-BR')} o aplicativo.`;
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
+async function removeApplication(target: Application): Promise<void> {
+  const confirmed = window.confirm(
+    `Remover ${target.name}? As configurações e sua mídia serão preservadas.`,
+  );
+  if (!confirmed) return;
+  await RemoveApplication(target.id);
 }
 
 function renderApplications(): void {
@@ -252,6 +309,16 @@ async function loadApplications(): Promise<void> {
       messageElement.textContent = 'Não foi possível carregar o catálogo do Corsarr.';
       messageElement.classList.add('error');
     }
+  }
+}
+
+async function loadApplicationStatuses(): Promise<void> {
+  try {
+    const statuses = await GetApplicationStatuses();
+    managedStatuses = new Map(statuses.map((status) => [status.applicationId, status]));
+    renderApplications();
+  } catch {
+    managedStatuses = new Map();
   }
 }
 
@@ -513,6 +580,7 @@ async function installApplications(): Promise<void> {
         installationResultElement.textContent = `${result.items.length} aplicativos instalados e iniciados.`;
       }
       installApplicationsButton.textContent = 'Aplicativos instalados';
+      await loadApplicationStatuses();
     } else {
       const failed = result.items.find((item) => item.error);
       if (installationResultElement) {
@@ -540,6 +608,7 @@ installApplicationsButton?.addEventListener('click', () => void installApplicati
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);
   await loadApplications();
+  await loadApplicationStatuses();
 }
 
 void loadInitialState();

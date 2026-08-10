@@ -658,7 +658,8 @@ nav {
 }
 
 .open-button,
-.select-button {
+.select-button,
+.lifecycle-button {
   padding: 7px 11px;
   color: #7acbc1;
   background: rgba(78, 175, 165, 0.07);
@@ -669,14 +670,24 @@ nav {
   cursor: pointer;
 }
 .open-button:hover,
-.select-button:hover {
+.select-button:hover,
+.lifecycle-button:hover {
   color: #b9f1e9;
   background: rgba(78, 175, 165, 0.14);
 }
 .open-button:disabled,
-.select-button:disabled {
+.select-button:disabled,
+.lifecycle-button:disabled {
   opacity: 0.45;
   cursor: wait;
+}
+
+.lifecycle-button {
+  padding-block: 5px;
+  color: #86a6a4;
+  background: rgba(99, 137, 134, 0.06);
+  border-color: rgba(117, 157, 153, 0.12);
+  font-size: 9px;
 }
 
 .select-button[aria-pressed="true"] {

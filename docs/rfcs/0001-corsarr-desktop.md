@@ -649,3 +649,5 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install
   flow. This installs containers only with an existing healthy runtime;
   application provisioning and runtime onboarding remain pending.
+- 2026-08-10: Exposed catalog-scoped application status and start, stop,
+  restart, and remove-preserving-data actions in Corsarr Desktop.

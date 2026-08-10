@@ -42,6 +42,14 @@ type installationManager interface {
 	) (application.InstallationResult, error)
 }
 
+type applicationManager interface {
+	ListStatuses(ctx context.Context) []application.ManagedApplicationStatus
+	Start(ctx context.Context, applicationID string) error
+	Stop(ctx context.Context, applicationID string) error
+	Restart(ctx context.Context, applicationID string) error
+	Remove(ctx context.Context, applicationID string) error
+}
+
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	ctx              context.Context
@@ -52,6 +60,7 @@ type App struct {
 	setup            setupManager
 	layoutPreparer   storageLayoutPreparer
 	installation     installationManager
+	management       applicationManager
 }
 
 func NewApp() (*App, error) {
@@ -84,6 +93,7 @@ func NewApp() (*App, error) {
 		catalog,
 		installer,
 	)
+	management := application.NewManagementService(catalog, dockerManager)
 
 	return &App{
 		catalog:          catalog,
@@ -93,6 +103,7 @@ func NewApp() (*App, error) {
 		setup:            setup,
 		layoutPreparer:   storage.NewLayoutPreparer(),
 		installation:     installation,
+		management:       management,
 	}, nil
 }
 
@@ -152,11 +163,37 @@ func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
 }
 
 func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {
-	ctx := a.ctx
-	if ctx == nil {
-		ctx = context.Background()
+	return a.installation.InstallSelected(
+		a.appContext(),
+		runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000},
+	)
+}
+
+func (a *App) GetApplicationStatuses() []application.ManagedApplicationStatus {
+	return a.management.ListStatuses(a.appContext())
+}
+
+func (a *App) StartApplication(id string) error {
+	return a.management.Start(a.appContext(), id)
+}
+
+func (a *App) StopApplication(id string) error {
+	return a.management.Stop(a.appContext(), id)
+}
+
+func (a *App) RestartApplication(id string) error {
+	return a.management.Restart(a.appContext(), id)
+}
+
+func (a *App) RemoveApplication(id string) error {
+	return a.management.Remove(a.appContext(), id)
+}
+
+func (a *App) appContext() context.Context {
+	if a.ctx == nil {
+		return context.Background()
 	}
-	return a.installation.InstallSelected(ctx, runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000})
+	return a.ctx
 }
 
 // PrepareStorageLayout creates only the reviewed Corsarr-owned directory tree.

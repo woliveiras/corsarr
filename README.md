@@ -51,8 +51,10 @@ an idempotent `Corsarr/` media/configuration tree only after explicit
 confirmation. With an existing healthy Docker runtime, the development build
 can now record explicit consent and install the selected, digest-pinned
 containers through the ownership-safe runtime boundary. Automatic runtime
-installation and cross-application provisioning are still pending; the
-prerequisites and usage instructions below describe the current CLI release.
+installation and cross-application provisioning are still pending. Installed
+containers expose status plus open, start, stop, restart, and removal actions
+that preserve data. The prerequisites and usage instructions below describe
+the current CLI release.
 
 ### Run Corsarr Desktop from source
 

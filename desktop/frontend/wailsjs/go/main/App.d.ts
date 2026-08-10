@@ -7,6 +7,8 @@ export function AcceptCurrentTerms():Promise<application.SetupStatus>;
 
 export function ChooseStorageLocation():Promise<storage.Status>;
 
+export function GetApplicationStatuses():Promise<Array<application.ManagedApplicationStatus>>;
+
 export function GetEnvironmentStatus():Promise<application.EnvironmentStatus>;
 
 export function GetSetupStatus():Promise<application.SetupStatus>;
@@ -19,4 +21,12 @@ export function OpenApplication(arg1:string):Promise<void>;
 
 export function PrepareStorageLayout():Promise<storage.LayoutStatus>;
 
+export function RemoveApplication(arg1:string):Promise<void>;
+
+export function RestartApplication(arg1:string):Promise<void>;
+
 export function SaveApplicationSelection(arg1:Array<string>):Promise<application.SetupStatus>;
+
+export function StartApplication(arg1:string):Promise<void>;
+
+export function StopApplication(arg1:string):Promise<void>;

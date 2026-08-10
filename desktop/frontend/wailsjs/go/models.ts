@@ -124,6 +124,26 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class ManagedApplicationStatus {
+	    applicationId: string;
+	    state: string;
+	    health?: string;
+	    image?: string;
+	    technicalDetail?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ManagedApplicationStatus(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.applicationId = source["applicationId"];
+	        this.state = source["state"];
+	        this.health = source["health"];
+	        this.image = source["image"];
+	        this.technicalDetail = source["technicalDetail"];
+	    }
+	}
 	export class SetupStatus {
 	    storagePath?: string;
 	    applications: string[];
