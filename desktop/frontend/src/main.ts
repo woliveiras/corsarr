@@ -124,6 +124,7 @@ root.innerHTML = [
   '        <div id="start-at-login-setting" class="start-at-login-setting" hidden><label><input id="start-at-login" type="checkbox"> <span>Iniciar meus serviços automaticamente quando eu entrar no Mac.</span></label><button id="open-login-settings" class="legal-link-button" type="button" hidden>Abrir Ajustes do Sistema</button></div>',
   '        <div id="jellyfin-lan-setting" class="start-at-login-setting" hidden><label><input id="jellyfin-lan" type="checkbox"> <span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local. Os painéis administrativos continuam privados neste computador.</span></label></div>',
   '        <p id="installation-result" class="installation-result"></p>',
+  '        <details id="operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="operation-technical"></code></details>',
   '      </div>',
   '      <div class="installation-actions">',
   '        <button id="prepare-storage" class="secondary-button" type="button" disabled>Preparar pastas</button>',
@@ -162,6 +163,8 @@ const storageBadgeElement = document.querySelector<HTMLElement>('#storage-badge'
 const chooseStorageButton = document.querySelector<HTMLButtonElement>('#choose-storage');
 const installationSummaryElement = document.querySelector<HTMLElement>('#installation-summary');
 const installationResultElement = document.querySelector<HTMLElement>('#installation-result');
+const operationDetailsElement = document.querySelector<HTMLDetailsElement>('#operation-details');
+const operationTechnicalElement = document.querySelector<HTMLElement>('#operation-technical');
 const prepareStorageButton = document.querySelector<HTMLButtonElement>('#prepare-storage');
 const installApplicationsButton =
   document.querySelector<HTMLButtonElement>('#install-applications');
@@ -191,6 +194,15 @@ let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let currentRuntimeState = 'checking';
 let currentHostReady = true;
+
+function renderOperationIssue(issue?: application.OperationIssue): void {
+  if (!operationDetailsElement || !operationTechnicalElement) return;
+  operationDetailsElement.hidden = !issue;
+  operationDetailsElement.open = false;
+  operationTechnicalElement.textContent = issue
+    ? `${issue.summary}\n${issue.nextAction}\nCódigo: ${issue.code}`
+    : '';
+}
 
 function showView(view: 'home' | 'licenses'): void {
   const showHome = view === 'home';
@@ -465,6 +477,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
     }
     try {
       const result = await UpdateApplication(target.id);
+      renderOperationIssue(result.issue);
       if (messageElement) {
         if (result.updated && !result.requiresAttention) {
           messageElement.textContent = `${target.name} foi atualizado e verificado. O backup das configurações foi preservado.`;
@@ -482,6 +495,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
       }
       await loadApplicationStatuses();
     } catch {
+      renderOperationIssue();
       if (messageElement) {
         messageElement.textContent = `Não foi possível iniciar a atualização de ${target.name}. Nenhuma alteração foi autorizada fora dos recursos do Corsarr.`;
         messageElement.classList.add('error');
@@ -1244,11 +1258,13 @@ async function installApplications(): Promise<void> {
       'Preparando o ambiente e baixando os aplicativos. Isso pode levar alguns minutos.';
     installationResultElement.classList.remove('error');
   }
+  renderOperationIssue();
 
   try {
     applySetupStatus(await AcceptCurrentTerms());
     const result = await InstallSelectedApplications();
     if (result.complete) {
+      renderOperationIssue();
       if (installationResultElement) {
         installationResultElement.textContent = `${result.items.length} aplicativos instalados e iniciados.`;
       }
@@ -1262,15 +1278,17 @@ async function installApplications(): Promise<void> {
       ]);
     } else {
       const failed = result.items.find((item) => item.failed);
+      renderOperationIssue(failed?.issue);
       if (installationResultElement) {
         installationResultElement.textContent = failed
-          ? `A instalação de ${failed.applicationId} não terminou. Tente novamente ou consulte os detalhes técnicos.`
+          ? `${failed.issue?.summary ?? `A instalação de ${failed.applicationId} não terminou.`} ${failed.issue?.nextAction ?? 'Tente novamente.'}`
           : 'A instalação não terminou. Tente novamente.';
         installationResultElement.classList.add('error');
       }
       installApplicationsButton.textContent = 'Tentar novamente';
     }
   } catch {
+    renderOperationIssue();
     if (installationResultElement) {
       installationResultElement.textContent =
         'Não foi possível iniciar a instalação. Sua pasta e seleção continuam preservadas.';

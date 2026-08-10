@@ -85,6 +85,18 @@ func TestDesktopResultContractsExcludeBackendRecoveryDetails(t *testing.T) {
 	if !strings.Contains(string(updatePayload), `"requiresAttention":true`) {
 		t.Fatalf("desktop update payload omitted bounded attention state: %s", updatePayload)
 	}
+	issuePayload, _ := json.Marshal(application.InstallationItem{
+		Failed: true,
+		Issue: &application.OperationIssue{
+			Code: "application_install_failed", Summary: "Não foi possível instalar.",
+			NextAction: "Verifique a conexão e tente novamente.",
+		},
+	})
+	for _, expected := range []string{"application_install_failed", "Não foi possível instalar", "Verifique a conexão"} {
+		if !strings.Contains(string(issuePayload), expected) {
+			t.Fatalf("desktop payload omitted actionable issue %q: %s", expected, issuePayload)
+		}
+	}
 }
 
 func applicationContainerStatus(image string) runtimeenv.ContainerStatus {

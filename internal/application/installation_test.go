@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
@@ -112,6 +113,39 @@ func TestInstallationServiceReturnsOnlyBoundedFailureStateToDesktop(t *testing.T
 	if result.Complete || len(result.Items) != 1 || !result.Items[0].Failed || result.Items[0].Error == "" {
 		t.Fatalf("unexpected bounded install failure %#v", result)
 	}
+	if result.Items[0].Issue == nil || result.Items[0].Issue.Code != "application_install_failed" {
+		t.Fatalf("expected actionable installation issue, got %#v", result.Items[0].Issue)
+	}
+	if strings.Contains(result.Items[0].Issue.Summary, "private runtime detail") ||
+		strings.Contains(result.Items[0].Issue.NextAction, "private runtime detail") {
+		t.Fatalf("user-facing issue exposed backend detail: %#v", result.Items[0].Issue)
+	}
+}
+
+func TestInstallationServiceDistinguishesProvisioningFailure(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	service := NewInstallationService(
+		&installationSetup{status: SetupStatus{
+			StoragePath: "/Users/test/Media", Applications: []string{"jellyfin"},
+			CanPrepare: true, CanInstall: true, TermsAccepted: true,
+		}},
+		&installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Media/Corsarr"}},
+		NewCatalog(registry),
+		&recordingInstaller{},
+		&recordingProvisioner{err: errors.New("private provisioning detail")},
+	)
+
+	result, err := service.InstallSelected(context.Background(), runtimecatalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("return structured provisioning failure: %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Issue == nil ||
+		result.Items[0].Issue.Code != "application_configuration_failed" {
+		t.Fatalf("expected actionable provisioning issue, got %#v", result)
+	}
 }
 
 type installationSetup struct{ status SetupStatus }
@@ -129,7 +163,10 @@ type recordingInstaller struct {
 	err            error
 }
 
-type recordingProvisioner struct{ applicationIDs []string }
+type recordingProvisioner struct {
+	applicationIDs []string
+	err            error
+}
 
 func (p *recordingProvisioner) Provision(
 	_ context.Context,
@@ -137,7 +174,7 @@ func (p *recordingProvisioner) Provision(
 	applicationID string,
 ) error {
 	p.applicationIDs = append(p.applicationIDs, applicationID)
-	return nil
+	return p.err
 }
 
 func (i *recordingInstaller) Install(

@@ -107,7 +107,10 @@ the UI reports the current application and whether it is being started or config
 exposing runtime logs or credentials.
 Completed-operation payloads likewise expose only bounded success, failure,
 rollback, and attention flags; private backup/trash paths, checksums, raw runtime
-status, and backend error text remain in Go.
+status, and backend error text remain in Go. Failed installation, provisioning,
+and update results include a stable diagnostic code plus a plain-language next
+action, available through expandable technical details without exposing the raw
+backend failure.
 The Go desktop boundary also permits only one setup, runtime, or application-data
 change at a time, so update, lifecycle, removal, onboarding, and login recovery
 cannot race each other even if separate interface controls are activated.

@@ -62,6 +62,9 @@ func TestUpdateServiceReturnsRollbackOutcomeWithoutProvisioning(t *testing.T) {
 	if !result.RolledBack || result.RequiresAttention || result.Error == "" || len(provisioner.applicationIDs) != 0 {
 		t.Fatalf("unexpected rollback result %#v", result)
 	}
+	if result.Issue == nil || result.Issue.Code != "application_update_rolled_back" {
+		t.Fatalf("expected actionable rollback issue, got %#v", result.Issue)
+	}
 }
 
 func TestUpdateServiceReportsAttentionWithoutExposingDetailsToDesktop(t *testing.T) {
@@ -80,6 +83,31 @@ func TestUpdateServiceReportsAttentionWithoutExposingDetailsToDesktop(t *testing
 	}
 	if !result.RequiresAttention || result.Error == "" || result.RolledBack {
 		t.Fatalf("unexpected attention result %#v", result)
+	}
+	if result.Issue == nil || result.Issue.Code != "application_update_failed" {
+		t.Fatalf("expected actionable update issue, got %#v", result.Issue)
+	}
+}
+
+func TestUpdateServiceDistinguishesProvisioningFailure(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	executor := &fakeUpdateExecutor{result: orchestrator.UpdateResult{
+		ApplicationID: "radarr", Updated: true,
+	}}
+	service := NewUpdateService(&updateSetup{status: SetupStatus{
+		StoragePath: "/tmp", TermsAccepted: true,
+	}}, NewCatalog(registry), executor, &recordingProvisioner{err: errors.New("private detail")})
+
+	result, err := service.Update(context.Background(), "radarr", catalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("update application: %v", err)
+	}
+	if !result.RequiresAttention || result.Issue == nil ||
+		result.Issue.Code != "application_configuration_failed" {
+		t.Fatalf("expected configuration issue after update, got %#v", result)
 	}
 }
 

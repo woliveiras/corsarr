@@ -30,6 +30,7 @@ type ApplicationUpdateResult struct {
 	Updated           bool                             `json:"updated"`
 	RolledBack        bool                             `json:"rolledBack"`
 	RequiresAttention bool                             `json:"requiresAttention"`
+	Issue             *OperationIssue                  `json:"issue,omitempty"`
 	Error             string                           `json:"-"`
 }
 
@@ -89,6 +90,11 @@ func (s *UpdateService) Update(
 	if updateErr != nil {
 		result.Error = updateErr.Error()
 		result.RequiresAttention = !result.RolledBack
+		if result.RolledBack {
+			result.Issue = updateRollbackIssue()
+		} else {
+			result.Issue = updateFailureIssue()
+		}
 		return result, nil
 	}
 	if !result.Updated {
@@ -97,6 +103,7 @@ func (s *UpdateService) Update(
 	if err := s.provisioner.Provision(ctx, filepath.Join(setup.StoragePath, "Corsarr"), applicationID); err != nil {
 		result.Error = fmt.Sprintf("reconcile application configuration after update: %v", err)
 		result.RequiresAttention = true
+		result.Issue = configurationIssue()
 	}
 	return result, nil
 }

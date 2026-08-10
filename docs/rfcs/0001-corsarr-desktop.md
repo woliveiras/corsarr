@@ -671,6 +671,10 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: added bounded user-facing operation issues for installation,
+  provisioning, update rollback, and update failure. The desktop now shows a
+  stable code and next action in expandable details while raw backend errors
+  remain Go-only.
 - 2026-08-11: reverified all ten immutable application indexes against their
   configured OCI registries without pulling layers. Every digest advertised
   both Linux AMD64 and ARM64; an opt-in remote contract now reproduces this

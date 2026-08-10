@@ -943,6 +943,31 @@ nav {
   color: #ee9b8f;
 }
 
+.operation-details {
+  margin-top: 8px;
+  color: #789291;
+  font-size: 9px;
+}
+
+.operation-details summary {
+  width: max-content;
+  cursor: pointer;
+}
+
+.operation-details code {
+  display: block;
+  max-width: 680px;
+  margin-top: 7px;
+  padding: 8px 10px;
+  overflow: auto;
+  color: #9fb7b5;
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 7px;
+  font-size: 9px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .terms-consent {
   display: flex;
   align-items: flex-start;

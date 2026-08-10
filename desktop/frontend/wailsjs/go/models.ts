@@ -24,11 +24,28 @@ export namespace application {
 	        this.dependencies = source["dependencies"];
 	    }
 	}
+	export class OperationIssue {
+	    code: string;
+	    summary: string;
+	    nextAction: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OperationIssue(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.summary = source["summary"];
+	        this.nextAction = source["nextAction"];
+	    }
+	}
 	export class ApplicationUpdateResult {
 	    applicationId: string;
 	    updated: boolean;
 	    rolledBack: boolean;
 	    requiresAttention: boolean;
+	    issue?: OperationIssue;
 
 	    static createFrom(source: any = {}) {
 	        return new ApplicationUpdateResult(source);
@@ -40,7 +57,26 @@ export namespace application {
 	        this.updated = source["updated"];
 	        this.rolledBack = source["rolledBack"];
 	        this.requiresAttention = source["requiresAttention"];
+	        this.issue = this.convertValues(source["issue"], OperationIssue);
 	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class EnvironmentStatus {
 	    platform: string;
@@ -81,6 +117,7 @@ export namespace application {
 	export class InstallationItem {
 	    applicationId: string;
 	    failed: boolean;
+	    issue?: OperationIssue;
 
 	    static createFrom(source: any = {}) {
 	        return new InstallationItem(source);
@@ -90,7 +127,26 @@ export namespace application {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.applicationId = source["applicationId"];
 	        this.failed = source["failed"];
+	        this.issue = this.convertValues(source["issue"], OperationIssue);
 	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class InstallationResult {
 	    items: InstallationItem[];
@@ -150,6 +206,7 @@ export namespace application {
 	        this.removalBlockedBy = source["removalBlockedBy"];
 	    }
 	}
+
 	export class ServiceAccessStatus {
 	    applicationId: string;
 	    username: string;
