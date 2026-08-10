@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/application"
@@ -122,14 +123,49 @@ func TestPrepareStorageLayoutRejectsIncompleteSetupWithoutWriting(t *testing.T) 
 
 func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) {
 	installation := &desktopInstallationManager{result: application.InstallationResult{Complete: true}}
-	app := &App{installation: installation}
+	runtime := &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}}
+	app := &App{
+		setup:        &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		installation: installation, runtimeOnboarding: runtime,
+	}
 
 	result, err := app.InstallSelectedApplications()
 	if err != nil {
 		t.Fatalf("install selected applications: %v", err)
 	}
-	if !result.Complete || installation.calls != 1 {
+	if !result.Complete || installation.calls != 1 || runtime.calls != 1 {
 		t.Fatalf("expected one completed installation call, got result=%#v calls=%d", result, installation.calls)
+	}
+}
+
+func TestInstallSelectedApplicationsDoesNotPrepareWithoutConsent(t *testing.T) {
+	runtime := &desktopRuntimePreparer{}
+	installation := &desktopInstallationManager{}
+	app := &App{
+		setup: &desktopSetupManager{}, runtimeOnboarding: runtime, installation: installation,
+	}
+
+	if _, err := app.InstallSelectedApplications(); err == nil {
+		t.Fatal("expected missing consent error")
+	}
+	if runtime.calls != 0 || installation.calls != 0 {
+		t.Fatalf("unauthorized install accessed runtime=%d installer=%d", runtime.calls, installation.calls)
+	}
+}
+
+func TestInstallSelectedApplicationsStopsWhenRuntimePreparationFails(t *testing.T) {
+	runtime := &desktopRuntimePreparer{prepareErr: errors.New("runtime unavailable")}
+	installation := &desktopInstallationManager{}
+	app := &App{
+		setup:             &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}},
+		runtimeOnboarding: runtime, installation: installation,
+	}
+
+	if _, err := app.InstallSelectedApplications(); err == nil {
+		t.Fatal("expected runtime preparation failure")
+	}
+	if runtime.calls != 1 || installation.calls != 0 {
+		t.Fatalf("unexpected calls runtime=%d installer=%d", runtime.calls, installation.calls)
 	}
 }
 
@@ -343,13 +379,14 @@ type desktopRuntimePreparer struct {
 	result         onboarding.PreparationResult
 	recoveryResult onboarding.PreparationResult
 	recoveryErr    error
+	prepareErr     error
 	calls          int
 	recoverCalls   int
 }
 
 func (p *desktopRuntimePreparer) Prepare(context.Context) (onboarding.PreparationResult, error) {
 	p.calls++
-	return p.result, nil
+	return p.result, p.prepareErr
 }
 
 func (p *desktopRuntimePreparer) Recover(context.Context) (onboarding.PreparationResult, error) {

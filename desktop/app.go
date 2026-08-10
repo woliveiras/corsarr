@@ -423,6 +423,20 @@ func (a *App) OpenStartAtLoginSettings() error {
 }
 
 func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {
+	setup, err := a.setup.Load()
+	if err != nil {
+		return application.InstallationResult{}, err
+	}
+	if !setup.TermsAccepted {
+		return application.InstallationResult{}, application.ErrTermsNotAccepted
+	}
+	prepared, err := a.runtimeOnboarding.Prepare(a.appContext())
+	if err != nil {
+		return application.InstallationResult{}, err
+	}
+	if !prepared.Ready {
+		return application.InstallationResult{}, fmt.Errorf("runtime preparation did not become ready")
+	}
 	return a.installation.InstallSelected(
 		a.appContext(),
 		runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000},

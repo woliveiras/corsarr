@@ -701,6 +701,9 @@ claims must be rechecked during implementation and release validation.
   then start only existing Corsarr-owned containers in dependency order.
   Missing applications are skipped and no login flow pulls, creates,
   provisions, or removes resources.
+- 2026-08-10: Made the bounded desktop install intent prepare/start and verify
+  the runtime before container installation, with an additional confirmation
+  before downloading an absent runtime.
 - 2026-08-10: Added versioned runtime consent to persistent desktop state.
   Existing setup state migrates without being treated as accepted consent.
 - 2026-08-10: Connected the reviewed setup to the transactional Docker install

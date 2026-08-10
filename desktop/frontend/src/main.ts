@@ -1002,6 +1002,14 @@ async function installApplications(): Promise<void> {
   if (!installApplicationsButton || !setupStatus?.canPrepare || !acceptTermsCheckbox?.checked) {
     return;
   }
+  if (
+    currentRuntimeState === 'unavailable' &&
+    !window.confirm(
+      'O Corsarr precisa preparar este computador antes de instalar os aplicativos. O Docker Desktop 4.86.0 será baixado da fonte oficial, verificado e o macOS pedirá sua autorização. Continuar?',
+    )
+  ) {
+    return;
+  }
 
   installApplicationsButton.disabled = true;
   installApplicationsButton.textContent = 'Instalando…';

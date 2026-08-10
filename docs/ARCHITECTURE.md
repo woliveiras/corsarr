@@ -129,6 +129,12 @@ configuration and media are deliberately outside cleanup. The orchestrator is
 covered through the runtime interface and reached from Wails only through the
 bounded `InstallSelectedApplications` intent.
 
+The desktop install intent is end-to-end: its backend rechecks current terms,
+prepares or starts the supported runtime, requires a ready result, and only then
+delegates to `InstallationService`. When the runtime is absent, the frontend
+also asks for a final explicit confirmation before the pinned installer is
+downloaded. A preparation failure never reaches container installation.
+
 Installation is reconciliatory: a matching running container is reused, and a
 matching stopped container is started. A differently pinned image is never
 replaced implicitly; that case is routed to the future update/rollback flow.

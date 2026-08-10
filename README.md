@@ -48,8 +48,8 @@ mutating it, and validates a user-selected storage folder for free space,
 writing, and hardlink support. It also persists the reviewed folder and
 application selection, includes catalog dependencies automatically, and creates
 an idempotent `Corsarr/` media/configuration tree only after explicit
-confirmation. With an existing healthy Docker runtime, the development build
-can now record explicit consent and install the selected, digest-pinned
+confirmation. The development build can now record explicit consent, prepare
+or start the supported runtime, and install the selected, digest-pinned
 containers through the ownership-safe runtime boundary. Installation waits for
 each allowlisted local web endpoint to become responsive before moving to its
 dependants. Radarr, Sonarr, and Lidarr then receive their approved library root
