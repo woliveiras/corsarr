@@ -130,14 +130,15 @@ $(go env GOPATH)/bin/wails build
 open build/bin/Corsarr.app
 ```
 
-An opt-in Docker adapter contract can use an immutable image that is already
-present locally. It creates only a labeled `corsarr-contract-test` container
-and the owned `corsarr` network, exercises lifecycle/log inspection, and removes
-both afterward without pulling an image:
+Opt-in Docker contracts can use an immutable image that is already present
+locally. They create only labeled contract containers and the owned `corsarr`
+network, exercise lifecycle/log inspection plus transactional installation and
+HTTP readiness, and remove their resources afterward without pulling an image.
+Run the packages serially because both deliberately exercise the same network:
 
 ```bash
 CORSARR_DOCKER_CONTRACT_IMAGE='repository/name@sha256:<digest>' \
-  go test ./internal/runtime -run TestDockerManagerRealContract -v
+  go test -p 1 ./internal/runtime ./internal/orchestrator -run 'Real.*Contract' -v
 ```
 
 This development build is self-signed and is not a published Corsarr release.
