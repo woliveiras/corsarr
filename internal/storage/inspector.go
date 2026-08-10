@@ -9,6 +9,8 @@ import (
 
 type State string
 
+const MinimumAvailableBytes uint64 = 10 * 1024 * 1024 * 1024
+
 const (
 	StateReady    State = "ready"
 	StateInvalid  State = "invalid"
@@ -21,18 +23,21 @@ type Status struct {
 	Writable        bool   `json:"writable"`
 	Hardlinks       bool   `json:"hardlinks"`
 	AvailableBytes  uint64 `json:"availableBytes,omitempty"`
+	RequiredBytes   uint64 `json:"requiredBytes"`
 	TechnicalDetail string `json:"technicalDetail,omitempty"`
 }
 
-type Inspector struct{}
+type Inspector struct {
+	diskBytes func(string) (uint64, error)
+}
 
 func NewInspector() *Inspector {
-	return &Inspector{}
+	return &Inspector{diskBytes: availableDiskBytes}
 }
 
 // Inspect validates a user-selected directory and removes all probe artifacts.
 func (i *Inspector) Inspect(path string) Status {
-	status := Status{Path: normalizedPath(path)}
+	status := Status{Path: normalizedPath(path), RequiredBytes: MinimumAvailableBytes}
 	if status.Path == "" {
 		status.State = StateInvalid
 		status.TechnicalDetail = "storage path is empty"
@@ -77,10 +82,21 @@ func (i *Inspector) Inspect(path string) Status {
 		status.TechnicalDetail = boundedStorageDetail(fmt.Errorf("hardlink check failed: %w", err))
 	}
 
-	if availableBytes, err := availableDiskBytes(status.Path); err == nil {
+	if availableBytes, err := i.diskBytes(status.Path); err == nil {
 		status.AvailableBytes = availableBytes
-	} else if status.TechnicalDetail == "" {
+		if availableBytes < MinimumAvailableBytes {
+			status.State = StateInvalid
+			status.TechnicalDetail = fmt.Sprintf(
+				"selected storage has %d bytes available; at least %d bytes are required",
+				availableBytes,
+				MinimumAvailableBytes,
+			)
+			return status
+		}
+	} else {
+		status.State = StateInvalid
 		status.TechnicalDetail = boundedStorageDetail(fmt.Errorf("disk space check failed: %w", err))
+		return status
 	}
 
 	status.State = StateReady

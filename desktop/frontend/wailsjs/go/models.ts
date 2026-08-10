@@ -506,6 +506,7 @@ export namespace storage {
 	    writable: boolean;
 	    hardlinks: boolean;
 	    availableBytes?: number;
+	    requiredBytes: number;
 	    technicalDetail?: string;
 
 	    static createFrom(source: any = {}) {
@@ -519,6 +520,7 @@ export namespace storage {
 	        this.writable = source["writable"];
 	        this.hardlinks = source["hardlinks"];
 	        this.availableBytes = source["availableBytes"];
+	        this.requiredBytes = source["requiredBytes"];
 	        this.technicalDetail = source["technicalDetail"];
 	    }
 	}

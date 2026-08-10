@@ -1072,7 +1072,12 @@ async function chooseStorage(): Promise<void> {
     if (storageTitleElement) storageTitleElement.textContent = 'Esta pasta não pode ser usada';
     if (storageDescriptionElement) {
       storageDescriptionElement.textContent =
-        storage.technicalDetail ?? 'Escolha uma pasta existente com permissão de escrita.';
+        storage.availableBytes !== undefined &&
+        storage.requiredBytes !== undefined &&
+        storage.availableBytes < storage.requiredBytes
+          ? `Há apenas ${formatAvailableSpace(storage.availableBytes).replace(' disponíveis', '')}. O Corsarr precisa de pelo menos ${formatAvailableSpace(storage.requiredBytes).replace(' disponíveis', ' livres')}.`
+          : (storage.technicalDetail ??
+            'Escolha uma pasta existente com permissão de escrita e espaço disponível verificável.');
     }
     if (storagePathElement) storagePathElement.textContent = storage.path;
     if (storageFactsElement) storageFactsElement.textContent = '';

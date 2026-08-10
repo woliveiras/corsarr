@@ -1,15 +1,20 @@
 package storage
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestInspectorAcceptsWritableDirectoryWithHardlinks(t *testing.T) {
 	baseDirectory := t.TempDir()
 
-	status := NewInspector().Inspect(baseDirectory)
+	inspector := &Inspector{diskBytes: func(string) (uint64, error) {
+		return MinimumAvailableBytes, nil
+	}}
+	status := inspector.Inspect(baseDirectory)
 
 	if status.State != StateReady {
 		t.Fatalf("expected ready storage, got %q: %s", status.State, status.TechnicalDetail)
@@ -56,5 +61,34 @@ func TestInspectorRejectsFilePath(t *testing.T) {
 
 	if status.State != StateInvalid {
 		t.Fatalf("expected file path to be invalid, got %q", status.State)
+	}
+}
+
+func TestInspectorRejectsStorageBelowOperationalMinimum(t *testing.T) {
+	baseDirectory := t.TempDir()
+	inspector := &Inspector{diskBytes: func(string) (uint64, error) {
+		return MinimumAvailableBytes - 1, nil
+	}}
+
+	status := inspector.Inspect(baseDirectory)
+
+	if status.State != StateInvalid || status.AvailableBytes != MinimumAvailableBytes-1 {
+		t.Fatalf("expected low-capacity storage rejection, got %#v", status)
+	}
+	if status.RequiredBytes != MinimumAvailableBytes {
+		t.Fatalf("expected explicit minimum %d, got %d", MinimumAvailableBytes, status.RequiredBytes)
+	}
+}
+
+func TestInspectorRejectsUnknownStorageCapacity(t *testing.T) {
+	baseDirectory := t.TempDir()
+	inspector := &Inspector{diskBytes: func(string) (uint64, error) {
+		return 0, errors.New("measurement unavailable")
+	}}
+
+	status := inspector.Inspect(baseDirectory)
+
+	if status.State != StateInvalid || !strings.Contains(status.TechnicalDetail, "disk space check failed") {
+		t.Fatalf("expected unknown-capacity storage rejection, got %#v", status)
 	}
 }
