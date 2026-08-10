@@ -52,6 +52,14 @@ type applicationManager interface {
 	Remove(ctx context.Context, applicationID string) error
 }
 
+type applicationUpdateManager interface {
+	Update(
+		ctx context.Context,
+		applicationID string,
+		options runtimecatalog.RuntimeOptions,
+	) (application.ApplicationUpdateResult, error)
+}
+
 type applicationDataManager interface {
 	ListStatuses() ([]storage.ApplicationDataStatus, error)
 	Archive(ctx context.Context, applicationID string) (storage.ArchivedApplicationData, error)
@@ -85,6 +93,7 @@ type App struct {
 	layoutPreparer   storageLayoutPreparer
 	installation     installationManager
 	management       applicationManager
+	updates          applicationUpdateManager
 	applicationData  applicationDataManager
 	serviceAccess    serviceAccessManager
 	clipboard        clipboardWriter
@@ -115,6 +124,12 @@ func NewApp() (*App, error) {
 	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
 	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
 	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog, readiness)
+	updater := orchestrator.NewUpdater(
+		dockerManager,
+		approvedCatalog,
+		readiness,
+		storage.NewBackupManager(),
+	)
 	arrCredentials := provisioning.NewARRCredentialReader()
 	arrClient := provisioning.NewARRClient(catalog)
 	arrProvisioner := provisioning.NewARRProvisioner(arrCredentials, arrClient)
@@ -163,7 +178,8 @@ func NewApp() (*App, error) {
 		installer,
 		provisioner,
 	)
-	management := application.NewManagementService(catalog, dockerManager)
+	management := application.NewManagementService(catalog, dockerManager, approvedCatalog)
+	updates := application.NewUpdateService(setup, catalog, updater, provisioner)
 	applicationData := application.NewDataManagementService(
 		catalog,
 		setup,
@@ -180,6 +196,7 @@ func NewApp() (*App, error) {
 		layoutPreparer:   storage.NewLayoutPreparer(),
 		installation:     installation,
 		management:       management,
+		updates:          updates,
 		applicationData:  applicationData,
 		serviceAccess:    application.NewServiceAccess(credentialStore),
 		clipboard:        wailsClipboard{},
@@ -266,6 +283,14 @@ func (a *App) RestartApplication(id string) error {
 
 func (a *App) RemoveApplication(id string) error {
 	return a.management.Remove(a.appContext(), id)
+}
+
+func (a *App) UpdateApplication(id string) (application.ApplicationUpdateResult, error) {
+	return a.updates.Update(
+		a.appContext(),
+		id,
+		runtimecatalog.RuntimeOptions{PUID: 1000, PGID: 1000},
+	)
 }
 
 func (a *App) GetApplicationDataStatuses() ([]storage.ApplicationDataStatus, error) {

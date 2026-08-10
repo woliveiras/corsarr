@@ -28,8 +28,9 @@ slice additionally accepts versioned runtime consent and can install selected
 digest-pinned containers when Docker is already healthy. A private, atomic,
 checksummed per-application configuration backup and a backend image-replacement
 transaction with readiness verification and image rollback are implemented.
-Runtime onboarding and the desktop update intent are not yet implemented.
-Current application
+The desktop reports when an approved digest differs, explains the backup and
+database-migration limitation, and exposes a bounded per-application update
+intent. Runtime onboarding is not yet implemented. Current application
 provisioning covers Arr root folders, qBittorrent credentials, paths and
 categories, Arr download clients, Prowlarr connections, and Bazarr's Radarr and
 Sonarr connections. Jellyfin provisioning covers its local administrator,

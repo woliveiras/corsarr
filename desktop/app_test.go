@@ -141,6 +141,21 @@ func TestArchiveApplicationDataUsesBoundedApplicationService(t *testing.T) {
 	}
 }
 
+func TestUpdateApplicationUsesBoundedApplicationService(t *testing.T) {
+	updates := &desktopUpdateManager{result: application.ApplicationUpdateResult{
+		ApplicationID: "radarr", Updated: true,
+	}}
+	app := &App{updates: updates}
+
+	result, err := app.UpdateApplication("radarr")
+	if err != nil {
+		t.Fatalf("update application: %v", err)
+	}
+	if !result.Updated || updates.applicationID != "radarr" || updates.calls != 1 {
+		t.Fatalf("expected one bounded update call, result=%#v manager=%#v", result, updates)
+	}
+}
+
 func TestCopyQBittorrentPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
 	clipboard := &desktopClipboard{}
@@ -260,6 +275,22 @@ type desktopApplicationDataManager struct {
 	result        storage.ArchivedApplicationData
 	applicationID string
 	calls         int
+}
+
+type desktopUpdateManager struct {
+	result        application.ApplicationUpdateResult
+	applicationID string
+	calls         int
+}
+
+func (m *desktopUpdateManager) Update(
+	_ context.Context,
+	applicationID string,
+	_ runtimecatalog.RuntimeOptions,
+) (application.ApplicationUpdateResult, error) {
+	m.calls++
+	m.applicationID = applicationID
+	return m.result, nil
 }
 
 type desktopServiceAccess struct {

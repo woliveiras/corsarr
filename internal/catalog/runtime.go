@@ -126,6 +126,14 @@ func NewRuntimeCatalog(registry *services.Registry) (*RuntimeCatalog, error) {
 	return &RuntimeCatalog{manifests: manifests}, nil
 }
 
+func (c *RuntimeCatalog) ApprovedImage(applicationID string) (string, error) {
+	manifest, exists := c.manifests[applicationID]
+	if !exists {
+		return "", fmt.Errorf("application is not approved for installation: %s", applicationID)
+	}
+	return manifest.Image, nil
+}
+
 func (c *RuntimeCatalog) Resolve(
 	applicationID string,
 	rootPath string,

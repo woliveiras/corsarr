@@ -43,6 +43,26 @@ func TestManagementServiceRejectsUnknownLifecycleTarget(t *testing.T) {
 	}
 }
 
+func TestManagementServiceReportsApprovedImageUpdate(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	runtime := &managementRuntime{statuses: map[string]containerruntime.ContainerStatus{
+		"radarr": {ApplicationID: "radarr", State: containerruntime.ContainerStateRunning, Image: "old-image"},
+	}}
+	service := NewManagementService(NewCatalog(registry), runtime, approvedImageStub{image: "approved-image"})
+
+	status := findManagedStatus(service.ListStatuses(context.Background()), "radarr")
+	if !status.UpdateAvailable || status.ApprovedImage != "approved-image" {
+		t.Fatalf("expected available approved update, got %#v", status)
+	}
+}
+
+type approvedImageStub struct{ image string }
+
+func (s approvedImageStub) ApprovedImage(string) (string, error) { return s.image, nil }
+
 type managementRuntime struct {
 	statuses      map[string]containerruntime.ContainerStatus
 	lastOperation string

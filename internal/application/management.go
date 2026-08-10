@@ -22,16 +22,31 @@ type ManagedApplicationStatus struct {
 	State           ManagedState `json:"state"`
 	Health          string       `json:"health,omitempty"`
 	Image           string       `json:"image,omitempty"`
+	ApprovedImage   string       `json:"approvedImage,omitempty"`
+	UpdateAvailable bool         `json:"updateAvailable"`
 	TechnicalDetail string       `json:"technicalDetail,omitempty"`
 }
 
-type ManagementService struct {
-	catalog *Catalog
-	runtime containerruntime.Manager
+type ApprovedImageResolver interface {
+	ApprovedImage(applicationID string) (string, error)
 }
 
-func NewManagementService(catalog *Catalog, runtime containerruntime.Manager) *ManagementService {
-	return &ManagementService{catalog: catalog, runtime: runtime}
+type ManagementService struct {
+	catalog        *Catalog
+	runtime        containerruntime.Manager
+	approvedImages ApprovedImageResolver
+}
+
+func NewManagementService(
+	catalog *Catalog,
+	runtime containerruntime.Manager,
+	approvedImages ...ApprovedImageResolver,
+) *ManagementService {
+	service := &ManagementService{catalog: catalog, runtime: runtime}
+	if len(approvedImages) > 0 {
+		service.approvedImages = approvedImages[0]
+	}
+	return service
 }
 
 func (s *ManagementService) ListStatuses(ctx context.Context) []ManagedApplicationStatus {
@@ -54,12 +69,23 @@ func (s *ManagementService) ListStatuses(ctx context.Context) []ManagedApplicati
 			})
 			continue
 		}
-		statuses = append(statuses, ManagedApplicationStatus{
+		status := ManagedApplicationStatus{
 			ApplicationID: application.ID,
 			State:         managedState(container.State),
 			Health:        container.Health,
 			Image:         container.Image,
-		})
+		}
+		if s.approvedImages != nil {
+			approvedImage, resolveErr := s.approvedImages.ApprovedImage(application.ID)
+			if resolveErr != nil {
+				status.State = ManagedStateAttention
+				status.TechnicalDetail = resolveErr.Error()
+			} else {
+				status.ApprovedImage = approvedImage
+				status.UpdateAvailable = container.Image != approvedImage
+			}
+		}
+		statuses = append(statuses, status)
 	}
 	return statuses
 }

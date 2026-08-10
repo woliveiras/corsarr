@@ -20,6 +20,7 @@ import {
   SaveApplicationSelection,
   StartApplication,
   StopApplication,
+  UpdateApplication,
 } from '../wailsjs/go/main/App';
 import type { application, storage } from '../wailsjs/go/models';
 
@@ -186,7 +187,7 @@ function createApplicationCard(application: Application): HTMLElement {
     stopped: 'Parado',
     attention: 'Atenção',
   };
-  metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}`;
+  metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}${managedStatus?.updateAvailable ? ' · Atualização disponível' : ''}`;
 
   information.append(title, description, metadata);
 
@@ -255,6 +256,12 @@ function createApplicationCard(application: Application): HTMLElement {
   });
 
   actions.append(selectButton, openButton);
+  if (
+    managedStatus?.updateAvailable &&
+    (managedStatus.state === 'running' || managedStatus.state === 'stopped')
+  ) {
+    actions.append(updateApplicationButton(application));
+  }
   if (managedStatus?.state === 'running') {
     actions.append(
       lifecycleButton('Reiniciar', () => RestartApplication(application.id)),
@@ -288,6 +295,54 @@ function createApplicationCard(application: Application): HTMLElement {
   }
   card.append(icon, information, actions);
   return card;
+}
+
+function updateApplicationButton(target: Application): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'update-button';
+  button.type = 'button';
+  button.textContent = 'Atualizar';
+  button.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      `Atualizar ${target.name}? O Corsarr criará um backup privado das configurações e verificará a nova versão antes de concluir. O aplicativo ficará indisponível por alguns instantes. Se a versão migrar o banco de dados, restaurar a imagem anterior pode não desfazer essa migração.`,
+    );
+    if (!confirmed) return;
+
+    button.disabled = true;
+    button.textContent = 'Atualizando…';
+    if (messageElement) {
+      messageElement.textContent = `Criando backup e verificando a atualização de ${target.name}…`;
+      messageElement.classList.remove('error');
+    }
+    try {
+      const result = await UpdateApplication(target.id);
+      if (messageElement) {
+        if (result.updated && !result.error) {
+          messageElement.textContent = `${target.name} foi atualizado e verificado. O backup das configurações foi preservado.`;
+          messageElement.classList.remove('error');
+        } else if (result.rolledBack) {
+          messageElement.textContent = `A nova versão de ${target.name} não passou na verificação. A imagem anterior foi restaurada e o backup foi preservado.`;
+          messageElement.classList.add('error');
+        } else if (result.error) {
+          messageElement.textContent = `${target.name} requer atenção após a tentativa de atualização. Consulte os detalhes técnicos.`;
+          messageElement.classList.add('error');
+        } else {
+          messageElement.textContent = `${target.name} já usa a versão aprovada pelo Corsarr.`;
+          messageElement.classList.remove('error');
+        }
+      }
+      await loadApplicationStatuses();
+    } catch {
+      if (messageElement) {
+        messageElement.textContent = `Não foi possível iniciar a atualização de ${target.name}. Nenhuma alteração foi autorizada fora dos recursos do Corsarr.`;
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Atualizar';
+    }
+  });
+  return button;
 }
 
 function lifecycleButton(label: string, operation: () => Promise<void>): HTMLButtonElement {

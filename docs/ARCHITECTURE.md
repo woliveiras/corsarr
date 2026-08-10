@@ -180,8 +180,18 @@ proxy-free, redirect-free, and response-bounded.
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching
-the runtime. Remove deletes only the labeled container; the bind-mounted config
-and shared media tree are outside its authority.
+the runtime. It also compares an installed image with the approved catalog
+digest so the UI can offer an update only when one exists. Remove deletes only
+the labeled container; the bind-mounted config and shared media tree are outside
+its authority.
+
+`internal/application.UpdateService` accepts only one catalog application ID,
+reloads the persisted storage choice and current consent, serializes update
+attempts, and supplies the runtime options internally. It invokes provisioning
+again only after a verified replacement. Runtime/rollback failures are returned
+as a structured result so the desktop can distinguish a restored previous image
+from an update that needs attention. The Wails surface cannot provide an image,
+backup path, mount, or runtime argument.
 
 `internal/application.DataManagementService` is a distinct destructive-action
 boundary. It requires the catalog application container to be absent, reloads

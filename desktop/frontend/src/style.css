@@ -659,7 +659,8 @@ nav {
 
 .open-button,
 .select-button,
-.lifecycle-button {
+.lifecycle-button,
+.update-button {
   padding: 7px 11px;
   color: #7acbc1;
   background: rgba(78, 175, 165, 0.07);
@@ -671,13 +672,15 @@ nav {
 }
 .open-button:hover,
 .select-button:hover,
-.lifecycle-button:hover {
+.lifecycle-button:hover,
+.update-button:hover {
   color: #b9f1e9;
   background: rgba(78, 175, 165, 0.14);
 }
 .open-button:disabled,
 .select-button:disabled,
-.lifecycle-button:disabled {
+.lifecycle-button:disabled,
+.update-button:disabled {
   opacity: 0.45;
   cursor: wait;
 }
@@ -688,6 +691,19 @@ nav {
   background: rgba(99, 137, 134, 0.06);
   border-color: rgba(117, 157, 153, 0.12);
   font-size: 9px;
+}
+
+.update-button {
+  padding-block: 6px;
+  color: #092126;
+  background: #d8c889;
+  border-color: #d8c889;
+  font-size: 9px;
+}
+
+.update-button:hover {
+  color: #092126;
+  background: #eadb9e;
 }
 
 .data-removal-button {

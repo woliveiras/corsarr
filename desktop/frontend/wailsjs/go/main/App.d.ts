@@ -42,3 +42,5 @@ export function SaveApplicationSelection(arg1:Array<string>):Promise<application
 export function StartApplication(arg1:string):Promise<void>;
 
 export function StopApplication(arg1:string):Promise<void>;
+
+export function UpdateApplication(arg1:string):Promise<application.ApplicationUpdateResult>;

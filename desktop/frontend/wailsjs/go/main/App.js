@@ -81,3 +81,7 @@ export function StartApplication(arg1) {
 export function StopApplication(arg1) {
   return window['go']['main']['App']['StopApplication'](arg1);
 }
+
+export function UpdateApplication(arg1) {
+  return window['go']['main']['App']['UpdateApplication'](arg1);
+}

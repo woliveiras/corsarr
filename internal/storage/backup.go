@@ -15,11 +15,11 @@ import (
 )
 
 type BackupResult struct {
-	ApplicationID string    `json:"applicationId"`
-	Path          string    `json:"path"`
-	SHA256        string    `json:"sha256"`
-	FileCount     int       `json:"fileCount"`
-	CreatedAt     time.Time `json:"createdAt"`
+	ApplicationID string `json:"applicationId"`
+	Path          string `json:"path"`
+	SHA256        string `json:"sha256"`
+	FileCount     int    `json:"fileCount"`
+	CreatedAt     string `json:"createdAt"`
 }
 
 type BackupManager struct {
@@ -107,7 +107,7 @@ func (m *BackupManager) Backup(rootPath, applicationID string) (result BackupRes
 		Path:          archivePath,
 		SHA256:        hex.EncodeToString(hash.Sum(nil)),
 		FileCount:     fileCount,
-		CreatedAt:     createdAt,
+		CreatedAt:     createdAt.Format(time.RFC3339Nano),
 	}, nil
 }
 
