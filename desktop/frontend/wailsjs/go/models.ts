@@ -178,6 +178,7 @@ export namespace application {
 	    approvedImage?: string;
 	    updateAvailable: boolean;
 	    technicalDetail?: string;
+	    removalBlockedBy?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new ManagedApplicationStatus(source);
@@ -192,6 +193,7 @@ export namespace application {
 	        this.approvedImage = source["approvedImage"];
 	        this.updateAvailable = source["updateAvailable"];
 	        this.technicalDetail = source["technicalDetail"];
+	        this.removalBlockedBy = source["removalBlockedBy"];
 	    }
 	}
 	export class ServiceAccessStatus {

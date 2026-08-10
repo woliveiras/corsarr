@@ -2,6 +2,8 @@ package application
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"testing"
 
 	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
@@ -56,6 +58,50 @@ func TestManagementServiceReportsApprovedImageUpdate(t *testing.T) {
 	status := findManagedStatus(service.ListStatuses(context.Background()), "radarr")
 	if !status.UpdateAvailable || status.ApprovedImage != "approved-image" {
 		t.Fatalf("expected available approved update, got %#v", status)
+	}
+}
+
+func TestManagementServiceBlocksRemovalRequiredByInstalledApplications(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	runtime := &managementRuntime{statuses: map[string]containerruntime.ContainerStatus{
+		"qbittorrent": {ApplicationID: "qbittorrent", State: containerruntime.ContainerStateRunning},
+		"radarr":      {ApplicationID: "radarr", State: containerruntime.ContainerStateRunning},
+		"sonarr":      {ApplicationID: "sonarr", State: containerruntime.ContainerStateStopped},
+	}}
+	service := NewManagementService(NewCatalog(registry), runtime)
+
+	status := findManagedStatus(service.ListStatuses(context.Background()), "qbittorrent")
+	want := []string{"radarr", "sonarr"}
+	if !reflect.DeepEqual(status.RemovalBlockedBy, want) {
+		t.Fatalf("expected removal blockers %v, got %#v", want, status)
+	}
+	if err := service.Remove(context.Background(), "qbittorrent"); !errors.Is(err, ErrApplicationRequired) {
+		t.Fatalf("expected dependency-aware removal rejection, got %v", err)
+	}
+	if runtime.lastOperation != "" {
+		t.Fatalf("blocked removal reached runtime: %q", runtime.lastOperation)
+	}
+}
+
+func TestManagementServiceAllowsLeafApplicationRemoval(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	runtime := &managementRuntime{statuses: map[string]containerruntime.ContainerStatus{
+		"qbittorrent": {ApplicationID: "qbittorrent", State: containerruntime.ContainerStateRunning},
+		"radarr":      {ApplicationID: "radarr", State: containerruntime.ContainerStateRunning},
+	}}
+	service := NewManagementService(NewCatalog(registry), runtime)
+
+	if err := service.Remove(context.Background(), "radarr"); err != nil {
+		t.Fatalf("remove leaf application: %v", err)
+	}
+	if runtime.lastOperation != "remove" {
+		t.Fatalf("expected runtime removal, got %q", runtime.lastOperation)
 	}
 }
 

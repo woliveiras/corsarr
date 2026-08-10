@@ -386,12 +386,12 @@ function createApplicationCard(application: Application): HTMLElement {
     actions.append(
       lifecycleButton('Reiniciar', () => RestartApplication(application.id)),
       lifecycleButton('Parar', () => StopApplication(application.id)),
-      lifecycleButton('Remover', () => removeApplication(application)),
+      applicationRemovalButton(application, managedStatus),
     );
   } else if (managedStatus?.state === 'stopped') {
     actions.append(
       lifecycleButton('Iniciar', () => StartApplication(application.id)),
-      lifecycleButton('Remover', () => removeApplication(application)),
+      applicationRemovalButton(application, managedStatus),
     );
   } else if (
     managedStatus?.state === 'not_installed' &&
@@ -501,6 +501,20 @@ async function removeApplication(target: Application): Promise<void> {
   );
   if (!confirmed) return;
   await RemoveApplication(target.id);
+}
+
+function applicationRemovalButton(target: Application, status: ManagedStatus): HTMLButtonElement {
+  const button = lifecycleButton('Remover', () => removeApplication(target));
+  const blockers = status.removalBlockedBy ?? [];
+  if (blockers.length === 0) return button;
+
+  const blockerNames = blockers.map(
+    (id) => availableApplications.find((application) => application.id === id)?.name ?? id,
+  );
+  button.disabled = true;
+  button.title = `Remova primeiro: ${blockerNames.join(', ')}.`;
+  button.setAttribute('aria-label', `Não é possível remover ${target.name}. ${button.title}`);
+  return button;
 }
 
 function dataRemovalButton(target: Application): HTMLButtonElement {
