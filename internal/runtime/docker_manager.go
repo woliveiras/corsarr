@@ -298,6 +298,7 @@ func containerName(applicationID string) string {
 func indicatesMissingResource(detail string, resource string) bool {
 	normalized := strings.ToLower(detail)
 	return strings.Contains(normalized, "no such "+resource) ||
+		(resource == "container" && strings.Contains(normalized, "no such object")) ||
 		strings.Contains(normalized, resource+" not found")
 }
 

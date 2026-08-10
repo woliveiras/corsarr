@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"sort"
 	"strconv"
 
 	"github.com/woliveiras/corsarr/internal/services"
@@ -21,6 +22,54 @@ type ApplicationSummary struct {
 	URL          string   `json:"url"`
 	Optional     bool     `json:"optional"`
 	Dependencies []string `json:"dependencies"`
+}
+
+func (c *Catalog) InstallationOrder(applicationIDs []string) ([]string, error) {
+	selected := make(map[string]struct{}, len(applicationIDs))
+	for _, id := range applicationIDs {
+		if _, exists := c.byID[id]; !exists {
+			return nil, fmt.Errorf("application is not available in the desktop catalog: %s", id)
+		}
+		selected[id] = struct{}{}
+	}
+	ids := make([]string, 0, len(selected))
+	for id := range selected {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	ordered := make([]string, 0, len(ids))
+	visiting := make(map[string]bool, len(ids))
+	visited := make(map[string]bool, len(ids))
+	var visit func(string) error
+	visit = func(id string) error {
+		if visited[id] {
+			return nil
+		}
+		if visiting[id] {
+			return fmt.Errorf("application dependency cycle includes %s", id)
+		}
+		visiting[id] = true
+		application := c.byID[id]
+		for _, dependencyID := range application.Dependencies {
+			if _, included := selected[dependencyID]; !included {
+				return fmt.Errorf("application %s requires unselected dependency %s", id, dependencyID)
+			}
+			if err := visit(dependencyID); err != nil {
+				return err
+			}
+		}
+		visiting[id] = false
+		visited[id] = true
+		ordered = append(ordered, id)
+		return nil
+	}
+	for _, id := range ids {
+		if err := visit(id); err != nil {
+			return nil, err
+		}
+	}
+	return ordered, nil
 }
 
 // Catalog exposes only user-facing applications from the service registry.

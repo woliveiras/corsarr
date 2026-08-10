@@ -49,6 +49,34 @@ func (i *Installer) Install(
 	if err := i.runtime.EnsureNetwork(ctx); err != nil {
 		return containerruntime.ContainerStatus{}, fmt.Errorf("prepare runtime network: %w", err)
 	}
+	existing, inspectErr := i.runtime.Inspect(ctx, applicationID)
+	if inspectErr == nil {
+		if existing.Image != spec.Image {
+			return containerruntime.ContainerStatus{}, fmt.Errorf(
+				"installed image differs from approved image; use the update workflow",
+			)
+		}
+		if existing.State == containerruntime.ContainerStateRunning {
+			return existing, nil
+		}
+		if err := i.runtime.Start(ctx, applicationID); err != nil {
+			return containerruntime.ContainerStatus{}, fmt.Errorf("start existing application container: %w", err)
+		}
+		status, err := i.runtime.Inspect(ctx, applicationID)
+		if err != nil {
+			return containerruntime.ContainerStatus{}, fmt.Errorf("verify existing application container: %w", err)
+		}
+		if status.State != containerruntime.ContainerStateRunning {
+			return containerruntime.ContainerStatus{}, fmt.Errorf(
+				"existing application container did not reach running state: %s",
+				status.State,
+			)
+		}
+		return status, nil
+	}
+	if !errors.Is(inspectErr, containerruntime.ErrResourceNotFound) {
+		return containerruntime.ContainerStatus{}, fmt.Errorf("inspect existing application: %w", inspectErr)
+	}
 	if err := i.runtime.Pull(ctx, spec.Image); err != nil {
 		return containerruntime.ContainerStatus{}, fmt.Errorf("download application image: %w", err)
 	}

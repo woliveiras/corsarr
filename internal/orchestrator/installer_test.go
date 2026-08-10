@@ -11,7 +11,7 @@ import (
 )
 
 func TestInstallerCompletesOwnedContainerLifecycle(t *testing.T) {
-	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
+	manager := &fakeRuntimeManager{initialInspectErr: containerruntime.ErrResourceNotFound, inspectStatus: containerruntime.ContainerStatus{
 		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning,
 	}}
 	resolver := &fakeSpecResolver{spec: validInstallerSpec("radarr")}
@@ -29,14 +29,17 @@ func TestInstallerCompletesOwnedContainerLifecycle(t *testing.T) {
 	if status.State != containerruntime.ContainerStateRunning {
 		t.Fatalf("expected running container, got %#v", status)
 	}
-	want := []string{"network", "pull", "create", "start", "inspect"}
+	want := []string{"network", "inspect", "pull", "create", "start", "inspect"}
 	if !reflect.DeepEqual(manager.operations, want) {
 		t.Fatalf("unexpected install operations\nwant: %v\n got: %v", want, manager.operations)
 	}
 }
 
 func TestInstallerRemovesIncompleteContainerAfterStartFailure(t *testing.T) {
-	manager := &fakeRuntimeManager{startErr: errors.New("runtime stopped")}
+	manager := &fakeRuntimeManager{
+		initialInspectErr: containerruntime.ErrResourceNotFound,
+		startErr:          errors.New("runtime stopped"),
+	}
 	installer := NewInstaller(manager, &fakeSpecResolver{spec: validInstallerSpec("radarr")})
 
 	_, err := installer.Install(
@@ -48,9 +51,28 @@ func TestInstallerRemovesIncompleteContainerAfterStartFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected start failure")
 	}
-	want := []string{"network", "pull", "create", "start", "remove"}
+	want := []string{"network", "inspect", "pull", "create", "start", "remove"}
 	if !reflect.DeepEqual(manager.operations, want) {
 		t.Fatalf("expected incomplete container cleanup\nwant: %v\n got: %v", want, manager.operations)
+	}
+}
+
+func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
+	spec := validInstallerSpec("radarr")
+	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
+		ApplicationID: "radarr", State: containerruntime.ContainerStateRunning, Image: spec.Image,
+	}}
+	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec})
+
+	status, err := installer.Install(context.Background(), "radarr", "/tmp/Corsarr", catalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("reconcile existing container: %v", err)
+	}
+	if status.State != containerruntime.ContainerStateRunning {
+		t.Fatalf("expected existing running status, got %#v", status)
+	}
+	if !reflect.DeepEqual(manager.operations, []string{"network", "inspect"}) {
+		t.Fatalf("expected no container recreation, got %v", manager.operations)
 	}
 }
 
@@ -75,9 +97,11 @@ func (r *fakeSpecResolver) Resolve(
 }
 
 type fakeRuntimeManager struct {
-	operations    []string
-	startErr      error
-	inspectStatus containerruntime.ContainerStatus
+	operations        []string
+	startErr          error
+	initialInspectErr error
+	inspectCalls      int
+	inspectStatus     containerruntime.ContainerStatus
 }
 
 func (m *fakeRuntimeManager) EnsureNetwork(context.Context) error {
@@ -111,5 +135,9 @@ func (m *fakeRuntimeManager) Remove(context.Context, string) error {
 
 func (m *fakeRuntimeManager) Inspect(context.Context, string) (containerruntime.ContainerStatus, error) {
 	m.operations = append(m.operations, "inspect")
+	m.inspectCalls++
+	if m.inspectCalls == 1 && m.initialInspectErr != nil {
+		return containerruntime.ContainerStatus{}, m.initialInspectErr
+	}
 	return m.inspectStatus, nil
 }

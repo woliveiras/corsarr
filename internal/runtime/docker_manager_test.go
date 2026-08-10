@@ -189,6 +189,19 @@ func TestDockerManagerInspectRejectsMismatchedApplicationLabel(t *testing.T) {
 	}
 }
 
+func TestDockerManagerInspectMapsDockerMissingObject(t *testing.T) {
+	runner := &recordingCommandRunner{
+		path:    "/usr/local/bin/docker",
+		results: []managerCommandResult{{err: errors.New("Error: No such object: corsarr-radarr")}},
+	}
+	manager := NewDockerManager(runner, time.Second)
+
+	_, err := manager.Inspect(context.Background(), "radarr")
+	if !errors.Is(err, ErrResourceNotFound) {
+		t.Fatalf("expected missing resource error, got %v", err)
+	}
+}
+
 type commandCall struct {
 	name string
 	args []string

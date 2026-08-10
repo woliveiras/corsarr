@@ -61,6 +61,13 @@ owned incomplete container using a non-canceled cleanup context. Bind-mounted
 configuration and media are deliberately outside cleanup. The orchestrator is
 covered through the runtime interface and is not connected to Wails yet.
 
+Installation is reconciliatory: a matching running container is reused, and a
+matching stopped container is started. A differently pinned image is never
+replaced implicitly; that case is routed to the future update/rollback flow.
+`internal/application.InstallationService` enforces current consent, prepares
+the reviewed layout, orders dependencies before consumers, and returns a
+structured per-application result while preserving already completed apps.
+
 `internal/storage` inspects only a directory returned by the native Wails folder
 picker. It verifies that the path already exists and is a directory, creates
 temporary write and hardlink probes, reports available space, and removes all

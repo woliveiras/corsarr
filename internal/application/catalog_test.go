@@ -57,6 +57,26 @@ func TestCatalogResolvesOnlyKnownApplicationURLs(t *testing.T) {
 	}
 }
 
+func TestCatalogOrdersDependenciesBeforeSelectedApplications(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	catalog := NewCatalog(registry)
+
+	ordered, err := catalog.InstallationOrder([]string{"radarr", "prowlarr", "qbittorrent"})
+	if err != nil {
+		t.Fatalf("order applications: %v", err)
+	}
+	positions := make(map[string]int, len(ordered))
+	for index, id := range ordered {
+		positions[id] = index
+	}
+	if positions["qbittorrent"] > positions["radarr"] || positions["prowlarr"] > positions["radarr"] {
+		t.Fatalf("expected dependencies before radarr, got %v", ordered)
+	}
+}
+
 func findApplication(applications []ApplicationSummary, id string) (ApplicationSummary, bool) {
 	for _, application := range applications {
 		if application.ID == id {
