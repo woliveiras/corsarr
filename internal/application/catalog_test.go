@@ -77,6 +77,30 @@ func TestCatalogOrdersDependenciesBeforeSelectedApplications(t *testing.T) {
 	}
 }
 
+func TestCatalogRequiresArrApplicationsBeforeBazarr(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	catalog := NewCatalog(registry)
+
+	selected := []string{"bazarr", "radarr", "sonarr", "prowlarr", "qbittorrent"}
+	ordered, err := catalog.InstallationOrder(selected)
+	if err != nil {
+		t.Fatalf("order applications: %v", err)
+	}
+	positions := make(map[string]int, len(ordered))
+	for index, id := range ordered {
+		positions[id] = index
+	}
+	if positions["radarr"] > positions["bazarr"] || positions["sonarr"] > positions["bazarr"] {
+		t.Fatalf("expected Radarr and Sonarr before Bazarr, got %v", ordered)
+	}
+	if _, err := catalog.InstallationOrder([]string{"bazarr"}); err == nil {
+		t.Fatal("expected Bazarr without Arr dependencies to be rejected")
+	}
+}
+
 func findApplication(applications []ApplicationSummary, id string) (ApplicationSummary, bool) {
 	for _, application := range applications {
 		if application.ID == id {

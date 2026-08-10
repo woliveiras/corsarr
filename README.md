@@ -61,8 +61,9 @@ Radarr, Sonarr, and Lidarr receive a dedicated `qBittorrent (Corsarr)` download
 client built from each app's live provider schema, without modifying providers
 created by the user. Prowlarr also receives reserved full-sync connections to
 those three apps using their internal network URLs and generated API keys.
-Automatic runtime installation plus Bazarr and media-server connections are
-still pending. Installed
+Bazarr requires Radarr and Sonarr, reads their generated keys only in Go, and
+connects to both through Bazarr's authenticated settings API. Automatic runtime
+installation and media-server connections are still pending. Installed
 containers expose status plus open, start, stop, restart, and removal actions
 that preserve data. Application configuration can be removed separately after
 its container is gone; Corsarr moves it into a private recoverable trash and

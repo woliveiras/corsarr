@@ -136,6 +136,15 @@ sets full sync plus the internal `prowlarr` and target network URLs, and relies
 on Prowlarr's provider create/update path to validate connectivity. User-created
 Prowlarr applications remain untouched.
 
+`internal/provisioning.BazarrProvisioner` runs only after its explicit Radarr
+and Sonarr dependencies are ready. It reads Bazarr's generated API key only
+from the fixed `config/bazarr/config/config.yaml` path and reuses the redacted
+Arr credential boundary for the other keys. `BazarrClient` submits only the
+documented settings fields to the loopback-only `/api/system/settings`
+endpoint, uses internal network aliases, then reads the settings back and
+verifies that both connections were persisted. No API key crosses the Wails
+boundary.
+
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
 start, stop, restart, and remove intents validate the catalog ID before reaching

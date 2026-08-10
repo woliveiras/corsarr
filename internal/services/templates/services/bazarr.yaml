@@ -35,7 +35,9 @@ network:
 restart: unless-stopped
 supports_vpn: true
 requires_vpn: false
-dependencies: []
+dependencies:
+  - radarr
+  - sonarr
 optional: true
 
 web_ui:

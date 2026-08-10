@@ -26,6 +26,9 @@ selection in the operating system's user configuration directory and creates
 the Corsarr-owned storage layout on explicit request. The latest development
 slice additionally accepts versioned runtime consent and can install selected
 digest-pinned containers when Docker is already healthy. Runtime onboarding and
-application provisioning are not yet implemented. The RFC must not be read as a
-description of the current release: only milestones explicitly recorded as
-implemented have been delivered.
+media-server provisioning are not yet implemented. Current application
+provisioning covers Arr root folders, qBittorrent credentials, paths and
+categories, Arr download clients, Prowlarr connections, and Bazarr's Radarr and
+Sonarr connections. The RFC must not be read as a description of the current
+release: only milestones explicitly recorded as implemented have been
+delivered.

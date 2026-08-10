@@ -629,6 +629,9 @@ claims must be rechecked during implementation and release validation.
 - [Jellyfin setup wizard and administrator](https://jellyfin.org/docs/general/post-install/setup-wizard/)
 - [Jellyfin official container image](https://jellyfin.org/docs/general/installation/container/)
 - [Bazarr supported container images](https://wiki.bazarr.media/Getting-Started/Installation/Docker/docker/)
+- [Bazarr API-key authentication contract](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/utils.py)
+- [Bazarr system settings API](https://github.com/morpheus65535/bazarr/blob/master/bazarr/api/system/settings.py)
+- [Bazarr configuration path and settings persistence](https://github.com/morpheus65535/bazarr/blob/master/bazarr/app/config.py)
 - [LinuxServer Radarr image, volumes, permissions, and hardlink warning](https://docs.linuxserver.io/images/docker-radarr/)
 - [Sonarr root folders, downloads, and hardlinks](https://wiki.servarr.com/en/sonarr/quick-start-guide)
 - [Archived Readarr repository](https://github.com/Readarr/Readarr)
@@ -685,3 +688,6 @@ claims must be rechecked during implementation and release validation.
   app's live provider schema while preserving user-created download clients.
 - 2026-08-10: Added reserved full-sync Prowlarr connections for Radarr, Sonarr,
   and Lidarr from Prowlarr's live application schemas.
+- 2026-08-10: Made Radarr and Sonarr explicit Bazarr dependencies and connected
+  both through Bazarr's authenticated settings API with persisted-state
+  verification.
