@@ -45,3 +45,6 @@ supports_vpn: true
 requires_vpn: false
 dependencies: []
 optional: false
+
+web_ui:
+  port: "8081"

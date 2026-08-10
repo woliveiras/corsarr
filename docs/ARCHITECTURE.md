@@ -2,10 +2,26 @@
 
 > 🏴‍☠️ Navigate the high seas of media automation
 
-> This document describes the current CLI and Docker Compose generator. The
-> accepted, not-yet-implemented Corsarr Desktop direction is documented in
+> This document primarily describes the current CLI and Docker Compose generator.
+> The accepted Corsarr Desktop direction is documented in
 > [RFC 0001](rfcs/0001-corsarr-desktop.md). Durable desktop technology and
-> runtime choices are recorded under [decisions](decisions/).
+> runtime choices are recorded under [decisions](decisions/). Its first
+> development slice is described below and is not part of a released version.
+
+## Corsarr Desktop development slice
+
+The first native shell lives under `desktop/` and is a second `main` package in
+the existing Go module. Wails v2 embeds the production frontend and exposes a
+small Go-bound method surface. The frontend can list catalog applications and
+request that an application be opened by ID; it cannot submit a URL, runtime
+command, or container operation.
+
+`internal/application.Catalog` is the first presentation-independent application
+service. It derives user-facing entries from `internal/services.Registry`,
+excludes infrastructure-only services without web UI metadata, and resolves
+only allowlisted loopback URLs. The CLI remains unchanged and continues to use
+the existing generator directly while reusable application services are
+extracted incrementally.
 
 ## 📋 Overview
 

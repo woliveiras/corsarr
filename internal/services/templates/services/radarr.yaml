@@ -41,3 +41,6 @@ dependencies:
   - qbittorrent
   - prowlarr
 optional: false
+
+web_ui:
+  port: "7878"

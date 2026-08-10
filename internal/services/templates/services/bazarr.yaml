@@ -37,3 +37,6 @@ supports_vpn: true
 requires_vpn: false
 dependencies: []
 optional: true
+
+web_ui:
+  port: "6767"

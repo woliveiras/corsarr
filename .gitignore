@@ -58,3 +58,8 @@ download-client-downloads
 music
 tv
 jellyseerr
+desktop/build/bin/
+desktop/frontend/node_modules/
+desktop/frontend/dist/*
+!desktop/frontend/dist/.gitkeep
+desktop/frontend/package.json.md5

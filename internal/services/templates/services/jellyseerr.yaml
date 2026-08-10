@@ -34,3 +34,6 @@ requires_vpn: false
 dependencies:
   - jellyfin
 optional: true
+
+web_ui:
+  port: "5055"

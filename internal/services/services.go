@@ -20,6 +20,11 @@ type NetworkConfig struct {
 	BridgeMode BridgeModeConfig `yaml:"bridge_mode"`
 }
 
+// WebUIConfig describes the local administration interface exposed by a service.
+type WebUIConfig struct {
+	Port string `yaml:"port"`
+}
+
 // VPNModeConfig represents network configuration for VPN mode
 type VPNModeConfig struct {
 	NetworkMode string `yaml:"network_mode"`
@@ -33,23 +38,24 @@ type BridgeModeConfig struct {
 
 // Service represents a Docker service configuration
 type Service struct {
-	ID          string            `yaml:"id"`
-	Name        string            `yaml:"name"`
-	Category    ServiceCategory   `yaml:"category"`
-	Description string            `yaml:"description"`
-	Image       string            `yaml:"image"`
+	ID            string          `yaml:"id"`
+	Name          string          `yaml:"name"`
+	Category      ServiceCategory `yaml:"category"`
+	Description   string          `yaml:"description"`
+	Image         string          `yaml:"image"`
 	ContainerName string          `yaml:"container_name"`
-	Ports       []PortMapping     `yaml:"ports,omitempty"`
-	Volumes     []VolumeMapping   `yaml:"volumes"`
-	Environment []string          `yaml:"environment,omitempty"`
-	Devices     []string          `yaml:"devices,omitempty"`
-	CapAdd      []string          `yaml:"cap_add,omitempty"`
-	Network     NetworkConfig     `yaml:"network"`
-	Restart     string            `yaml:"restart"`
-	SupportsVPN bool              `yaml:"supports_vpn"`
-	RequiresVPN bool              `yaml:"requires_vpn"`
-	Dependencies []string         `yaml:"dependencies,omitempty"`
-	Optional    bool              `yaml:"optional"`
+	Ports         []PortMapping   `yaml:"ports,omitempty"`
+	Volumes       []VolumeMapping `yaml:"volumes"`
+	Environment   []string        `yaml:"environment,omitempty"`
+	Devices       []string        `yaml:"devices,omitempty"`
+	CapAdd        []string        `yaml:"cap_add,omitempty"`
+	Network       NetworkConfig   `yaml:"network"`
+	Restart       string          `yaml:"restart"`
+	SupportsVPN   bool            `yaml:"supports_vpn"`
+	RequiresVPN   bool            `yaml:"requires_vpn"`
+	Dependencies  []string        `yaml:"dependencies,omitempty"`
+	Optional      bool            `yaml:"optional"`
+	WebUI         *WebUIConfig    `yaml:"web_ui,omitempty"`
 }
 
 // GetTranslationKey returns the i18n key for the service

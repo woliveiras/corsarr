@@ -1,0 +1,516 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #e9f4f2;
+  background: #071419;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 760px;
+  min-height: 600px;
+  background: radial-gradient(circle at 72% 0%, rgba(31, 137, 134, 0.12), transparent 35%), #071419;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #61d8c8;
+  outline-offset: 3px;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 22px 24px;
+  background: rgba(8, 24, 30, 0.92);
+  border-right: 1px solid rgba(159, 202, 196, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+  padding: 0 8px 34px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #082026;
+  background: linear-gradient(135deg, #6fe3cf, #2b9e9a);
+  font:
+    700 22px "Avenir Next",
+    sans-serif;
+  box-shadow: 0 8px 28px rgba(49, 181, 168, 0.22);
+}
+
+.brand strong {
+  display: block;
+  font:
+    700 19px "Avenir Next",
+    sans-serif;
+  letter-spacing: -0.4px;
+}
+.brand small {
+  color: #718c8d;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+nav {
+  display: grid;
+  gap: 7px;
+}
+
+.nav-item {
+  display: grid;
+  grid-template-columns: 23px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 12px 13px;
+  color: #789295;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.nav-item span {
+  font-size: 19px;
+}
+.nav-item small {
+  color: #526b6d;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.nav-item.active {
+  color: #dff8f3;
+  background: rgba(57, 167, 157, 0.13);
+}
+.nav-item.active span {
+  color: #5cd1c1;
+}
+
+.sidebar-note {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding: 15px 13px;
+  color: #668183;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(150, 198, 193, 0.08);
+  border-radius: 12px;
+}
+
+.status-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #54c7a8;
+  box-shadow: 0 0 10px #54c7a8;
+}
+.sidebar-note p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.sidebar-note strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #a7bfbd;
+  font-size: 12px;
+}
+
+.content {
+  grid-column: 2;
+  padding: 37px clamp(30px, 5vw, 72px) 60px;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+.eyebrow {
+  margin: 0 0 6px;
+  color: #4faea5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+}
+.topbar h1 {
+  margin: 0;
+  font:
+    600 26px "Avenir Next",
+    sans-serif;
+  letter-spacing: -0.7px;
+}
+
+.machine {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 13px;
+  color: #799193;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(154, 200, 194, 0.09);
+  border-radius: 11px;
+}
+.machine-icon {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  color: #70c9bd;
+  background: rgba(79, 174, 165, 0.1);
+  border-radius: 8px;
+}
+.machine small,
+.machine strong {
+  display: block;
+}
+.machine small {
+  margin-bottom: 1px;
+  font-size: 9px;
+}
+.machine strong {
+  color: #a9c2c0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hero {
+  position: relative;
+  min-height: 235px;
+  display: flex;
+  align-items: center;
+  padding: 36px 41% 36px 38px;
+  overflow: hidden;
+  background:
+    linear-gradient(110deg, rgba(13, 55, 60, 0.88), rgba(9, 34, 39, 0.66)),
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(120, 194, 187, 0.025) 20px);
+  border: 1px solid rgba(108, 192, 182, 0.13);
+  border-radius: 20px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.16);
+}
+
+.phase {
+  display: inline-block;
+  margin-bottom: 15px;
+  padding: 5px 8px;
+  color: #60c9bb;
+  background: rgba(69, 180, 168, 0.11);
+  border: 1px solid rgba(93, 205, 191, 0.17);
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.hero h2 {
+  margin: 0 0 13px;
+  font:
+    600 clamp(27px, 3.5vw, 40px) / 1.12 "Avenir Next",
+    sans-serif;
+  letter-spacing: -1.4px;
+}
+.hero h2 em {
+  color: #5bcabd;
+  font-style: normal;
+}
+.hero p {
+  max-width: 480px;
+  margin: 0;
+  color: #91aaa9;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.radar {
+  position: absolute;
+  width: 310px;
+  height: 310px;
+  right: -5px;
+  top: -38px;
+  border: 1px solid rgba(81, 193, 180, 0.12);
+  border-radius: 50%;
+}
+.radar::before,
+.radar::after,
+.radar span {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  border: 1px solid rgba(81, 193, 180, 0.12);
+  border-radius: 50%;
+}
+.radar::after {
+  inset: 31%;
+}
+.radar span:nth-child(1) {
+  inset: 49% 0 auto;
+  border: 0;
+  border-top: 1px solid rgba(81, 193, 180, 0.12);
+  border-radius: 0;
+}
+.radar span:nth-child(2) {
+  inset: 0 auto 0 49%;
+  border: 0;
+  border-left: 1px solid rgba(81, 193, 180, 0.12);
+  border-radius: 0;
+}
+.radar i {
+  position: absolute;
+  inset: 50% 50% auto auto;
+  width: 50%;
+  height: 50%;
+  transform-origin: top right;
+  background: linear-gradient(215deg, rgba(84, 209, 192, 0.13), transparent 68%);
+  animation: sweep 5s linear infinite;
+}
+.radar b {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+  color: #092126;
+  background: #55c9bb;
+  border: 7px solid rgba(21, 67, 69, 0.95);
+  border-radius: 15px;
+  font:
+    700 21px "Avenir Next",
+    sans-serif;
+  box-shadow: 0 0 35px rgba(82, 206, 190, 0.22);
+}
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin: 36px 2px 17px;
+}
+.section-heading h2 {
+  margin: 0;
+  font:
+    600 22px "Avenir Next",
+    sans-serif;
+  letter-spacing: -0.5px;
+}
+.catalog-count {
+  margin: 0;
+  color: #70898a;
+  font-size: 11px;
+}
+
+.message {
+  min-height: 0;
+  color: #79c9be;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.message:not(:empty) {
+  min-height: 31px;
+  margin-top: -5px;
+}
+.message.error {
+  color: #ee9b8f;
+}
+
+.applications {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.application-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 101px;
+  padding: 16px;
+  background: rgba(12, 33, 39, 0.72);
+  border: 1px solid rgba(145, 193, 187, 0.09);
+  border-radius: 14px;
+  transition:
+    border-color 0.2s,
+    transform 0.2s,
+    background 0.2s;
+}
+
+.application-card:hover {
+  transform: translateY(-1px);
+  background: rgba(14, 39, 45, 0.84);
+  border-color: rgba(91, 202, 189, 0.19);
+}
+.application-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: #b6e6df;
+  background: linear-gradient(145deg, rgba(60, 148, 143, 0.2), rgba(26, 90, 91, 0.18));
+  border: 1px solid rgba(103, 205, 193, 0.16);
+  border-radius: 12px;
+  font:
+    700 14px "Avenir Next",
+    sans-serif;
+}
+.application-icon.radarr {
+  color: #f0c96c;
+}
+.application-icon.sonarr {
+  color: #74c8ed;
+}
+.application-icon.lidarr {
+  color: #67d697;
+}
+.application-icon.jellyfin {
+  color: #b69af2;
+}
+.application-icon.prowlarr {
+  color: #e4a268;
+}
+.application-info {
+  min-width: 0;
+}
+.application-info h3 {
+  margin: 0 0 4px;
+  color: #dbecea;
+  font:
+    600 14px "Avenir Next",
+    sans-serif;
+}
+.application-info p {
+  margin: 0;
+  overflow: hidden;
+  color: #6f8a8b;
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.metadata {
+  margin-top: 7px;
+  color: #4d9f98;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.open-button {
+  padding: 7px 11px;
+  color: #7acbc1;
+  background: rgba(78, 175, 165, 0.07);
+  border: 1px solid rgba(86, 190, 179, 0.16);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.open-button:hover {
+  color: #b9f1e9;
+  background: rgba(78, 175, 165, 0.14);
+}
+.open-button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
+.loading-card {
+  height: 101px;
+  border-radius: 14px;
+  background: linear-gradient(
+    100deg,
+    rgba(12, 33, 39, 0.6) 30%,
+    rgba(24, 54, 59, 0.65) 50%,
+    rgba(12, 33, 39, 0.6) 70%
+  );
+  background-size: 300% 100%;
+  animation: loading 1.5s infinite;
+}
+@keyframes loading {
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .shell {
+    grid-template-columns: 188px minmax(0, 1fr);
+  }
+  .sidebar {
+    width: 188px;
+    padding-inline: 15px;
+  }
+  .content {
+    padding-inline: 27px;
+  }
+  .hero {
+    padding-right: 34%;
+  }
+  .radar {
+    right: -88px;
+  }
+  .applications {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component animations */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component animations */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component behavior */
+    scroll-behavior: auto !important;
+  }
+}

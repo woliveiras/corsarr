@@ -546,7 +546,8 @@ is insufficient.
 ## Drawbacks and unresolved questions
 
 - Final supported OS versions and CPU architectures for the first public MVP.
-- Exact Wails frontend framework and design system.
+- Whether the initial vanilla TypeScript/CSS frontend needs a component library
+  after the onboarding and lifecycle screens establish reusable UI patterns.
 - Which service bootstrap endpoints/config files are stable enough to support
   per application version.
 - Whether Docker Desktop may be redistributed; initial policy is download and
@@ -633,4 +634,5 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-10: Accepted Docker-first delivery behind a runtime boundary.
 - 2026-08-10: Defined the cross-platform Podman promotion gate.
 - 2026-08-10: Deferred Readarr/replacements and remote-host management.
-- 2026-08-10: Documentation created; implementation has not started.
+- 2026-08-10: Started Phase 1 with a reusable application catalog and Wails v2
+  shell; built and visually smoke-tested the first self-signed macOS arm64 app.

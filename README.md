@@ -31,8 +31,8 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 
 ## 🧭 Project Direction
 
-Corsarr currently ships as the CLI documented below. An accepted proposal will
-evolve it into Corsarr Desktop: a focused visual application for non-technical
+Corsarr currently ships as the CLI documented below. Development has started on
+Corsarr Desktop: a focused visual application for non-technical
 users to install and operate the media stack on their personal computer while
 keeping Docker, Podman, WSL, and other runtime details out of the primary user
 experience.
@@ -41,8 +41,35 @@ experience.
 - [Corsarr Desktop RFC](docs/rfcs/0001-corsarr-desktop.md)
 - [Accepted architecture decisions](docs/decisions/)
 
-The desktop proposal has not been implemented yet. The prerequisites and usage
-instructions below continue to describe the current CLI release.
+The first development milestone provides a native Wails shell backed by the
+existing Go service catalog. It lists user-facing applications and opens their
+allowlisted local web interfaces. Runtime installation, container lifecycle,
+and application provisioning are the next milestones; the prerequisites and
+usage instructions below still describe the current CLI release.
+
+### Run Corsarr Desktop from source
+
+Development currently targets macOS on Apple Silicon first and requires Go
+1.25+, Node.js 22+, pnpm 11.1.3, Xcode command-line tooling, and Wails v2:
+
+```bash
+npm install --global pnpm@11.1.3
+go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+cd desktop
+$(go env GOPATH)/bin/wails dev
+```
+
+Build the local macOS application with:
+
+```bash
+cd desktop
+$(go env GOPATH)/bin/wails build
+open build/bin/Corsarr.app
+```
+
+This development build is self-signed and is not a published Corsarr release.
+Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,
+and TypeScript types with Biome and `tsc`.
 
 ## ⚡ Quick Start
 

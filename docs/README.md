@@ -1,7 +1,7 @@
 # Corsarr documentation
 
-This directory separates the behavior that Corsarr ships today from the accepted
-direction for Corsarr Desktop.
+This directory separates released CLI behavior, the in-development Desktop
+surface, and the accepted direction that has not been delivered yet.
 
 ## Current product
 
@@ -19,6 +19,6 @@ direction for Corsarr Desktop.
 - [ADR 0002: Runtime strategy](decisions/0002-docker-first-runtime-with-podman-gate.md)
   records the Docker-first MVP and the evidence gate for promoting Podman.
 
-The RFC is accepted but not implemented. It must not be read as a description of
-the current release until its individual milestones have been delivered and
-validated.
+Phase 1 implementation has started with the reusable application catalog and a
+Wails v2 shell. The RFC must not be read as a description of the current release:
+only milestones explicitly recorded as implemented have been delivered.

@@ -40,3 +40,6 @@ dependencies:
   - qbittorrent
   - prowlarr
 optional: true
+
+web_ui:
+  port: "5299"
