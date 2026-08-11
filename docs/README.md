@@ -13,6 +13,12 @@ architecture, and work that still has empirical or platform gates.
 - [Desktop installation](DESKTOP_INSTALLATION.md) documents download,
   first-open behavior, manual updates, uninstallation, data preservation, and
   known limitations.
+- [CLI guide](CLI.md) covers installation, generation, profiles, automation,
+  updates, and uninstallation.
+- [Stack operations](STACK_OPERATIONS.md) covers starting, connecting,
+  updating, backing up, and securing a CLI-generated media stack.
+- [Development](DEVELOPMENT.md) covers local builds, validation, opt-in
+  container contracts, CI, and release references.
 - [Release procedure](RELEASING.md) documents unified versioning, the dry run,
   SBOM checks, and the protected publication approval.
 
@@ -32,9 +38,10 @@ obtains versioned runtime consent, prepares or starts Docker Desktop on macOS,
 and installs only digest-pinned containers owned by Corsarr. First launch is a
 persisted sequential journey through welcome, authorization, environment,
 storage, and application selection; it resumes after interruption and becomes
-the regular lifecycle dashboard only after a complete installation. Its lifecycle UI
-opens, starts, stops, restarts, updates, and removes each application while
-keeping container removal separate from recoverable configuration archival.
+the regular lifecycle dashboard only after a complete installation. Its
+lifecycle UI opens, starts, stops, restarts, updates, and removes each
+application while keeping container removal separate from recoverable
+configuration archival.
 The reviewed movie/TV preset explicitly selects its supporting integrations.
 Choosing an individual consumer marks its recommended integrations, but the
 user can remove any suggestion after seeing which automatic setup will become

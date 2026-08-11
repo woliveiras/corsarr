@@ -20,7 +20,7 @@ type Copy = {
     status: string;
     services: string;
     caption: string;
-    onboardingCaption: string;
+    onboardingLabel: string;
   };
   problem: { eyebrow: string; title: string; body: string; items: string[] };
   steps: { eyebrow: string; title: string; body: string; items: Array<{ title: string; body: string }> };
@@ -33,7 +33,6 @@ type Copy = {
     title: string;
     body: string;
     platforms: Array<{ name: string; detail: string; action: string; href: string }>;
-    notice: string;
   };
   faq: { eyebrow: string; title: string; items: Array<{ question: string; answer: string }> };
   footer: { body: string; github: string; licenses: string; copyright: string };
@@ -56,7 +55,7 @@ const copy: Record<Locale, Copy> = {
       eyebrow: "AUTOMAÇÃO DE MÍDIA NO SEU COMPUTADOR",
       title: "Seu servidor de mídia,",
       accent: "sem complicação.",
-      body: "Configure uma experiência completa para organizar, baixar legendas e assistir aos seus filmes e séries — sem editar YAML, decorar portas ou administrar containers.",
+      body: "Configure uma experiência completa para organizar, baixar legendas e assistir aos seus filmes e séries — sem alterar arquivos de configuração complicados, criar VMs ou saber redes.",
       download: "Baixar Corsarr",
       cli: "Conhecer a versão CLI",
       note: "Desktop para macOS, Windows e Linux · CLI para usuários avançados",
@@ -68,16 +67,16 @@ const copy: Record<Locale, Copy> = {
       services: "Aplicativos conectados e prontos",
       caption:
         "Prévia conceitual da experiência Corsarr. Capturas reais do aplicativo serão adicionadas em breve.",
-      onboardingCaption: "Uma visão da jornada de configuração, criada especialmente para esta landing page.",
+      onboardingLabel: "Prévia da jornada de configuração do Corsarr",
     },
     problem: {
       eyebrow: "UMA EXPERIÊNCIA, NÃO UMA PILHA DE CONFIGURAÇÕES",
       title: "Cuide da sua mídia. O Corsarr cuida da infraestrutura.",
       body: "Um servidor de mídia costuma exigir várias ferramentas, caminhos e credenciais. O Corsarr reúne essa preparação em uma jornada clara.",
       items: [
-        "Sem Docker na experiência principal",
-        "Sem arquivos YAML para editar",
-        "Sem conectar cada aplicativo à mão",
+        "Sem configurações avançadas para usuários comuns",
+        "Sem arquivos de configuração, tudo via interface amigável",
+        "Sem ter que configurar cada mínimo detalhe, o Corsarr cuida da configuração de base para você",
       ],
     },
     steps: {
@@ -111,7 +110,7 @@ const copy: Record<Locale, Copy> = {
         "Marcas e logos pertencem aos respectivos projetos. Corsarr não é afiliado nem endossado por eles.",
     },
     safety: {
-      eyebrow: "LOCAL POR PADRÃO",
+      eyebrow: "SUA PRIVACIDADE NAS SUAS MÃOS",
       title: "Seu computador. Seus arquivos. Suas escolhas.",
       body: "A simplicidade não precisa esconder decisões importantes. O Corsarr reduz a operação técnica enquanto mantém dados e consentimento sob seu controle.",
       cards: [
@@ -143,7 +142,7 @@ const copy: Record<Locale, Copy> = {
     downloads: {
       eyebrow: "ESCOLHA SUA PLATAFORMA",
       title: "Pronto para começar?",
-      body: "O Desktop para macOS é a experiência suportada. Windows e Linux também recebem prévias experimentais para testes.",
+      body: "Escolha a sua plataforma.",
       platforms: [
         {
           name: "macOS",
@@ -164,8 +163,6 @@ const copy: Record<Locale, Copy> = {
           href: `${releases}/latest/download/corsarr_desktop_linux_amd64.tar.gz`,
         },
       ],
-      notice:
-        "Os pacotes ainda não são assinados. Windows e Linux não incluem o onboarding completo; confira as notas da release.",
     },
     faq: {
       eyebrow: "DÚVIDAS FREQUENTES",
@@ -190,11 +187,6 @@ const copy: Record<Locale, Copy> = {
           question: "O que acontece se eu remover um aplicativo?",
           answer:
             "O container é removido, mas configurações, downloads e biblioteca são preservados. A exclusão da configuração é uma ação separada e nunca inclui a mídia compartilhada.",
-        },
-        {
-          question: "Windows e Linux são suportados?",
-          answer:
-            "O Desktop suportado começa pelo macOS. Windows e Linux recebem builds experimentais para testes, mas a preparação automática do runtime e o armazenamento seguro nativo ainda estão em desenvolvimento.",
         },
         {
           question: "Ainda existe uma versão CLI?",
@@ -223,7 +215,7 @@ const copy: Record<Locale, Copy> = {
       eyebrow: "MEDIA AUTOMATION ON YOUR COMPUTER",
       title: "Your media server,",
       accent: "made simple.",
-      body: "Set up a complete experience to organize, download subtitles, and watch your movies and shows — without editing YAML, memorizing ports, or managing containers.",
+      body: "Set up a complete experience to organize, download subtitles, and watch your movies and shows — without changing complicated configuration files, creating VMs, or understanding networking.",
       download: "Download Corsarr",
       cli: "Explore the CLI",
       note: "Desktop for macOS, Windows, and Linux · CLI for advanced users",
@@ -234,13 +226,17 @@ const copy: Record<Locale, Copy> = {
       status: "7/7 services online",
       services: "Apps connected and ready",
       caption: "A conceptual preview of the Corsarr experience. Real app screenshots are coming soon.",
-      onboardingCaption: "A view of the setup journey, created especially for this landing page.",
+      onboardingLabel: "Corsarr setup journey preview",
     },
     problem: {
       eyebrow: "ONE EXPERIENCE, NOT A STACK OF CONFIG FILES",
       title: "Care for your media. Corsarr handles the infrastructure.",
       body: "A media server usually requires several tools, paths, and credentials. Corsarr turns that setup into one clear journey.",
-      items: ["No Docker in the main experience", "No YAML files to edit", "No wiring every app by hand"],
+      items: [
+        "No advanced setup for everyday users",
+        "No configuration files, everything through a friendly interface",
+        "No need to configure every little detail, Corsarr handles the foundational setup for you",
+      ],
     },
     steps: {
       eyebrow: "HOW IT WORKS",
@@ -273,7 +269,7 @@ const copy: Record<Locale, Copy> = {
         "Names and logos belong to their respective projects. Corsarr is not affiliated with or endorsed by them.",
     },
     safety: {
-      eyebrow: "LOCAL BY DEFAULT",
+      eyebrow: "YOUR PRIVACY, IN YOUR HANDS",
       title: "Your computer. Your files. Your choices.",
       body: "Simplicity should not hide important decisions. Corsarr reduces technical operation while keeping data and consent under your control.",
       cards: [
@@ -305,7 +301,7 @@ const copy: Record<Locale, Copy> = {
     downloads: {
       eyebrow: "CHOOSE YOUR PLATFORM",
       title: "Ready to begin?",
-      body: "Desktop for macOS is the supported experience. Windows and Linux also receive experimental previews for testing.",
+      body: "Choose your platform.",
       platforms: [
         {
           name: "macOS",
@@ -326,8 +322,6 @@ const copy: Record<Locale, Copy> = {
           href: `${releases}/latest/download/corsarr_desktop_linux_amd64.tar.gz`,
         },
       ],
-      notice:
-        "Packages are currently unsigned. Windows and Linux do not include complete onboarding; check the release notes.",
     },
     faq: {
       eyebrow: "FREQUENTLY ASKED QUESTIONS",
@@ -352,11 +346,6 @@ const copy: Record<Locale, Copy> = {
           question: "What happens when I remove an app?",
           answer:
             "The container is removed, while configuration, downloads, and library are preserved. Deleting configuration is a separate action and never includes shared media.",
-        },
-        {
-          question: "Are Windows and Linux supported?",
-          answer:
-            "Supported Desktop onboarding starts on macOS. Windows and Linux receive experimental test builds, while automatic runtime preparation and native secure credential storage remain in development.",
         },
         {
           question: "Is there still a CLI?",
@@ -457,7 +446,7 @@ root.innerHTML = `
       </div>
       <p class="image-caption">${t.preview.caption}</p>
       <figure class="onboarding-concept">
-        <div class="onboarding-window" role="img" aria-label="${t.preview.onboardingCaption}">
+        <div class="onboarding-window" role="img" aria-label="${t.preview.onboardingLabel}">
           <div class="window-bar"><span></span><span></span><span></span><strong>Corsarr</strong></div>
           <div class="setup-concept" aria-hidden="true">
             <div class="setup-copy">
@@ -468,7 +457,6 @@ root.innerHTML = `
             <div class="setup-radar"><i></i><b>C</b><span></span></div>
           </div>
         </div>
-        <figcaption>${t.preview.onboardingCaption}</figcaption>
       </figure>
     </section>
 
@@ -541,7 +529,6 @@ root.innerHTML = `
       <div class="download-grid">
         ${t.downloads.platforms.map((platform, index) => `<article><span class="platform-icon">${icon((["apple", "windows", "linux"] as const)[index] ?? "linux")}</span><h3>${platform.name}</h3><p>${platform.detail}</p><a href="${platform.href}" rel="noreferrer">${platform.action} ${icon("arrow")}</a></article>`).join("")}
       </div>
-      <p class="download-notice">${t.downloads.notice} <a href="${releases}">${locale === "en" ? "View all releases." : "Ver todas as releases."}</a></p>
     </section>
 
     <section id="faq" class="faq section-shell">

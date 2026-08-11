@@ -671,8 +671,7 @@ img {
 }
 
 .image-caption,
-.trademark-note,
-.download-notice {
+.trademark-note {
   margin: 18px auto 0;
   color: var(--text-muted);
   font-size: 11px;
@@ -759,14 +758,6 @@ img {
   inset: 12%;
   border: 1px solid rgba(92, 205, 191, 0.12);
   border-radius: 18px;
-}
-
-.onboarding-concept figcaption {
-  margin-top: 14px;
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.65;
-  text-align: center;
 }
 
 .problem {
