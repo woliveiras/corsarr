@@ -13,6 +13,8 @@ architecture, and work that still has empirical or platform gates.
 - [Desktop installation](DESKTOP_INSTALLATION.md) documents download,
   first-open behavior, manual updates, uninstallation, data preservation, and
   known limitations.
+- [Release procedure](RELEASING.md) documents unified versioning, the dry run,
+  SBOM checks, and the protected publication approval.
 
 ## Accepted product direction
 

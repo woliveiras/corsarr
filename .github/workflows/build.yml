@@ -33,6 +33,9 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      - name: Scan reachable Go vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...
+
       - name: Run tests
         run: go test -race -coverprofile=coverage.out ./...
 
