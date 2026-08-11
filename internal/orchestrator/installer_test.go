@@ -66,6 +66,67 @@ func TestInstallerRemovesIncompleteContainerAfterStartFailure(t *testing.T) {
 	}
 }
 
+func TestInstallerContinuesWhenCreateSucceededBeforeClientReportedFailure(t *testing.T) {
+	spec := validInstallerSpec("qbittorrent")
+	manager := &fakeRuntimeManager{
+		initialInspectErr: containerruntime.ErrResourceNotFound,
+		createErr:         errors.New("Docker client lost the create response"),
+		inspectStatus: containerruntime.ContainerStatus{
+			ApplicationID:       "qbittorrent",
+			State:               containerruntime.ContainerStateCreated,
+			Image:               spec.Image,
+			ContractFingerprint: mustContractFingerprint(t, spec),
+		},
+	}
+	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec}, &fakeReadiness{})
+
+	status, err := installer.Install(
+		context.Background(),
+		"qbittorrent",
+		"/Users/test/Media/Corsarr",
+		catalog.RuntimeOptions{},
+	)
+	if err != nil {
+		t.Fatalf("recover daemon-side create: %v", err)
+	}
+	if status.State != containerruntime.ContainerStateRunning {
+		t.Fatalf("expected recovered running status, got %#v", status)
+	}
+	want := []string{"network", "inspect", "pull", "create", "inspect", "start", "inspect"}
+	if !reflect.DeepEqual(manager.operations, want) {
+		t.Fatalf("unexpected recovered install operations\nwant: %v\n got: %v", want, manager.operations)
+	}
+}
+
+func TestInstallerRejectsUnexpectedContainerAfterCreateFailure(t *testing.T) {
+	spec := validInstallerSpec("qbittorrent")
+	manager := &fakeRuntimeManager{
+		initialInspectErr: containerruntime.ErrResourceNotFound,
+		createErr:         errors.New("Docker client lost the create response"),
+		inspectStatus: containerruntime.ContainerStatus{
+			ApplicationID:       "qbittorrent",
+			State:               containerruntime.ContainerStateCreated,
+			Image:               spec.Image,
+			ContractFingerprint: "unexpected-contract",
+		},
+	}
+	installer := NewInstaller(manager, &fakeSpecResolver{spec: spec}, &fakeReadiness{})
+
+	_, err := installer.Install(
+		context.Background(),
+		"qbittorrent",
+		"/Users/test/Media/Corsarr",
+		catalog.RuntimeOptions{},
+	)
+	if err == nil {
+		t.Fatal("expected unexpected partial container to be rejected")
+	}
+	want := []string{"network", "inspect", "pull", "create", "inspect"}
+	if !reflect.DeepEqual(manager.operations, want) {
+		t.Fatalf("unexpected partial container was mutated: %v", manager.operations)
+	}
+}
+
 func TestInstallerReusesMatchingRunningContainer(t *testing.T) {
 	spec := validInstallerSpec("radarr")
 	manager := &fakeRuntimeManager{inspectStatus: containerruntime.ContainerStatus{
@@ -176,6 +237,7 @@ func (r *fakeSpecResolver) Resolve(
 
 type fakeRuntimeManager struct {
 	operations        []string
+	createErr         error
 	startErr          error
 	initialInspectErr error
 	inspectCalls      int
@@ -194,11 +256,14 @@ func (m *fakeRuntimeManager) Pull(context.Context, string) error {
 
 func (m *fakeRuntimeManager) Create(context.Context, containerruntime.ContainerSpec) error {
 	m.operations = append(m.operations, "create")
-	return nil
+	return m.createErr
 }
 
 func (m *fakeRuntimeManager) Start(context.Context, string) error {
 	m.operations = append(m.operations, "start")
+	if m.startErr == nil {
+		m.inspectStatus.State = containerruntime.ContainerStateRunning
+	}
 	return m.startErr
 }
 

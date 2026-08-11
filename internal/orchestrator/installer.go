@@ -108,8 +108,18 @@ func (i *Installer) Install(
 	if err := i.runtime.Pull(ctx, spec.Image); err != nil {
 		return containerruntime.ContainerStatus{}, fmt.Errorf("download application image: %w", err)
 	}
-	if err := i.runtime.Create(ctx, spec); err != nil {
-		return containerruntime.ContainerStatus{}, fmt.Errorf("create application container: %w", err)
+	if createErr := i.runtime.Create(ctx, spec); createErr != nil {
+		created, inspectErr := i.runtime.Inspect(ctx, applicationID)
+		if inspectErr != nil || created.ContractFingerprint != approvedContract ||
+			created.Image != spec.Image {
+			if inspectErr != nil {
+				createErr = errors.Join(createErr, fmt.Errorf("inspect partial create: %w", inspectErr))
+			}
+			return containerruntime.ContainerStatus{}, fmt.Errorf(
+				"create application container: %w",
+				createErr,
+			)
+		}
 	}
 
 	if err := i.runtime.Start(ctx, applicationID); err != nil {
