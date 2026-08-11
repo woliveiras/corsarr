@@ -285,9 +285,10 @@ write.
 Go and asks `ARRClient` to reconcile the reserved `qBittorrent (Corsarr)`
 provider. The client first fetches the app's official live provider schema,
 requires every expected qBittorrent field, fills only the internal network
-alias, port, stored credentials, and app-specific category, then creates or
-updates only the exact reserved provider name. Other user providers are never
-selected. Radarr and Sonarr use API v3; Lidarr uses API v1.
+alias and runtime-aligned WebUI port `8081`, stored credentials, and
+app-specific category, then creates or updates only the exact reserved provider
+name. Other user providers are never selected. Radarr and Sonarr use API v3;
+Lidarr uses API v1.
 
 `internal/provisioning.ProwlarrProvisioner` runs when each supported target Arr
 app becomes ready and Prowlarr is also selected. It reads the Prowlarr and target

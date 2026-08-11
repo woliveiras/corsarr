@@ -61,6 +61,9 @@ runtime or application terms on the user's behalf.
 - [ ] Confirm that environment diagnosis, storage selection, and application
   selection appear one at a time, in that order, and that relaunch resumes an
   interrupted journey instead of exposing the dashboard.
+- [ ] Resize the onboarding across a compact laptop window and a large desktop
+  display. Confirm that headings, cards, status messages, technical details, and
+  installation progress remain readable without clipping controls.
 - [ ] Choose a storage folder with at least 10 GiB available and confirm that
   the displayed folder, capacity, and hardlink result are understandable.
 - [ ] Select Radarr and confirm that qBittorrent and Prowlarr are suggested
@@ -75,6 +78,8 @@ runtime or application terms on the user's behalf.
   launches do not repeat onboarding.
 - [ ] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
+  Confirm that each Arr download client reaches qBittorrent through the managed
+  network on WebUI port 8081.
 - [ ] Open each installed application through its Corsarr shortcut and verify
   that its local web interface is ready.
 - [ ] Verify stop, start, and restart for an application without using Docker

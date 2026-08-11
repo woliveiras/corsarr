@@ -842,3 +842,7 @@ claims must be rechecked during implementation and release validation.
 - 2026-08-11: Added an expandable, per-application installation tracker to
   onboarding. It derives waiting and completed rows from the reviewed selection
   and updates them only with bounded progress events, never raw runtime output.
+- 2026-08-11: Aligned the Arr qBittorrent provider with the managed runtime's
+  internal WebUI port 8081 after Radarr correctly rejected the stale port 8080.
+- 2026-08-11: Replaced fixed onboarding microcopy sizes with viewport-bounded
+  typography tokens for readable laptop and large-display layouts.
