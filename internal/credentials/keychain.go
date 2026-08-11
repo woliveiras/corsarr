@@ -50,7 +50,7 @@ var arrPasswordKeys = map[string]Key{
 func ARRPasswordKey(applicationID string) (Key, error) {
 	key, allowed := arrPasswordKeys[applicationID]
 	if !allowed {
-		return "", fmt.Errorf("Arr credential application is not allowlisted: %s", applicationID)
+		return "", fmt.Errorf("arr credential application is not allowlisted: %s", applicationID)
 	}
 	return key, nil
 }
