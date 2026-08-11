@@ -839,3 +839,6 @@ claims must be rechecked during implementation and release validation.
   desktop. Selecting a consumer marks its recommended stack; removing a
   suggestion removes only that item and instead explains which Corsarr
   automation the user is choosing to configure manually.
+- 2026-08-11: Added an expandable, per-application installation tracker to
+  onboarding. It derives waiting and completed rows from the reviewed selection
+  and updates them only with bounded progress events, never raw runtime output.

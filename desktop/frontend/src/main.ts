@@ -36,18 +36,18 @@ import {
 import type { application, legal, main, storage } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { missingSelectedIntegrations, toggleApplicationSelection } from './application-selection';
+import {
+  applyInstallationProgress,
+  createInstallationProgress,
+  type InstallationProgressEvent,
+  type InstallationProgressItem,
+  type TrackedInstallationStage,
+} from './installation-progress';
 
 type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
 type DataStatus = storage.ApplicationDataStatus;
 type LegalNotice = legal.Notice;
-type InstallationProgress = {
-  applicationId: string;
-  stage: 'installing' | 'provisioning' | 'ready' | 'failed';
-  position: number;
-  total: number;
-};
-
 const root = document.querySelector<HTMLDivElement>('#app');
 
 if (!root) {
@@ -79,7 +79,7 @@ root.innerHTML = [
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="environment">Voltar</button><div><button id="onboarding-choose-storage" class="secondary-button" type="button">Escolher pasta</button><button id="onboarding-storage-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
   '    </article>',
   '    <article id="onboarding-applications" class="onboarding-step" hidden>',
-  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><div id="onboarding-integration-guidance" class="onboarding-integration-benefit" role="status" aria-live="polite"><strong id="onboarding-integration-title">Mais automação, menos configuração</strong><p id="onboarding-integration-copy">Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.</p></div><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
+  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><div id="onboarding-integration-guidance" class="onboarding-integration-benefit" role="status" aria-live="polite"><strong id="onboarding-integration-title">Mais automação, menos configuração</strong><p id="onboarding-integration-copy">Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.</p></div><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-installation-progress" class="installation-progress-details" hidden><summary><span>Acompanhar instalação</span><small id="onboarding-installation-progress-summary"></small></summary><ol id="onboarding-installation-progress-list"></ol></details><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="storage">Voltar</button><button id="onboarding-install" class="onboarding-primary" type="button" disabled>Instalar aplicativos</button></footer>',
   '    </article>',
   '  </div>',
@@ -251,6 +251,15 @@ const onboardingInstallButton = document.querySelector<HTMLButtonElement>('#onbo
 const onboardingInstallationResult = document.querySelector<HTMLElement>(
   '#onboarding-installation-result',
 );
+const onboardingInstallationProgressDetails = document.querySelector<HTMLDetailsElement>(
+  '#onboarding-installation-progress',
+);
+const onboardingInstallationProgressSummary = document.querySelector<HTMLElement>(
+  '#onboarding-installation-progress-summary',
+);
+const onboardingInstallationProgressList = document.querySelector<HTMLOListElement>(
+  '#onboarding-installation-progress-list',
+);
 const onboardingOperationDetails = document.querySelector<HTMLDetailsElement>(
   '#onboarding-operation-details',
 );
@@ -310,6 +319,7 @@ let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let currentRuntimeState = 'checking';
 let currentHostReady = true;
+let onboardingInstallationProgress: InstallationProgressItem[] = [];
 
 type OnboardingStep = 'splash' | 'permissions' | 'environment' | 'storage' | 'applications';
 
@@ -1948,6 +1958,67 @@ onboardingJellyfinLANCheckbox?.addEventListener('change', async () => {
   }
 });
 
+function installationStageLabel(stage: TrackedInstallationStage): string {
+  const labels: Record<TrackedInstallationStage, string> = {
+    waiting: 'Aguardando',
+    installing: 'Baixando e iniciando',
+    provisioning: 'Configurando',
+    ready: 'Pronto',
+    failed: 'Precisa de atenção',
+  };
+  return labels[stage];
+}
+
+function renderOnboardingInstallationProgress(): void {
+  if (
+    !onboardingInstallationProgressDetails ||
+    !onboardingInstallationProgressSummary ||
+    !onboardingInstallationProgressList
+  ) {
+    return;
+  }
+  onboardingInstallationProgressDetails.hidden = onboardingInstallationProgress.length === 0;
+  if (onboardingInstallationProgress.length === 0) return;
+
+  const ready = onboardingInstallationProgress.filter(({ stage }) => stage === 'ready').length;
+  const failed = onboardingInstallationProgress.some(({ stage }) => stage === 'failed');
+  const active = onboardingInstallationProgress.find(
+    ({ stage }) => stage === 'installing' || stage === 'provisioning',
+  );
+  onboardingInstallationProgressSummary.textContent = failed
+    ? 'Precisa de atenção'
+    : active?.position
+      ? `${active.position} de ${onboardingInstallationProgress.length}`
+      : `${ready} de ${onboardingInstallationProgress.length} concluídos`;
+
+  onboardingInstallationProgressList.replaceChildren(
+    ...onboardingInstallationProgress.map((item) => {
+      const applicationName =
+        availableApplications.find(({ id }) => id === item.applicationId)?.name ??
+        item.applicationId;
+      const row = document.createElement('li');
+      row.className = `installation-progress-item ${item.stage}`;
+      const indicator = document.createElement('span');
+      indicator.className = 'installation-progress-indicator';
+      indicator.setAttribute('aria-hidden', 'true');
+      const copy = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = applicationName;
+      const status = document.createElement('small');
+      status.textContent = installationStageLabel(item.stage);
+      copy.append(name, status);
+      row.append(indicator, copy);
+      return row;
+    }),
+  );
+}
+
+function startOnboardingInstallationProgress(): void {
+  onboardingInstallationProgress = createInstallationProgress(selectedApplicationIDs);
+  if (onboardingInstallationProgressDetails) onboardingInstallationProgressDetails.open = false;
+  renderOnboardingInstallationProgress();
+}
+
 onboardingInstallButton?.addEventListener('click', async () => {
   if (!onboardingInstallButton || !setupStatus?.canInstall) return;
   onboardingInstallButton.disabled = true;
@@ -1958,6 +2029,7 @@ onboardingInstallButton?.addEventListener('click', async () => {
       'Baixando e configurando os aplicativos. Isso pode levar alguns minutos.';
     onboardingInstallationResult.classList.remove('error');
   }
+  startOnboardingInstallationProgress();
   try {
     const result = await InstallSelectedApplications();
     if (!result.complete) {
@@ -2018,11 +2090,11 @@ EventsOn('corsarr:background-recovery-complete', () => {
   ]);
 });
 
-EventsOn('corsarr:installation-progress', (progress: InstallationProgress) => {
+EventsOn('corsarr:installation-progress', (progress: InstallationProgressEvent) => {
   const applicationName =
     availableApplications.find((application) => application.id === progress.applicationId)?.name ??
     'aplicativo';
-  const stageMessages: Record<InstallationProgress['stage'], string> = {
+  const stageMessages: Record<InstallationProgressEvent['stage'], string> = {
     installing: `Baixando e iniciando ${applicationName}`,
     provisioning: `Configurando ${applicationName}`,
     ready: `${applicationName} está pronto`,
@@ -2035,6 +2107,11 @@ EventsOn('corsarr:installation-progress', (progress: InstallationProgress) => {
   if (onboardingInstallationResult && !onboardingElement?.hidden) {
     onboardingInstallationResult.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
     onboardingInstallationResult.classList.toggle('error', progress.stage === 'failed');
+    onboardingInstallationProgress = applyInstallationProgress(
+      onboardingInstallationProgress,
+      progress,
+    );
+    renderOnboardingInstallationProgress();
   }
   if (installApplicationsButton && progress.stage !== 'failed') {
     installApplicationsButton.textContent = `${progress.position} de ${progress.total}`;

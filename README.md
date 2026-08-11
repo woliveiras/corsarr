@@ -55,8 +55,11 @@ full-window onboarding presents a welcome radar, authorization and
 start-at-login choices, live Docker diagnosis, storage selection, and
 application selection as separate sequential screens.
 It reaches the regular dashboard only after the selected applications install
-successfully. Interrupted setup resumes from its last completed step, while
-migrated state starts at the welcome without inventing consent. A reviewed
+successfully. During installation, an expandable progress panel follows every
+selected application through waiting, download/start, configuration, ready, or
+attention states without exposing raw runtime logs. Interrupted setup resumes
+from its last completed step, while migrated state starts at the welcome without
+inventing consent. A reviewed
 one-click preset selects the complete movie/TV stack while leaving music,
 books, and transcoding optional. Existing installed apps
 remain part of desired state, and removal is blocked while an installed app

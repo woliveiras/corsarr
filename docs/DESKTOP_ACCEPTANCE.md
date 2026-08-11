@@ -68,9 +68,11 @@ runtime or application terms on the user's behalf.
   and that the inline copy explains which setup becomes manual, then approve
   only the intended digest-pinned image downloads.
 - [ ] Install the selected stack and confirm that progress identifies the
-  current application without exposing credentials or runtime logs. Confirm
-  that the regular dashboard appears only after the whole selection succeeds
-  and that subsequent launches do not repeat onboarding.
+  current application. Expand “Acompanhar instalação” and confirm that every
+  selected app moves through waiting, download/start, configuration, and ready
+  states without exposing credentials or runtime logs. Confirm that the regular
+  dashboard appears only after the whole selection succeeds and that subsequent
+  launches do not repeat onboarding.
 - [ ] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
 - [ ] Open each installed application through its Corsarr shortcut and verify

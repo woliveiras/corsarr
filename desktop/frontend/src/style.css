@@ -315,6 +315,123 @@ body {
   margin-top: 24px;
 }
 
+.installation-progress-details {
+  margin-top: 8px;
+  color: #9bb2b0;
+  background: rgba(7, 28, 33, 0.72);
+  border: 1px solid rgba(101, 198, 185, 0.13);
+  border-radius: 10px;
+}
+
+.installation-progress-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.installation-progress-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.installation-progress-details summary::before {
+  content: "›";
+  color: #5ccdbf;
+  transition: transform 160ms ease;
+}
+
+.installation-progress-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.installation-progress-details summary span {
+  margin-right: auto;
+}
+
+.installation-progress-details summary small {
+  color: #718c8d;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.installation-progress-details ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 4px 12px 10px;
+  list-style: none;
+  border-top: 1px solid rgba(101, 198, 185, 0.08);
+}
+
+.installation-progress-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 5px 4px;
+}
+
+.installation-progress-item strong,
+.installation-progress-item small {
+  display: block;
+}
+
+.installation-progress-item strong {
+  color: #b9cecb;
+  font-size: 10px;
+}
+
+.installation-progress-item small {
+  margin-top: 2px;
+  color: #627e7f;
+  font-size: 9px;
+}
+
+.installation-progress-indicator {
+  width: 7px;
+  height: 7px;
+  background: #486467;
+  border-radius: 50%;
+}
+
+.installation-progress-item.installing .installation-progress-indicator,
+.installation-progress-item.provisioning .installation-progress-indicator {
+  background: #5ccdbf;
+  box-shadow: 0 0 8px rgba(92, 205, 191, 0.58);
+  animation: installation-progress-pulse 1.3s ease-in-out infinite;
+}
+
+.installation-progress-item.ready .installation-progress-indicator {
+  background: #62c99f;
+}
+
+.installation-progress-item.failed .installation-progress-indicator {
+  background: #ee9b8f;
+}
+
+.installation-progress-item.installing small,
+.installation-progress-item.provisioning small {
+  color: #65c6b9;
+}
+
+.installation-progress-item.failed small {
+  color: #ee9b8f;
+}
+
+@keyframes installation-progress-pulse {
+  50% {
+    opacity: 0.4;
+    transform: scale(0.78);
+  }
+}
+
 .onboarding-diagnostic,
 .onboarding-path-preview {
   display: grid;

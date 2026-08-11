@@ -213,7 +213,10 @@ the reviewed layout, orders selected integrations before consumers, and returns
 a structured per-application result while preserving already completed apps.
 Its optional observer emits only catalog ID, bounded stage, position, and total
 for desktop progress. Runtime output and provisioning errors are excluded from
-events so progress reporting cannot become a log or credential channel.
+events so progress reporting cannot become a log or credential channel. The
+onboarding frontend keeps a local, expandable per-application view from those
+events, showing unstarted selections as waiting and retaining ready or failed
+states for the duration of the installation attempt.
 `internal/provisioning.HTTPReadiness` then probes only the catalog-resolved
 loopback URL, without credentials or redirects, until the application accepts
 HTTP or a bounded timeout expires. A newly created container that never becomes
