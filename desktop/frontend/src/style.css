@@ -1698,6 +1698,62 @@ nav {
   background-size: 300% 100%;
   animation: loading 1.5s infinite;
 }
+
+.onboarding {
+  --onboarding-font-micro: clamp(9px, calc(7.5px + 0.22vw), 12px);
+  --onboarding-font-small: clamp(10px, calc(8px + 0.25vw), 13px);
+  --onboarding-font-body: clamp(11px, calc(8.5px + 0.3vw), 15px);
+}
+
+.onboarding .onboarding-step-copy > h1 {
+  font-size: clamp(29px, 4vw, 52px);
+}
+
+.onboarding .onboarding-brand small,
+.onboarding .onboarding-progress small,
+.onboarding .eyebrow,
+.onboarding .onboarding-diagnostic small,
+.onboarding .onboarding-path-preview small,
+.onboarding .onboarding-diagnostic details,
+.onboarding .onboarding-diagnostic code,
+.onboarding .onboarding-path-preview code,
+.onboarding .installation-progress-details summary small,
+.onboarding .installation-progress-item small,
+.onboarding .metadata,
+.onboarding .onboarding-license-button,
+.onboarding .operation-details code {
+  font-size: var(--onboarding-font-micro);
+}
+
+.onboarding .onboarding-primary,
+.onboarding .onboarding-link,
+.onboarding .onboarding-back,
+.onboarding .onboarding-explanation ul,
+.onboarding .onboarding-check,
+.onboarding .onboarding-message,
+.onboarding .installation-progress-details summary,
+.onboarding .installation-progress-item strong,
+.onboarding .onboarding-diagnostic p,
+.onboarding .onboarding-path-preview p,
+.onboarding .folder-tree code,
+.onboarding .onboarding-integration-benefit p,
+.onboarding .onboarding-catalog-heading,
+.onboarding .onboarding-catalog-error p,
+.onboarding .application-info p,
+.onboarding .select-button,
+.onboarding .operation-details {
+  font-size: var(--onboarding-font-small);
+}
+
+.onboarding .onboarding-notification p,
+.onboarding .onboarding-explanation strong,
+.onboarding .onboarding-diagnostic strong,
+.onboarding .onboarding-path-preview strong,
+.onboarding .onboarding-integration-benefit strong,
+.onboarding .application-info h3 {
+  font-size: var(--onboarding-font-body);
+}
+
 @keyframes loading {
   to {
     background-position: -150% 0;
