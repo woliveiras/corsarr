@@ -83,10 +83,14 @@ jobs:
       fail-fast: false
       matrix:
         goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
+        goarch: [amd64, arm64, 386]
         exclude:
           - goos: windows
             goarch: arm64
+          - goos: darwin
+            goarch: 386
+          - goos: linux
+            goarch: 386
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
