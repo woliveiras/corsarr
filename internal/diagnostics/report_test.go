@@ -100,6 +100,42 @@ func TestReporterDoesNotInspectStorageWhenSetupHasNoPath(t *testing.T) {
 	}
 }
 
+func TestInstallationSupportReportIncludesFailureAndRedactsPrivateData(t *testing.T) {
+	report := Report{
+		SchemaVersion:  CurrentSchemaVersion,
+		GeneratedAt:    "2026-08-11T10:33:00Z",
+		CorsarrVersion: "development",
+		Setup: SetupReport{
+			StoragePath:  "/Users/william/Media",
+			Applications: []string{"jellyseerr"},
+		},
+		Storage: &storage.Status{Path: "/Users/william/Media", State: storage.StateReady},
+	}
+	issue := &application.OperationIssue{Code: "application_configuration_failed"}
+
+	contents, err := FormatInstallationSupportReport(
+		report,
+		"jellyseerr",
+		issue,
+		"ensure Seerr setup from /Users/william/Media: password=private-value unexpected HTTP status 500",
+	)
+	if err != nil {
+		t.Fatalf("format support report: %v", err)
+	}
+	if !strings.Contains(contents, `"applicationId": "jellyseerr"`) ||
+		!strings.Contains(contents, "unexpected HTTP status 500") {
+		t.Fatalf("support report omitted failure context: %s", contents)
+	}
+	for _, private := range []string{"private-value", "/Users/william/Media"} {
+		if strings.Contains(contents, private) {
+			t.Fatalf("support report leaked %q: %s", private, contents)
+		}
+	}
+	if !strings.Contains(contents, RedactedValue) {
+		t.Fatalf("support report omitted redaction marker: %s", contents)
+	}
+}
+
 func TestFileWriterCreatesPrivateAtomicJSON(t *testing.T) {
 	destination := filepath.Join(t.TempDir(), "corsarr-diagnostics.json")
 	report := Report{SchemaVersion: CurrentSchemaVersion, GeneratedAt: "2026-08-10T21:30:00Z"}

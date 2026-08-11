@@ -1555,6 +1555,11 @@ nav {
   white-space: pre-wrap;
 }
 
+.operation-details .support-report-button {
+  display: block;
+  margin-top: 9px;
+}
+
 .terms-consent {
   display: flex;
   align-items: flex-start;

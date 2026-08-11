@@ -166,6 +166,8 @@ func (wailsEventPublisher) Emit(ctx context.Context, name string, data ...interf
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
 	changeMu                sync.Mutex
+	supportReportMu         sync.RWMutex
+	lastInstallationReport  string
 	ctx                     context.Context
 	catalog                 *application.Catalog
 	legal                   *legal.Catalog
@@ -643,6 +645,7 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 		return application.InstallationResult{}, err
 	}
 	defer release()
+	a.storeInstallationSupportReport("")
 
 	setup, err := a.setup.Load()
 	if err != nil {
@@ -679,6 +682,7 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	} else {
 		result, err = a.installation.InstallSelected(a.appContext(), options)
 	}
+	a.captureInstallationSupportReport(result)
 	if err != nil || !result.Complete {
 		return result, err
 	}
@@ -686,6 +690,49 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 		return result, fmt.Errorf("complete first-run onboarding: %w", err)
 	}
 	return result, nil
+}
+
+func (a *App) captureInstallationSupportReport(result application.InstallationResult) {
+	for _, item := range result.Items {
+		if !item.Failed {
+			continue
+		}
+		report := diagnostics.Report{SchemaVersion: diagnostics.CurrentSchemaVersion}
+		if a.diagnosticReporter != nil {
+			built, err := a.diagnosticReporter.Build(a.appContext())
+			if err == nil {
+				report = built
+			}
+		}
+		contents, err := diagnostics.FormatInstallationSupportReport(
+			report,
+			item.ApplicationID,
+			item.Issue,
+			item.Error,
+		)
+		if err == nil {
+			a.storeInstallationSupportReport(contents)
+		}
+		return
+	}
+}
+
+func (a *App) storeInstallationSupportReport(contents string) {
+	a.supportReportMu.Lock()
+	defer a.supportReportMu.Unlock()
+	a.lastInstallationReport = contents
+}
+
+// CopyLastInstallationSupportReport copies only a backend-generated, redacted
+// report after an explicit user action. Arbitrary frontend text is never accepted.
+func (a *App) CopyLastInstallationSupportReport() error {
+	a.supportReportMu.RLock()
+	contents := a.lastInstallationReport
+	a.supportReportMu.RUnlock()
+	if strings.TrimSpace(contents) == "" {
+		return fmt.Errorf("no installation support report is available")
+	}
+	return a.clipboard.SetText(a.appContext(), contents)
 }
 
 func (a *App) GetApplicationStatuses() []application.ManagedApplicationStatus {

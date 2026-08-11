@@ -30,6 +30,10 @@ export function CopyJellyfinPassword() {
   return window['go']['main']['App']['CopyJellyfinPassword']();
 }
 
+export function CopyLastInstallationSupportReport() {
+  return window['go']['main']['App']['CopyLastInstallationSupportReport']();
+}
+
 export function CopyQBittorrentPassword() {
   return window['go']['main']['App']['CopyQBittorrentPassword']();
 }

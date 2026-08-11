@@ -20,6 +20,8 @@ export function CopyJellyfinNetworkURL(arg1:string):Promise<void>;
 
 export function CopyJellyfinPassword():Promise<void>;
 
+export function CopyLastInstallationSupportReport():Promise<void>;
+
 export function CopyQBittorrentPassword():Promise<void>;
 
 export function ExportDiagnostics():Promise<main.DiagnosticExportResult>;

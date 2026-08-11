@@ -323,6 +323,39 @@ func TestInstallSelectedApplicationsDoesNotCompleteOnboardingAfterPartialFailure
 	}
 }
 
+func TestCopyLastInstallationSupportReportUsesBackendGeneratedClipboardText(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}}
+	installation := &desktopInstallationManager{result: application.InstallationResult{
+		Items: []application.InstallationItem{{
+			ApplicationID: "jellyseerr",
+			Failed:        true,
+			Error:         "ensure Seerr setup: unexpected HTTP status 500",
+			Issue: &application.OperationIssue{
+				Code: "application_configuration_failed",
+			},
+		}},
+	}}
+	clipboard := &desktopClipboard{}
+	app := &App{
+		setup: setup, installation: installation, clipboard: clipboard,
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+		diagnosticReporter: &desktopDiagnosticReporter{report: diagnostics.Report{
+			SchemaVersion: diagnostics.CurrentSchemaVersion,
+		}},
+	}
+
+	if _, err := app.InstallSelectedApplications(); err != nil {
+		t.Fatalf("return partial installation: %v", err)
+	}
+	if err := app.CopyLastInstallationSupportReport(); err != nil {
+		t.Fatalf("copy support report: %v", err)
+	}
+	if clipboard.calls != 1 || !strings.Contains(clipboard.value, `"applicationId": "jellyseerr"`) ||
+		!strings.Contains(clipboard.value, "unexpected HTTP status 500") {
+		t.Fatalf("unexpected support clipboard %#v", clipboard)
+	}
+}
+
 func TestInstallSelectedApplicationsDoesNotPrepareWithoutConsent(t *testing.T) {
 	runtime := &desktopRuntimePreparer{}
 	installation := &desktopInstallationManager{}

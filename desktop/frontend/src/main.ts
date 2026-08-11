@@ -7,6 +7,7 @@ import {
   CopyARRPassword,
   CopyJellyfinNetworkURL,
   CopyJellyfinPassword,
+  CopyLastInstallationSupportReport,
   CopyQBittorrentPassword,
   ExportDiagnostics,
   GetApplicationDataStatuses,
@@ -82,7 +83,7 @@ root.innerHTML = [
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="environment">Voltar</button><div><button id="onboarding-choose-storage" class="secondary-button" type="button">Escolher pasta</button><button id="onboarding-storage-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
   '    </article>',
   '    <article id="onboarding-applications" class="onboarding-step" hidden>',
-  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><div id="onboarding-integration-guidance" class="onboarding-integration-benefit" role="status" aria-live="polite"><strong id="onboarding-integration-title">Mais automação, menos configuração</strong><p id="onboarding-integration-copy">Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.</p></div><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-installation-progress" class="installation-progress-details" hidden><summary><span>Acompanhar instalação</span><small id="onboarding-installation-progress-summary"></small></summary><ol id="onboarding-installation-progress-list"></ol></details><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
+  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><div id="onboarding-integration-guidance" class="onboarding-integration-benefit" role="status" aria-live="polite"><strong id="onboarding-integration-title">Mais automação, menos configuração</strong><p id="onboarding-integration-copy">Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.</p></div><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-installation-progress" class="installation-progress-details" hidden><summary><span>Acompanhar instalação</span><small id="onboarding-installation-progress-summary"></small></summary><ol id="onboarding-installation-progress-list"></ol></details><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code><button id="onboarding-copy-support-report" class="secondary-button support-report-button" type="button">Copiar relatório técnico</button></details></div>',
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="storage">Voltar</button><button id="onboarding-install" class="onboarding-primary" type="button" disabled>Instalar aplicativos</button></footer>',
   '    </article>',
   '  </div>',
@@ -250,6 +251,9 @@ const onboardingOperationDetails = document.querySelector<HTMLDetailsElement>(
 const onboardingOperationTechnical = document.querySelector<HTMLElement>(
   '#onboarding-operation-technical',
 );
+const onboardingCopySupportReport = document.querySelector<HTMLButtonElement>(
+  '#onboarding-copy-support-report',
+);
 const countElement = document.querySelector<HTMLElement>('#catalog-count');
 const selectRecommendedButton = document.querySelector<HTMLButtonElement>('#select-recommended');
 const messageElement = document.querySelector<HTMLElement>('#message');
@@ -406,10 +410,30 @@ function renderOnboardingIssue(issue?: application.OperationIssue): void {
   if (!onboardingOperationDetails || !onboardingOperationTechnical) return;
   onboardingOperationDetails.hidden = !issue;
   onboardingOperationDetails.open = false;
+  if (onboardingCopySupportReport) onboardingCopySupportReport.hidden = !issue;
+  if (onboardingCopySupportReport && issue) {
+    onboardingCopySupportReport.textContent = 'Copiar relatório técnico';
+  }
   onboardingOperationTechnical.textContent = issue
     ? `${issue.summary}\n${issue.nextAction}\nCódigo: ${issue.code}`
     : '';
 }
+
+onboardingCopySupportReport?.addEventListener('click', async () => {
+  if (!onboardingCopySupportReport) return;
+  onboardingCopySupportReport.disabled = true;
+  try {
+    await CopyLastInstallationSupportReport();
+    onboardingCopySupportReport.textContent = 'Relatório copiado';
+    showOnboardingNotification(
+      'Relatório técnico copiado. Você pode colá-lo diretamente na issue do GitHub.',
+    );
+  } catch {
+    onboardingCopySupportReport.textContent = 'Não foi possível copiar';
+  } finally {
+    onboardingCopySupportReport.disabled = false;
+  }
+});
 
 function renderOperationIssue(issue?: application.OperationIssue): void {
   if (!operationDetailsElement || !operationTechnicalElement) return;
