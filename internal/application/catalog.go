@@ -132,7 +132,7 @@ func newCatalog(registry *services.Registry, translator *i18n.I18n) *Catalog {
 			Category:     string(service.Category),
 			URL:          applicationURL,
 			Optional:     service.Optional,
-			Dependencies: append([]string(nil), service.Dependencies...),
+			Dependencies: append([]string{}, service.Dependencies...),
 		}
 
 		applications = append(applications, summary)

@@ -35,6 +35,19 @@ func TestCatalogListsOnlyApplicationsWithWebInterfaces(t *testing.T) {
 	}
 }
 
+func TestCatalogAlwaysExposesDependenciesAsAnArray(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+
+	for _, application := range NewCatalog(registry).ListApplications() {
+		if application.Dependencies == nil {
+			t.Fatalf("application %q exposes null dependencies", application.ID)
+		}
+	}
+}
+
 func TestLocalizedCatalogUsesEmbeddedDesktopTranslations(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

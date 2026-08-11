@@ -289,6 +289,7 @@ const legalNoticesElement = document.querySelector<HTMLElement>('#legal-notices'
 
 let setupStatus: application.SetupStatus | undefined;
 let availableApplications: Application[] = [];
+let applicationCatalogState: 'loading' | 'ready' | 'error' = 'loading';
 let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
 let managedStatuses = new Map<string, ManagedStatus>();
@@ -337,6 +338,16 @@ function showOnboardingNotification(message: string): void {
   onboardingNotification.hidden = false;
 }
 
+function updateOnboardingCatalogAuthority(): void {
+  if (onboardingRecommended) {
+    onboardingRecommended.disabled = applicationCatalogState !== 'ready' || selectionSaving;
+  }
+  if (onboardingInstallButton) {
+    onboardingInstallButton.disabled =
+      applicationCatalogState !== 'ready' || !setupStatus?.canInstall;
+  }
+}
+
 function showOnboardingStep(step: OnboardingStep): void {
   for (const element of document.querySelectorAll<HTMLElement>('.onboarding-step')) {
     const active = element.id === `onboarding-${step}`;
@@ -377,7 +388,7 @@ function syncOnboarding(status: application.SetupStatus): void {
     onboardingPermissionsNext.disabled = !onboardingTermsCheckbox?.checked;
   }
   if (onboardingStorageNext) onboardingStorageNext.disabled = !status.storagePath;
-  if (onboardingInstallButton) onboardingInstallButton.disabled = !status.canInstall;
+  updateOnboardingCatalogAuthority();
   if (onboardingJellyfinLANSetting) {
     onboardingJellyfinLANSetting.hidden = !status.applications.includes('jellyfin');
   }
@@ -908,8 +919,9 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   metadata.className = 'metadata';
   const notice = legalNotices.find((candidate) => candidate.id === target.id);
   metadata.textContent = `Container próprio${notice?.license ? ` · ${notice.license}` : ''}`;
-  if (target.dependencies.length > 0) {
-    const dependencyNames = target.dependencies.map(
+  const dependencies = target.dependencies ?? [];
+  if (dependencies.length > 0) {
+    const dependencyNames = dependencies.map(
       (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
     );
     metadata.textContent += ` · Inclui ${dependencyNames.join(', ')}`;
@@ -960,6 +972,20 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   return card;
 }
 
+function renderApplicationCatalogError(): void {
+  const error = document.createElement('div');
+  error.className = 'onboarding-catalog-error';
+  const copy = document.createElement('p');
+  copy.textContent = 'Não foi possível carregar os aplicativos disponíveis.';
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'secondary-button';
+  retry.textContent = 'Tentar novamente';
+  retry.addEventListener('click', () => void loadApplications());
+  error.append(copy, retry);
+  onboardingApplicationList?.replaceChildren(error);
+}
+
 function renderApplications(): void {
   applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
   onboardingApplicationList?.replaceChildren(
@@ -971,19 +997,31 @@ function renderApplications(): void {
 }
 
 async function loadApplications(): Promise<void> {
-  if (!applicationsElement || !countElement) return;
+  if (!applicationsElement && !onboardingApplicationList) return;
+
+  applicationCatalogState = 'loading';
+  if (onboardingCatalogCount) onboardingCatalogCount.textContent = 'Carregando…';
+  updateOnboardingCatalogAuthority();
 
   try {
     availableApplications = await ListApplications();
+    if (availableApplications.length === 0) throw new Error('empty application catalog');
+    applicationCatalogState = 'ready';
     renderApplications();
-    countElement.textContent = `${availableApplications.length} disponíveis`;
+    if (countElement) countElement.textContent = `${availableApplications.length} disponíveis`;
   } catch {
-    applicationsElement.replaceChildren();
-    countElement.textContent = 'Indisponível';
+    applicationCatalogState = 'error';
+    availableApplications = [];
+    applicationsElement?.replaceChildren();
+    if (countElement) countElement.textContent = 'Indisponível';
+    if (onboardingCatalogCount) onboardingCatalogCount.textContent = 'Catálogo indisponível';
+    renderApplicationCatalogError();
     if (messageElement) {
       messageElement.textContent = 'Não foi possível carregar o catálogo do Corsarr.';
       messageElement.classList.add('error');
     }
+  } finally {
+    updateOnboardingCatalogAuthority();
   }
 }
 
@@ -1829,7 +1867,7 @@ onboardingStorageNext?.addEventListener('click', async () => {
 });
 
 onboardingRecommended?.addEventListener('click', async () => {
-  if (!onboardingRecommended || selectionSaving) return;
+  if (!onboardingRecommended || selectionSaving || applicationCatalogState !== 'ready') return;
   onboardingRecommended.disabled = true;
   selectionSaving = true;
   renderApplications();
@@ -1848,7 +1886,7 @@ onboardingRecommended?.addEventListener('click', async () => {
     }
   } finally {
     selectionSaving = false;
-    onboardingRecommended.disabled = false;
+    updateOnboardingCatalogAuthority();
     renderApplications();
   }
 });
@@ -1916,7 +1954,7 @@ onboardingInstallButton?.addEventListener('click', async () => {
     onboardingInstallButton.textContent = 'Tentar novamente';
   } finally {
     if (!setupStatus?.onboardingCompleted) {
-      onboardingInstallButton.disabled = !setupStatus?.canInstall;
+      updateOnboardingCatalogAuthority();
     }
   }
 });
