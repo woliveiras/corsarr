@@ -1894,18 +1894,22 @@ onboardingRecommended?.addEventListener('click', async () => {
 onboardingJellyfinLANCheckbox?.addEventListener('change', async () => {
   if (!onboardingJellyfinLANCheckbox) return;
   const enabled = onboardingJellyfinLANCheckbox.checked;
-  if (
-    enabled &&
-    !window.confirm('Permitir que TVs e celulares desta rede local acessem o Jellyfin?')
-  ) {
-    onboardingJellyfinLANCheckbox.checked = false;
-    return;
-  }
   onboardingJellyfinLANCheckbox.disabled = true;
+  hideOnboardingNotification();
   try {
     applySetupStatus(await SetJellyfinLAN(enabled));
   } catch {
-    applySetupStatus(await GetSetupStatus());
+    try {
+      applySetupStatus(await GetSetupStatus());
+    } catch {
+      // Keep the last known state when the setup refresh is also unavailable.
+    }
+    showOnboardingStep('applications');
+    showOnboardingNotification(
+      enabled
+        ? 'Não foi possível liberar o Jellyfin para esta rede. Confirme que o Jellyfin está selecionado e tente novamente.'
+        : 'Não foi possível remover o acesso do Jellyfin à rede. Tente novamente.',
+    );
   } finally {
     onboardingJellyfinLANCheckbox.disabled = false;
   }
