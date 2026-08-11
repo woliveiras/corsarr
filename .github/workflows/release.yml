@@ -80,6 +80,11 @@ jobs:
       - name: Test Go behavior
         run: go test -race ./...
 
+      - name: Verify third-party notices are current
+        run: |
+          go run ./tools/notices
+          git diff --exit-code -- THIRD_PARTY_NOTICES.md
+
       - name: Install frontend dependencies
         run: pnpm --dir desktop/frontend install --frozen-lockfile
 
@@ -123,6 +128,11 @@ jobs:
       - name: Install pinned Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
 
+      - name: Install pinned Syft for the Desktop SBOM
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          syft-version: v1.50.0
+
       - name: Set bundle version
         env:
           RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.0' }}
@@ -156,20 +166,27 @@ jobs:
 
       - name: Package macOS application
         run: |
-          ditto -c -k --sequesterRsrc --keepParent \
-            desktop/build/bin/Corsarr.app \
-            corsarr_desktop_darwin_universal.zip
+          mkdir package
+          ditto desktop/build/bin/Corsarr.app package/Corsarr.app
+          cp README.md LICENSE THIRD_PARTY_NOTICES.md package/
+          syft package \
+            -o spdx-json=corsarr_desktop_darwin_universal.spdx.json
+          (cd package && ditto -c -k --sequesterRsrc . ../corsarr_desktop_darwin_universal.zip)
 
       - name: Attest macOS artifact
         uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
         with:
-          subject-path: corsarr_desktop_darwin_universal.zip
+          subject-path: |
+            corsarr_desktop_darwin_universal.zip
+            corsarr_desktop_darwin_universal.spdx.json
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: corsarr-desktop-macos-${{ github.sha }}
-          path: corsarr_desktop_darwin_universal.zip
+          path: |
+            corsarr_desktop_darwin_universal.zip
+            corsarr_desktop_darwin_universal.spdx.json
           if-no-files-found: error
           retention-days: 7
 
@@ -208,6 +225,11 @@ jobs:
       - name: Install pinned Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
 
+      - name: Install pinned Syft for the Desktop SBOM
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          syft-version: v1.50.0
+
       - name: Build Windows desktop application
         shell: pwsh
         working-directory: desktop
@@ -244,19 +266,26 @@ jobs:
           foreach ($package in $packages) {
             New-Item -ItemType Directory -Path $package.Directory | Out-Null
             Copy-Item $package.Source (Join-Path $package.Directory "Corsarr.exe")
-            Copy-Item README.md, LICENSE $package.Directory
+            Copy-Item README.md, LICENSE, THIRD_PARTY_NOTICES.md $package.Directory
             Compress-Archive -Path "$($package.Directory)/*" -DestinationPath $package.Archive
           }
+
+          syft package-amd64 -o spdx-json=corsarr_desktop_windows_amd64.spdx.json
+          syft package-386 -o spdx-json=corsarr_desktop_windows_386.spdx.json
 
       - name: Attest Windows x64 artifact
         uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
         with:
-          subject-path: corsarr_desktop_windows_amd64.zip
+          subject-path: |
+            corsarr_desktop_windows_amd64.zip
+            corsarr_desktop_windows_amd64.spdx.json
 
       - name: Attest Windows x86 artifact
         uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
         with:
-          subject-path: corsarr_desktop_windows_386.zip
+          subject-path: |
+            corsarr_desktop_windows_386.zip
+            corsarr_desktop_windows_386.spdx.json
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -265,6 +294,8 @@ jobs:
           path: |
             corsarr_desktop_windows_amd64.zip
             corsarr_desktop_windows_386.zip
+            corsarr_desktop_windows_amd64.spdx.json
+            corsarr_desktop_windows_386.spdx.json
           if-no-files-found: error
           retention-days: 7
 
@@ -311,6 +342,11 @@ jobs:
       - name: Install pinned Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
 
+      - name: Install pinned Syft for the Desktop SBOM
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          syft-version: v1.50.0
+
       - name: Build Linux desktop application
         working-directory: desktop
         env:
@@ -330,19 +366,24 @@ jobs:
         run: |
           mkdir package
           install -m 0755 desktop/build/bin/Corsarr package/Corsarr
-          cp README.md LICENSE package/
+          cp README.md LICENSE THIRD_PARTY_NOTICES.md package/
+          syft package -o spdx-json=corsarr_desktop_linux_amd64.spdx.json
           tar -C package -czf corsarr_desktop_linux_amd64.tar.gz .
 
       - name: Attest Linux artifact
         uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
         with:
-          subject-path: corsarr_desktop_linux_amd64.tar.gz
+          subject-path: |
+            corsarr_desktop_linux_amd64.tar.gz
+            corsarr_desktop_linux_amd64.spdx.json
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: corsarr-desktop-linux-${{ github.sha }}
-          path: corsarr_desktop_linux_amd64.tar.gz
+          path: |
+            corsarr_desktop_linux_amd64.tar.gz
+            corsarr_desktop_linux_amd64.spdx.json
           if-no-files-found: error
           retention-days: 7
 
