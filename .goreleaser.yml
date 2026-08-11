@@ -84,4 +84,12 @@ release:
     owner: woliveiras
     name: corsarr
   name_template: "{{.Tag}}"
+  header: |
+    ## Desktop support
+
+    Corsarr Desktop for macOS is the supported non-technical onboarding release.
+    Windows and Linux Desktop archives are experimental previews: they launch on
+    their target systems, but automatic runtime preparation and native secure
+    credential storage are not implemented yet. The CLI remains supported on all
+    published platforms.
   prerelease: auto

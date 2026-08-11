@@ -80,9 +80,9 @@ automatically only when Radarr and Sonarr are also selected, reads their
 generated keys only in Go, and uses Bazarr's authenticated settings API. On macOS, the
 desktop can install or start its pinned, verified runtime after explicit
 consent. The first supported Desktop release targets macOS 14 or newer on
-Apple Silicon and Intel. Windows and Linux artifacts compile, but their
-automatic runtime preparation and native credential stores are not yet part of
-the supported release path. Jellyfin's first-run
+Apple Silicon and Intel. Windows and Linux Desktop archives are published as
+experimental previews, but their automatic runtime preparation and native
+credential stores are not yet part of the supported release path. Jellyfin's first-run
 wizard is automated with a generated `corsarr` administrator stored in the
 macOS Keychain, remote access disabled by default, and reserved movie, TV, and
 music libraries. Installed
@@ -140,12 +140,16 @@ marking its first-run setup complete.
 ### Download Corsarr Desktop
 
 - [Download the latest macOS universal build](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_darwin_universal.zip)
+- [Download the experimental Windows x64 build](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_windows_amd64.zip)
+- [Download the experimental Linux x64 build](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_linux_amd64.tar.gz)
 - [Open the complete GitHub Release page](https://github.com/woliveiras/corsarr/releases/latest)
 
 The macOS build is distributed without Apple Developer ID signing or
 notarization. macOS will therefore show a Gatekeeper warning on first launch.
 Follow the reviewed first-open steps in the
 [Desktop installation guide](docs/DESKTOP_INSTALLATION.md#install-on-macos).
+Windows and Linux Desktop builds are unsigned experimental previews and do not
+yet support the complete non-technical onboarding flow.
 
 ### Run Corsarr Desktop from source
 

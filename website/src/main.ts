@@ -143,7 +143,7 @@ const copy: Record<Locale, Copy> = {
     downloads: {
       eyebrow: "ESCOLHA SUA PLATAFORMA",
       title: "Pronto para começar?",
-      body: "As compilações Desktop são publicadas junto com as releases do Corsarr. Escolha a plataforma deste computador.",
+      body: "O Desktop para macOS é a experiência suportada. Windows e Linux também recebem prévias experimentais para testes.",
       platforms: [
         {
           name: "macOS",
@@ -153,18 +153,19 @@ const copy: Record<Locale, Copy> = {
         },
         {
           name: "Windows",
-          detail: "Windows 10/11 · x64",
-          action: "Baixar para Windows",
+          detail: "Experimental · Windows 10/11 · x64",
+          action: "Baixar prévia para Windows",
           href: `${releases}/latest/download/corsarr_desktop_windows_amd64.zip`,
         },
         {
           name: "Linux",
-          detail: "Linux · x64",
-          action: "Baixar para Linux",
+          detail: "Experimental · Linux · x64",
+          action: "Baixar prévia para Linux",
           href: `${releases}/latest/download/corsarr_desktop_linux_amd64.tar.gz`,
         },
       ],
-      notice: "As primeiras versões podem não ser assinadas. Confira as notas da release antes de instalar.",
+      notice:
+        "Os pacotes ainda não são assinados. Windows e Linux não incluem o onboarding completo; confira as notas da release.",
     },
     faq: {
       eyebrow: "DÚVIDAS FREQUENTES",
@@ -193,7 +194,7 @@ const copy: Record<Locale, Copy> = {
         {
           question: "Windows e Linux são suportados?",
           answer:
-            "As compilações estão previstas para as três plataformas. O onboarding completo começa pelo macOS; veja as notas de cada release para o estado atual de Windows e Linux.",
+            "O Desktop suportado começa pelo macOS. Windows e Linux recebem builds experimentais para testes, mas a preparação automática do runtime e o armazenamento seguro nativo ainda estão em desenvolvimento.",
         },
         {
           question: "Ainda existe uma versão CLI?",
@@ -304,7 +305,7 @@ const copy: Record<Locale, Copy> = {
     downloads: {
       eyebrow: "CHOOSE YOUR PLATFORM",
       title: "Ready to begin?",
-      body: "Desktop builds are published alongside Corsarr releases. Choose the platform for this computer.",
+      body: "Desktop for macOS is the supported experience. Windows and Linux also receive experimental previews for testing.",
       platforms: [
         {
           name: "macOS",
@@ -314,18 +315,19 @@ const copy: Record<Locale, Copy> = {
         },
         {
           name: "Windows",
-          detail: "Windows 10/11 · x64",
-          action: "Download for Windows",
+          detail: "Experimental · Windows 10/11 · x64",
+          action: "Download Windows preview",
           href: `${releases}/latest/download/corsarr_desktop_windows_amd64.zip`,
         },
         {
           name: "Linux",
-          detail: "Linux · x64",
-          action: "Download for Linux",
+          detail: "Experimental · Linux · x64",
+          action: "Download Linux preview",
           href: `${releases}/latest/download/corsarr_desktop_linux_amd64.tar.gz`,
         },
       ],
-      notice: "Early builds may be unsigned. Check the release notes before installing.",
+      notice:
+        "Packages are currently unsigned. Windows and Linux do not include complete onboarding; check the release notes.",
     },
     faq: {
       eyebrow: "FREQUENTLY ASKED QUESTIONS",
@@ -354,7 +356,7 @@ const copy: Record<Locale, Copy> = {
         {
           question: "Are Windows and Linux supported?",
           answer:
-            "Builds are planned for all three platforms. Full onboarding starts on macOS; check each release note for the current Windows and Linux status.",
+            "Supported Desktop onboarding starts on macOS. Windows and Linux receive experimental test builds, while automatic runtime preparation and native secure credential storage remain in development.",
         },
         {
           question: "Is there still a CLI?",

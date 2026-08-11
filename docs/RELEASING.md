@@ -6,11 +6,11 @@ must agree. The next prepared version is `1.2.0`.
 
 ## Publication boundary
 
-A tag push cannot publish a release. It validates the tag and builds the macOS
-release candidate with read-only repository permission. Publication requires a
-second, explicit **Run workflow** action on that exact tag with the `publish`
-checkbox enabled. Only that manually initiated job receives repository-content
-write permission after all checks pass.
+A tag push cannot publish a release. It validates the tag and builds the macOS,
+Windows, and Linux release candidates with read-only repository permission.
+Publication requires a second, explicit **Run workflow** action on that exact
+tag with the `publish` checkbox enabled. Only that manually initiated job
+receives repository-content write permission after all checks pass.
 
 Branch protection, required checks, secret scanning, and push protection are
 separate repository settings and should still be configured before release.
@@ -22,9 +22,11 @@ separate repository settings and should still be configured before release.
 2. Run the focused checks and the full validation commands documented below.
 3. Run the Release workflow manually. Manual execution is a dry run: it builds
    Desktop artifacts and a CLI GoReleaser snapshot but cannot publish.
-4. Download the macOS artifact, verify its attestation and checksum, and test it
-   from a clean user environment. The external non-technical onboarding test is
-   release-candidate evidence, not something inferred from unit tests.
+4. Download the Desktop artifacts, verify their attestations and checksums, and
+   test the macOS package from a clean user environment. Windows and Linux are
+   published as experimental previews until their native acceptance gates pass.
+   The external non-technical onboarding test is release-candidate evidence,
+   not something inferred from unit tests.
 5. Inspect `THIRD_PARTY_NOTICES.md` and the generated SPDX JSON SBOM.
 6. Review known limitations and release notes, especially the unsigned and
    unnotarized macOS first-open experience.
@@ -34,14 +36,13 @@ separate repository settings and should still be configured before release.
 Publishing requires separate authorization. After approval to create the
 candidate, create and push the exact tag `v$(cat VERSION)`. A tag push verifies
 the tag against `VERSION`, reruns tests and vulnerability scanning, and builds
-the macOS universal Desktop package without publishing it. Inspect that run,
-then manually run the Release workflow on the same tag with `publish` enabled.
-That second run repeats the checks and publishes the CLI and macOS assets.
-
-Windows and Linux Desktop jobs remain in the manual dry-run matrix as
-experimental build evidence. They are not uploaded to a public release while
-automatic runtime preparation and native secure credential storage remain
-unimplemented. The cross-platform CLI continues to be released by GoReleaser.
+the macOS, Windows, and Linux Desktop packages without publishing them. Inspect
+that run, then manually run the Release workflow on the same tag with `publish`
+enabled. That second run repeats the checks and publishes the cross-platform
+CLI, the supported macOS Desktop archive, and the experimental Windows/Linux
+Desktop archives. Release notes and installation documentation must preserve
+that support distinction until automatic runtime preparation, native secure
+credential storage, and platform acceptance are complete.
 
 ## Local validation
 

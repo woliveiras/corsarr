@@ -22,6 +22,19 @@ Only download Corsarr from the official `woliveiras/corsarr` GitHub Releases
 page and compare the archive with `desktop_checksums.txt` from the same release.
 The workflow also publishes an artifact attestation and an SPDX JSON SBOM.
 
+## Experimental Windows and Linux previews
+
+The official release also includes unsigned experimental Desktop archives:
+
+- [`corsarr_desktop_windows_amd64.zip`](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_windows_amd64.zip)
+- [`corsarr_desktop_windows_386.zip`](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_windows_386.zip)
+- [`corsarr_desktop_linux_amd64.tar.gz`](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_linux_amd64.tar.gz)
+
+These packages are published for platform testing and feedback. They are not
+yet supported for the complete non-technical onboarding flow: automatic runtime
+preparation and native secure credential storage remain intentionally blocked.
+Verify every archive against `desktop_checksums.txt` from the same release.
+
 ## Update manually
 
 1. Close Corsarr Desktop. Closing the interface does not stop running media
