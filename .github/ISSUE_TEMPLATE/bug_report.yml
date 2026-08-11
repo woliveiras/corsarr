@@ -1,0 +1,89 @@
+name: Bug report
+description: Report a reproducible Corsarr CLI or Desktop problem
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Corsarr. For vulnerabilities or exposed credentials, stop here and use the private security advisory link in SECURITY.md.
+
+  - type: input
+    id: version
+    attributes:
+      label: Corsarr version
+      description: Use the version shown in the diagnostic report or `corsarr --version`.
+      placeholder: "1.2.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Product surface
+      options:
+        - Corsarr Desktop
+        - Corsarr CLI
+    validations:
+      required: true
+
+  - type: input
+    id: system
+    attributes:
+      label: Operating system and architecture
+      placeholder: "macOS 15.6, Apple Silicon"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Start from the last known working state and list every action needed to reproduce the problem.
+      placeholder: |
+        1. Open Corsarr...
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the visible diagnostic code and exact safe error text.
+    validations:
+      required: true
+
+  - type: textarea
+    id: report
+    attributes:
+      label: Technical report
+      description: In onboarding use "Copiar relatório técnico". On the dashboard use "Exportar diagnóstico" and drag the JSON file here. Inspect it first and remove private paths or identifiers. Never attach passwords, API keys, cookies, tracker credentials, application logs, or media filenames.
+      placeholder: Drag the reviewed corsarr-diagnostics.json here, or paste the copied onboarding report.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots only after checking that they contain no private data.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I tested the latest published Corsarr release.
+          required: true
+        - label: I reviewed every attachment and removed credentials and private data.
+          required: true
+        - label: This report is a product bug, not a security vulnerability.
+          required: true

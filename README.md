@@ -751,12 +751,16 @@ docker compose up -d
 ## 📄 License
 
 See [LICENSE](LICENSE) file.
+Third-party software incorporated into release artifacts is listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). See
+[SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 ---
 
 ## 🔗 Links
 
 - **[Issue Tracker](https://github.com/woliveiras/corsarr/issues)** - Report bugs or request features
+- **[Security](SECURITY.md)** - Privately report vulnerabilities
 - **[Gluetun Wiki](https://github.com/qdm12/gluetun-wiki)** - VPN provider documentation
 
 ---

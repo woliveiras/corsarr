@@ -2,6 +2,24 @@
 
 Use this guide to diagnose common issues when running Corsarr-generated stacks.
 
+## Corsarr Desktop support report
+
+During a failed onboarding installation, expand **Detalhes técnicos** and choose
+**Copiar relatório técnico**. After onboarding, choose **Exportar diagnóstico**
+in the sidebar and save `corsarr-diagnostics.json` to a location you control.
+
+Before attaching either report to a
+[bug report](https://github.com/woliveiras/corsarr/issues/new/choose), inspect it
+and remove personal paths or identifiers you do not want to publish. Corsarr
+excludes application logs and runtime sockets and redacts credential-shaped
+values, but you must still verify the file. Never publish passwords, API keys,
+cookies, tracker credentials, download history, or media filenames.
+
+Include the Corsarr version, operating system and architecture, visible
+diagnostic code, selected applications, exact reproduction steps, and whether
+retry changed the result. Report suspected vulnerabilities through the private
+process in [SECURITY.md](../SECURITY.md), not through a public issue.
+
 ## Service Can't Access Files
 
 **Problem**: Permission denied errors
