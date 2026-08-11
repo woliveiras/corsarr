@@ -26,9 +26,9 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
+      - -X github.com/woliveiras/corsarr/internal/buildinfo.Version={{.Version}}
+      - -X github.com/woliveiras/corsarr/internal/buildinfo.Commit={{.Commit}}
+      - -X github.com/woliveiras/corsarr/internal/buildinfo.Date={{.Date}}
     env:
       - CGO_ENABLED=0
 

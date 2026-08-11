@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/woliveiras/corsarr/internal/buildinfo"
 	"github.com/woliveiras/corsarr/internal/i18n"
 )
 
@@ -15,8 +16,9 @@ var (
 
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
-	Use:   "corsarr",
-	Short: "🏴‍☠️ Corsarr - Navigate the high seas of media automation",
+	Use:     "corsarr",
+	Short:   "🏴‍☠️ Corsarr - Navigate the high seas of media automation",
+	Version: buildinfo.Current(),
 	Long: `Corsarr is a CLI tool to easily configure and deploy your *arr stack
 (Radarr, Sonarr, Prowlarr, etc.) with Docker Compose.
 
@@ -26,7 +28,7 @@ and Corsarr will generate the docker-compose.yml and .env files for you.`,
 		// Initialize i18n if not already done
 		if translator == nil {
 			var err error
-			
+
 			// If language not set, prompt user to select
 			if language == "" {
 				language, err = i18n.SelectLanguage()

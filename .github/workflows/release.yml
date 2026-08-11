@@ -18,12 +18,28 @@ jobs:
     name: Validate release trigger
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Require a semantic version tag
         if: github.event_name == 'push'
         shell: bash
         run: |
           if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Release tags must use semantic versioning, for example v1.2.3." >&2
+            exit 1
+          fi
+
+      - name: Require tag to match the repository version
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          EXPECTED_VERSION="$(tr -d '[:space:]' < VERSION)"
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          RELEASE_VERSION="${RELEASE_VERSION%%-*}"
+          RELEASE_VERSION="${RELEASE_VERSION%%+*}"
+          if [[ "${RELEASE_VERSION}" != "${EXPECTED_VERSION}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match VERSION (${EXPECTED_VERSION})." >&2
             exit 1
           fi
 
@@ -109,7 +125,7 @@ jobs:
 
       - name: Set bundle version
         env:
-          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v0.0.0' }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.0' }}
           BUILD_VERSION: ${{ github.run_number }}
         run: |
           RELEASE_VERSION="${RELEASE_VERSION#v}"
@@ -118,12 +134,16 @@ jobs:
 
       - name: Build universal desktop bundle
         working-directory: desktop
+        env:
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.0' }}
+          RELEASE_COMMIT: ${{ github.sha }}
         run: |
           "$(go env GOPATH)/bin/wails" build \
             -clean \
             -m \
             -nosyncgomod \
             -trimpath \
+            -ldflags "-X github.com/woliveiras/corsarr/internal/buildinfo.Version=${RELEASE_VERSION} -X github.com/woliveiras/corsarr/internal/buildinfo.Commit=${RELEASE_COMMIT}" \
             -platform darwin/universal
 
       - name: Verify ad hoc signature
@@ -191,6 +211,9 @@ jobs:
       - name: Build Windows desktop application
         shell: pwsh
         working-directory: desktop
+        env:
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.0' }}
+          RELEASE_COMMIT: ${{ github.sha }}
         run: |
           $wails = Join-Path (go env GOPATH) "bin\wails.exe"
           & $wails build `
@@ -198,6 +221,7 @@ jobs:
             -m `
             -nosyncgomod `
             -trimpath `
+            -ldflags "-X github.com/woliveiras/corsarr/internal/buildinfo.Version=$env:RELEASE_VERSION -X github.com/woliveiras/corsarr/internal/buildinfo.Commit=$env:RELEASE_COMMIT" `
             -platform windows/amd64,windows/386
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -289,12 +313,16 @@ jobs:
 
       - name: Build Linux desktop application
         working-directory: desktop
+        env:
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.0' }}
+          RELEASE_COMMIT: ${{ github.sha }}
         run: |
           "$(go env GOPATH)/bin/wails" build \
             -clean \
             -m \
             -nosyncgomod \
             -trimpath \
+            -ldflags "-X github.com/woliveiras/corsarr/internal/buildinfo.Version=${RELEASE_VERSION} -X github.com/woliveiras/corsarr/internal/buildinfo.Commit=${RELEASE_COMMIT}" \
             -platform linux/amd64 \
             -tags webkit2_41
 

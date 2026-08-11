@@ -8,7 +8,6 @@ import (
 	"os/user"
 	"path/filepath"
 	goruntime "runtime"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +15,7 @@ import (
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/woliveiras/corsarr/internal/application"
 	"github.com/woliveiras/corsarr/internal/autostart"
+	"github.com/woliveiras/corsarr/internal/buildinfo"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
@@ -976,9 +976,5 @@ func newRuntimeOnboarding(probe runtimeenv.Probe) (runtimePreparer, error) {
 }
 
 func corsarrBuildVersion() string {
-	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok || buildInfo.Main.Version == "" || buildInfo.Main.Version == "(devel)" {
-		return "development"
-	}
-	return buildInfo.Main.Version
+	return buildinfo.Current()
 }
