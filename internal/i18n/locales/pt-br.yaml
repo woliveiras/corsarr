@@ -135,6 +135,7 @@ errors:
   missing_dependency: "✗ Serviço '%s' requer '%s'"
   vpn_credentials_missing: "✗ Credenciais VPN estão faltando"
   docker_not_found: "✗ Docker não está instalado"
+  docker_unavailable: "✗ Docker está instalado, mas não está acessível. Verifique se o serviço está em execução e se seu usuário tem permissão para acessá-lo"
   docker_compose_not_found: "✗ Docker Compose não está instalado"
   no_services_selected: "✗ Nenhum serviço selecionado"
   generation_failed: "✗ Falha ao gerar arquivos: %s"
