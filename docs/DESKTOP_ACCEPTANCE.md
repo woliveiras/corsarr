@@ -76,6 +76,11 @@ runtime or application terms on the user's behalf.
   states without exposing credentials or runtime logs. Confirm that the regular
   dashboard appears only after the whole selection succeeds and that subsequent
   launches do not repeat onboarding.
+- [ ] On the completed dashboard, confirm that the hero reports running services
+  against all installed services, updates after stop/start/remove actions, and
+  that installed or attention-required applications appear before applications
+  that have not been installed. Confirm that the obsolete preparation review is
+  no longer rendered below the catalog.
 - [ ] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
   Confirm that each Arr download client reaches qBittorrent through the managed

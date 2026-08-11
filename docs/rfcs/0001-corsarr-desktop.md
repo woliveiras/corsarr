@@ -846,3 +846,7 @@ claims must be rechecked during implementation and release validation.
   internal WebUI port 8081 after Radarr correctly rejected the stale port 8080.
 - 2026-08-11: Replaced fixed onboarding microcopy sizes with viewport-bounded
   typography tokens for readable laptop and large-display layouts.
+- 2026-08-11: Made the completed dashboard summarize running versus installed
+  services from live managed status, group installed applications before the
+  remaining catalog without changing either group's catalog order, and removed
+  the obsolete preparation review already completed by onboarding.

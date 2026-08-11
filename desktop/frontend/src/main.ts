@@ -36,6 +36,7 @@ import {
 import type { application, legal, main, storage } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { missingSelectedIntegrations, toggleApplicationSelection } from './application-selection';
+import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
 import {
   applyInstallationProgress,
   createInstallationProgress,
@@ -109,7 +110,7 @@ root.innerHTML = [
   '    <section class="hero" aria-labelledby="hero-title">',
   '      <div>',
   '        <span class="phase">CONTROLE LOCAL</span>',
-  '        <h2 id="hero-title">Tudo no lugar certo,<br><em>sem complicação.</em></h2>',
+  '        <h2 id="hero-title">Tudo funcionando,<br><em>0/0 serviços rodando</em></h2>',
   '        <p>Instale, atualize e cuide dos seus aplicativos de mídia por uma única interface.</p>',
   '      </div>',
   '      <div class="radar" aria-hidden="true"><span></span><span></span><i></i><b>C</b></div>',
@@ -146,22 +147,6 @@ root.innerHTML = [
   '    <section id="applications" class="applications" aria-label="Aplicativos disponíveis">',
   '      <div class="loading-card"></div><div class="loading-card"></div><div class="loading-card"></div>',
   '    </section>',
-  '    <section class="installation-review" aria-labelledby="installation-title">',
-  '      <div>',
-  '        <p class="eyebrow">PRÓXIMA ETAPA</p>',
-  '        <h2 id="installation-title">Revise sua preparação</h2>',
-  '        <p id="installation-summary">Escolha uma pasta e ao menos um aplicativo.</p>',
-  '        <label class="terms-consent"><input id="accept-terms" type="checkbox"> <span>Autorizo o Corsarr a instalar e usar o Docker Desktop, baixar as imagens aprovadas e criar os serviços selecionados. Aceito os termos do Docker Desktop e entendo que o uso pessoal é gratuito, enquanto empresas maiores e entidades governamentais podem precisar de assinatura. Cada aplicação mantém sua própria licença.</span></label>',
-  '        <div id="start-at-login-setting" class="start-at-login-setting" hidden><label><input id="start-at-login" type="checkbox"> <span>Iniciar meus serviços automaticamente quando eu entrar no Mac.</span></label><button id="open-login-settings" class="legal-link-button" type="button" hidden>Abrir Ajustes do Sistema</button></div>',
-  '        <div id="jellyfin-lan-setting" class="start-at-login-setting" hidden><label><input id="jellyfin-lan" type="checkbox"> <span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local. Os painéis administrativos continuam privados neste computador.</span></label></div>',
-  '        <p id="installation-result" class="installation-result"></p>',
-  '        <details id="operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="operation-technical"></code></details>',
-  '      </div>',
-  '      <div class="installation-actions">',
-  '        <button id="prepare-storage" class="secondary-button" type="button" disabled>Preparar pastas</button>',
-  '        <button id="install-applications" class="prepare-button" type="button" disabled>Instalar aplicativos</button>',
-  '      </div>',
-  '    </section>',
   '    </div>',
   '    <section id="licenses-view" class="licenses-view" hidden aria-labelledby="licenses-title">',
   '      <header class="credits-header"><div><p class="eyebrow">CRÉDITOS E TRANSPARÊNCIA</p><h1 id="licenses-title">Aplicativos e licenças</h1><p>O Corsarr existe graças a estes projetos e mantenedores. Cada componente mantém seus próprios termos, marcas e direitos autorais.</p></div><button id="licenses-back" class="secondary-button" type="button">Voltar ao início</button></header>',
@@ -173,6 +158,7 @@ root.innerHTML = [
 ].join('');
 
 const applicationsElement = document.querySelector<HTMLElement>('#applications');
+const heroTitleElement = document.querySelector<HTMLElement>('#hero-title');
 const onboardingElement = document.querySelector<HTMLElement>('#onboarding');
 const dashboardShell = document.querySelector<HTMLElement>('#dashboard-shell');
 const onboardingProgress = document.querySelector<HTMLElement>('#onboarding-progress');
@@ -1003,7 +989,10 @@ function renderApplicationCatalogError(): void {
 }
 
 function renderApplications(): void {
-  applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
+  const dashboardApplications = sortApplicationsByInstallation(availableApplications, [
+    ...managedStatuses.values(),
+  ]);
+  applicationsElement?.replaceChildren(...dashboardApplications.map(createApplicationCard));
   onboardingApplicationList?.replaceChildren(
     ...availableApplications.map(createOnboardingApplicationCard),
   );
@@ -1011,6 +1000,18 @@ function renderApplications(): void {
   if (onboardingCatalogCount) {
     onboardingCatalogCount.textContent = `${availableApplications.length} disponíveis`;
   }
+}
+
+function renderRunningServicesSummary(): void {
+  if (!heroTitleElement) return;
+  const summary = runningServicesSummary([...managedStatuses.values()]);
+  heroTitleElement.replaceChildren(
+    'Tudo funcionando,',
+    document.createElement('br'),
+    Object.assign(document.createElement('em'), {
+      textContent: `${summary.running}/${summary.installed} serviços rodando`,
+    }),
+  );
 }
 
 function renderIntegrationAdvice(): void {
@@ -1142,11 +1143,13 @@ async function loadApplicationStatuses(): Promise<void> {
   try {
     const statuses = await GetApplicationStatuses();
     managedStatuses = new Map(statuses.map((status) => [status.applicationId, status]));
+    renderRunningServicesSummary();
     updateJellyfinLANControl();
     renderApplications();
     renderLegalNotices();
   } catch {
     managedStatuses = new Map();
+    renderRunningServicesSummary();
   }
 }
 
@@ -1439,12 +1442,11 @@ async function prepareRuntime(): Promise<void> {
     }
     return;
   }
-  if (!acceptTermsCheckbox?.checked) {
-    if (installationResultElement) {
-      installationResultElement.textContent =
-        'Leia e marque a autorização abaixo antes de preparar este computador.';
-      installationResultElement.classList.add('error');
-      acceptTermsCheckbox?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (!setupStatus?.termsAccepted) {
+    if (messageElement) {
+      messageElement.textContent =
+        'A autorização inicial não está disponível. Reinicie a configuração para preparar este computador.';
+      messageElement.classList.add('error');
     }
     return;
   }
