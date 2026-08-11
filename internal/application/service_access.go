@@ -18,6 +18,8 @@ type ServiceAccess struct {
 	store credentials.Store
 }
 
+var managedARRApplications = []string{"lidarr", "prowlarr", "radarr", "sonarr"}
+
 func NewServiceAccess(store credentials.Store) *ServiceAccess {
 	return &ServiceAccess{store: store}
 }
@@ -60,6 +62,45 @@ func (s *ServiceAccess) JellyfinPassword(ctx context.Context) (credentials.Secre
 	secret, err := s.store.Load(ctx, credentials.KeyJellyfinPassword)
 	if err != nil {
 		return credentials.Secret{}, fmt.Errorf("load Jellyfin credential: %w", err)
+	}
+	return secret, nil
+}
+
+func (s *ServiceAccess) ARRStatuses(
+	ctx context.Context,
+) ([]ServiceAccessStatus, error) {
+	statuses := make([]ServiceAccessStatus, 0, len(managedARRApplications))
+	for _, applicationID := range managedARRApplications {
+		status := ServiceAccessStatus{ApplicationID: applicationID, Username: "corsarr"}
+		key, err := credentials.ARRPasswordKey(applicationID)
+		if err != nil {
+			return nil, fmt.Errorf("resolve %s access status: %w", applicationID, err)
+		}
+		_, err = s.store.Load(ctx, key)
+		if errors.Is(err, credentials.ErrCredentialNotFound) {
+			statuses = append(statuses, status)
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("load %s access status: %w", applicationID, err)
+		}
+		status.Available = true
+		statuses = append(statuses, status)
+	}
+	return statuses, nil
+}
+
+func (s *ServiceAccess) ARRPassword(
+	ctx context.Context,
+	applicationID string,
+) (credentials.Secret, error) {
+	key, err := credentials.ARRPasswordKey(applicationID)
+	if err != nil {
+		return credentials.Secret{}, err
+	}
+	secret, err := s.store.Load(ctx, key)
+	if err != nil {
+		return credentials.Secret{}, fmt.Errorf("load %s credential: %w", applicationID, err)
 	}
 	return secret, nil
 }

@@ -25,11 +25,34 @@ type Key string
 const (
 	KeyJellyfinPassword    Key = "jellyfin-password"
 	KeyQBitTorrentPassword Key = "qbittorrent-password"
+	KeyLidarrPassword      Key = "lidarr-password"
+	KeyProwlarrPassword    Key = "prowlarr-password"
+	KeyRadarrPassword      Key = "radarr-password"
+	KeySonarrPassword      Key = "sonarr-password"
 )
 
 var keychainAccounts = map[Key]string{
 	KeyJellyfinPassword:    "jellyfin",
 	KeyQBitTorrentPassword: "qbittorrent",
+	KeyLidarrPassword:      "lidarr",
+	KeyProwlarrPassword:    "prowlarr",
+	KeyRadarrPassword:      "radarr",
+	KeySonarrPassword:      "sonarr",
+}
+
+var arrPasswordKeys = map[string]Key{
+	"lidarr":   KeyLidarrPassword,
+	"prowlarr": KeyProwlarrPassword,
+	"radarr":   KeyRadarrPassword,
+	"sonarr":   KeySonarrPassword,
+}
+
+func ARRPasswordKey(applicationID string) (Key, error) {
+	key, allowed := arrPasswordKeys[applicationID]
+	if !allowed {
+		return "", fmt.Errorf("Arr credential application is not allowlisted: %s", applicationID)
+	}
+	return key, nil
 }
 
 type Secret struct {

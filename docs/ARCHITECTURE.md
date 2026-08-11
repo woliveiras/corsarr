@@ -252,6 +252,19 @@ only when the desired path is absent. `ARRProvisioner` connects this client to
 installation after readiness, making retries idempotent. Unsupported apps are
 left unchanged for their dedicated provisioners.
 
+Before other Arr provisioning, `ARRAuthenticationProvisioner` inspects the live
+host configuration and acts only on the exact pristine state: no authentication
+method and no username. It creates a unique password for each supported Arr
+application, stores it in the native credential store, enables Forms
+authentication for `corsarr`, and keeps loopback access exempt so backend
+automation can continue without browser sessions. Existing or concurrently
+changed authentication is never overwritten. If the application accepted the
+credential but final verification was interrupted, the credential remains in
+the Keychain so the user is not locked out. Subsequent desktop startup
+reconciles this setup for already-running managed containers without pulling,
+creating, starting, or reinstalling them. Enabling start at login separately
+authorizes the runtime and existing containers to be started first.
+
 `internal/credentials.Store` is the boundary for generated service secrets.
 The first platform adapter uses the macOS Keychain with a fixed service name
 and allowlisted account keys. Secret values redact default formatting and JSON,
@@ -271,6 +284,12 @@ The Wails surface can report only whether qBittorrent access is available and
 the non-secret username. Password retrieval remains in Go: an explicit
 `CopyQBittorrentPassword` intent writes it directly to the native clipboard and
 returns no secret to TypeScript.
+
+The same boundary applies to managed Arr credentials. The dashboard receives
+only application ID, username, and availability. An explicit allowlisted
+`CopyARRPassword` intent loads one app-specific secret in Go and writes it
+directly to the native clipboard; the password and Arr API key never cross the
+Wails return boundary.
 
 `internal/diagnostics.Reporter` builds the support snapshot only after the user
 chooses Export diagnostics. It includes bounded platform, runtime, catalog,

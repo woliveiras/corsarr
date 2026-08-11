@@ -125,6 +125,10 @@ func (s *DataManagementService) deleteApplicationCredentials(
 		keys = []credentials.Key{credentials.KeyJellyfinPassword}
 	case "qbittorrent":
 		keys = []credentials.Key{credentials.KeyQBitTorrentPassword}
+	default:
+		if key, err := credentials.ARRPasswordKey(applicationID); err == nil {
+			keys = []credentials.Key{key}
+		}
 	}
 	for _, key := range keys {
 		if err := s.secrets.Delete(ctx, key); err != nil {

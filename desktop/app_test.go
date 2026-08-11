@@ -633,6 +633,26 @@ func TestCopyJellyfinPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	}
 }
 
+func TestCopyARRPasswordWritesOnlyAllowlistedSecretToNativeClipboard(t *testing.T) {
+	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
+	clipboard := &desktopClipboard{}
+	app := &App{serviceAccess: access, clipboard: clipboard}
+
+	if err := app.CopyARRPassword("radarr"); err != nil {
+		t.Fatalf("copy Radarr password: %v", err)
+	}
+	if clipboard.value != "private-password" || clipboard.calls != 1 ||
+		access.arrApplicationID != "radarr" {
+		t.Fatalf("expected one allowlisted native clipboard write, access=%#v clipboard=%#v", access, clipboard)
+	}
+	if err := app.CopyARRPassword("../../foreign"); err == nil {
+		t.Fatal("expected arbitrary credential lookup to be rejected")
+	}
+	if clipboard.calls != 1 {
+		t.Fatal("rejected application reached native clipboard")
+	}
+}
+
 func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
 		Provider: runtimeenv.ProviderDocker,
@@ -761,15 +781,24 @@ func TestBackgroundRecoveryStartsRuntimeBeforeExistingApplications(t *testing.T)
 	}}
 	runtime := &desktopRuntimePreparer{recoveryResult: onboarding.PreparationResult{Ready: true}}
 	recovery := &desktopBackgroundRecovery{result: application.RecoveryResult{Complete: true}}
+	reconciler := &desktopConfigurationReconciler{
+		result: application.ConfigurationReconciliationResult{Complete: true},
+	}
 	events := &desktopEventPublisher{}
 	app := &App{
-		setup: setup, runtimeOnboarding: runtime, backgroundRecovery: recovery, events: events,
+		setup: setup, runtimeOnboarding: runtime, backgroundRecovery: recovery,
+		configurationReconciler: reconciler, events: events,
 	}
 
 	app.runBackgroundRecovery(context.Background())
 
-	if runtime.recoverCalls != 1 || recovery.calls != 1 {
-		t.Fatalf("unexpected recovery calls runtime=%d applications=%d", runtime.recoverCalls, recovery.calls)
+	if runtime.recoverCalls != 1 || recovery.calls != 1 || reconciler.calls != 1 {
+		t.Fatalf(
+			"unexpected recovery calls runtime=%d applications=%d configuration=%d",
+			runtime.recoverCalls,
+			recovery.calls,
+			reconciler.calls,
+		)
 	}
 	if events.calls != 1 || events.name != backgroundRecoveryCompletedEvent {
 		t.Fatalf("unexpected recovery event %#v", events)
@@ -780,23 +809,28 @@ func TestBackgroundRecoveryStartsRuntimeBeforeExistingApplications(t *testing.T)
 	}
 }
 
-func TestBackgroundRecoveryDoesNothingWithoutEnabledNativeSetting(t *testing.T) {
+func TestBackgroundRecoveryReconcilesRunningConfigurationWithoutStartingServices(t *testing.T) {
 	for _, status := range []application.SetupStatus{
-		{},
-		{StartAtLogin: true, StartAtLoginSupported: true, StartAtLoginRequiresApproval: true},
+		{OnboardingCompleted: true},
+		{OnboardingCompleted: true, StartAtLogin: true, StartAtLoginSupported: true, StartAtLoginRequiresApproval: true},
 	} {
 		runtime := &desktopRuntimePreparer{}
 		recovery := &desktopBackgroundRecovery{}
+		reconciler := &desktopConfigurationReconciler{
+			result: application.ConfigurationReconciliationResult{Complete: true},
+		}
 		events := &desktopEventPublisher{}
 		app := &App{
 			setup:             &desktopSetupManager{status: status},
 			runtimeOnboarding: runtime, backgroundRecovery: recovery, events: events,
+			configurationReconciler: reconciler,
 		}
 
 		app.runBackgroundRecovery(context.Background())
 
-		if runtime.recoverCalls != 0 || recovery.calls != 0 || events.calls != 0 {
-			t.Fatalf("disabled setting caused recovery for %#v", status)
+		if runtime.recoverCalls != 0 || recovery.calls != 0 || reconciler.calls != 1 ||
+			events.calls != 1 {
+			t.Fatalf("unexpected disabled auto-start behavior for %#v", status)
 		}
 	}
 }
@@ -916,6 +950,19 @@ type desktopBackgroundRecovery struct {
 	result application.RecoveryResult
 	err    error
 	calls  int
+}
+
+type desktopConfigurationReconciler struct {
+	result application.ConfigurationReconciliationResult
+	err    error
+	calls  int
+}
+
+func (r *desktopConfigurationReconciler) Reconcile(
+	context.Context,
+) (application.ConfigurationReconciliationResult, error) {
+	r.calls++
+	return r.result, r.err
 }
 
 func (r *desktopBackgroundRecovery) Recover(context.Context) (application.RecoveryResult, error) {
@@ -1109,7 +1156,8 @@ func (m *desktopUpdateManager) Update(
 }
 
 type desktopServiceAccess struct {
-	password credentials.Secret
+	password         credentials.Secret
+	arrApplicationID string
 }
 
 type desktopLocalNetwork struct {
@@ -1128,6 +1176,25 @@ func (a *desktopServiceAccess) QBittorrentStatus(context.Context) (application.S
 		Username:      "corsarr",
 		Available:     true,
 	}, nil
+}
+
+func (a *desktopServiceAccess) ARRStatuses(context.Context) ([]application.ServiceAccessStatus, error) {
+	return []application.ServiceAccessStatus{{
+		ApplicationID: "radarr",
+		Username:      "corsarr",
+		Available:     true,
+	}}, nil
+}
+
+func (a *desktopServiceAccess) ARRPassword(
+	_ context.Context,
+	applicationID string,
+) (credentials.Secret, error) {
+	if _, err := credentials.ARRPasswordKey(applicationID); err != nil {
+		return credentials.Secret{}, err
+	}
+	a.arrApplicationID = applicationID
+	return a.password, nil
 }
 
 func (a *desktopServiceAccess) QBittorrentPassword(context.Context) (credentials.Secret, error) {

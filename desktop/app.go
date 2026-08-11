@@ -94,6 +94,8 @@ type applicationDataManager interface {
 }
 
 type serviceAccessManager interface {
+	ARRStatuses(ctx context.Context) ([]application.ServiceAccessStatus, error)
+	ARRPassword(ctx context.Context, applicationID string) (credentials.Secret, error)
 	JellyfinStatus(ctx context.Context) (application.ServiceAccessStatus, error)
 	JellyfinPassword(ctx context.Context) (credentials.Secret, error)
 	QBittorrentStatus(ctx context.Context) (application.ServiceAccessStatus, error)
@@ -120,6 +122,10 @@ type runtimePreparer interface {
 
 type backgroundRecoveryManager interface {
 	Recover(ctx context.Context) (application.RecoveryResult, error)
+}
+
+type configurationReconciliationManager interface {
+	Reconcile(ctx context.Context) (application.ConfigurationReconciliationResult, error)
 }
 
 type eventPublisher interface {
@@ -159,30 +165,31 @@ func (wailsEventPublisher) Emit(ctx context.Context, name string, data ...interf
 
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
-	changeMu           sync.Mutex
-	ctx                context.Context
-	catalog            *application.Catalog
-	legal              *legal.Catalog
-	environment        *application.EnvironmentService
-	directoryPicker    directoryPicker
-	storageInspector   storageInspector
-	setup              setupManager
-	layoutPreparer     storageLayoutPreparer
-	installation       installationManager
-	management         applicationManager
-	updates            applicationUpdateManager
-	runtimeOnboarding  runtimePreparer
-	applicationData    applicationDataManager
-	serviceAccess      serviceAccessManager
-	clipboard          clipboardWriter
-	diagnosticPicker   diagnosticFilePicker
-	diagnosticReporter diagnosticReporter
-	diagnosticWriter   diagnosticWriter
-	backgroundRecovery backgroundRecoveryManager
-	events             eventPublisher
-	runtimeDefaults    runtimecatalog.RuntimeOptions
-	localNetwork       localNetworkURLProvider
-	hostReadiness      hostreadiness.Checker
+	changeMu                sync.Mutex
+	ctx                     context.Context
+	catalog                 *application.Catalog
+	legal                   *legal.Catalog
+	environment             *application.EnvironmentService
+	directoryPicker         directoryPicker
+	storageInspector        storageInspector
+	setup                   setupManager
+	layoutPreparer          storageLayoutPreparer
+	installation            installationManager
+	management              applicationManager
+	updates                 applicationUpdateManager
+	runtimeOnboarding       runtimePreparer
+	applicationData         applicationDataManager
+	serviceAccess           serviceAccessManager
+	clipboard               clipboardWriter
+	diagnosticPicker        diagnosticFilePicker
+	diagnosticReporter      diagnosticReporter
+	diagnosticWriter        diagnosticWriter
+	backgroundRecovery      backgroundRecoveryManager
+	configurationReconciler configurationReconciliationManager
+	events                  eventPublisher
+	runtimeDefaults         runtimecatalog.RuntimeOptions
+	localNetwork            localNetworkURLProvider
+	hostReadiness           hostreadiness.Checker
 }
 
 func NewApp() (*App, error) {
@@ -240,8 +247,13 @@ func NewApp() (*App, error) {
 	)
 	arrCredentials := provisioning.NewARRCredentialReader()
 	arrClient := provisioning.NewARRClient(catalog)
-	arrProvisioner := provisioning.NewARRProvisioner(arrCredentials, arrClient)
 	credentialStore := credentials.NewPlatformStore()
+	arrAuthenticationProvisioner := provisioning.NewARRAuthenticationProvisioner(
+		arrCredentials,
+		credentialStore,
+		arrClient,
+	)
+	arrProvisioner := provisioning.NewARRProvisioner(arrCredentials, arrClient)
 	qbittorrentProvisioner := provisioning.NewQBittorrentProvisioner(
 		dockerManager,
 		credentialStore,
@@ -271,6 +283,7 @@ func NewApp() (*App, error) {
 		provisioning.NewSeerrClient(catalog),
 	)
 	provisioner := provisioning.NewChainProvisioner(
+		arrAuthenticationProvisioner,
 		arrProvisioner,
 		qbittorrentProvisioner,
 		arrDownloadProvisioner,
@@ -305,30 +318,37 @@ func NewApp() (*App, error) {
 		runtimecatalog.RuntimeCatalogVerifiedAt,
 	)
 	backgroundRecovery := application.NewRecoveryService(setup, catalog, dockerManager)
+	configurationReconciler := application.NewConfigurationReconciler(
+		setup,
+		catalog,
+		dockerManager,
+		provisioner,
+	)
 	hostProfile := hostprofile.NewProfiler().Current(goruntime.GOOS)
 
 	return &App{
-		catalog:            catalog,
-		legal:              legalCatalog,
-		environment:        environment,
-		directoryPicker:    wailsDirectoryPicker{},
-		storageInspector:   storageInspector,
-		setup:              setup,
-		layoutPreparer:     storage.NewLayoutPreparer(),
-		installation:       installation,
-		management:         management,
-		updates:            updates,
-		runtimeOnboarding:  runtimeOnboarding,
-		applicationData:    applicationData,
-		serviceAccess:      application.NewServiceAccess(credentialStore),
-		clipboard:          wailsClipboard{},
-		diagnosticPicker:   wailsDiagnosticFilePicker{},
-		diagnosticReporter: diagnosticReporter,
-		diagnosticWriter:   diagnostics.NewFileWriter(),
-		backgroundRecovery: backgroundRecovery,
-		events:             wailsEventPublisher{},
-		localNetwork:       localnetwork.NewDiscoverer(),
-		hostReadiness:      hostReadiness,
+		catalog:                 catalog,
+		legal:                   legalCatalog,
+		environment:             environment,
+		directoryPicker:         wailsDirectoryPicker{},
+		storageInspector:        storageInspector,
+		setup:                   setup,
+		layoutPreparer:          storage.NewLayoutPreparer(),
+		installation:            installation,
+		management:              management,
+		updates:                 updates,
+		runtimeOnboarding:       runtimeOnboarding,
+		applicationData:         applicationData,
+		serviceAccess:           application.NewServiceAccess(credentialStore),
+		clipboard:               wailsClipboard{},
+		diagnosticPicker:        wailsDiagnosticFilePicker{},
+		diagnosticReporter:      diagnosticReporter,
+		diagnosticWriter:        diagnostics.NewFileWriter(),
+		backgroundRecovery:      backgroundRecovery,
+		configurationReconciler: configurationReconciler,
+		events:                  wailsEventPublisher{},
+		localNetwork:            localnetwork.NewDiscoverer(),
+		hostReadiness:           hostReadiness,
 		runtimeDefaults: runtimecatalog.RuntimeOptions{
 			Timezone: hostProfile.Timezone, PUID: hostProfile.PUID, PGID: hostProfile.PGID,
 		},
@@ -358,18 +378,28 @@ func (a *App) runBackgroundRecovery(ctx context.Context) {
 	defer release()
 
 	setup, err := a.setup.Load()
-	if err != nil || !setup.StartAtLogin || !setup.StartAtLoginSupported ||
-		setup.StartAtLoginRequiresApproval {
+	if err != nil {
 		return
 	}
 	event := BackgroundRecoveryEvent{}
 	defer func() { a.events.Emit(ctx, backgroundRecoveryCompletedEvent, event) }()
-	prepared, err := a.runtimeOnboarding.Recover(ctx)
-	if err != nil || !prepared.Ready {
+	recoverAtLogin := setup.StartAtLogin && setup.StartAtLoginSupported &&
+		!setup.StartAtLoginRequiresApproval
+	if recoverAtLogin {
+		prepared, recoveryErr := a.runtimeOnboarding.Recover(ctx)
+		if recoveryErr != nil || !prepared.Ready {
+			return
+		}
+		result, recoveryErr := a.backgroundRecovery.Recover(ctx)
+		if recoveryErr != nil || !result.Complete {
+			return
+		}
+	}
+	if a.configurationReconciler == nil {
 		return
 	}
-	result, err := a.backgroundRecovery.Recover(ctx)
-	event.Complete = err == nil && result.Complete
+	configuration, err := a.configurationReconciler.Reconcile(ctx)
+	event.Complete = err == nil && configuration.Complete
 }
 
 // ListApplications returns the user-facing applications known by Corsarr.
@@ -751,6 +781,20 @@ func (a *App) GetQBittorrentAccessStatus() (application.ServiceAccessStatus, err
 // an explicit user action. The value is never returned through Wails.
 func (a *App) CopyQBittorrentPassword() error {
 	secret, err := a.serviceAccess.QBittorrentPassword(a.appContext())
+	if err != nil {
+		return err
+	}
+	return a.clipboard.SetText(a.appContext(), secret.Reveal())
+}
+
+func (a *App) GetARRAccessStatuses() ([]application.ServiceAccessStatus, error) {
+	return a.serviceAccess.ARRStatuses(a.appContext())
+}
+
+// CopyARRPassword reveals an allowlisted managed credential only to the native
+// clipboard after an explicit user action. The value is never returned through Wails.
+func (a *App) CopyARRPassword(applicationID string) error {
+	secret, err := a.serviceAccess.ARRPassword(a.appContext(), applicationID)
 	if err != nil {
 		return err
 	}

@@ -90,6 +90,31 @@ func TestDataManagementServiceRemovesCredentialAfterArchivingConfiguration(t *te
 	}
 }
 
+func TestDataManagementServiceRemovesArrCredentialAfterArchivingConfiguration(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{result: storage.ArchivedApplicationData{
+		ApplicationID: "radarr", Archived: true,
+	}}
+	secrets := &dataCredentialStore{archiver: archiver}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	if _, err := service.Archive(context.Background(), "radarr"); err != nil {
+		t.Fatalf("archive Radarr data: %v", err)
+	}
+	if len(secrets.deleted) != 1 || secrets.deleted[0] != credentials.KeyRadarrPassword {
+		t.Fatalf("expected only Radarr credential removal, got %v", secrets.deleted)
+	}
+}
+
 func TestDataManagementServicePreservesCredentialWhenArchiveFails(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

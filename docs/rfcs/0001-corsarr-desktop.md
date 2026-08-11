@@ -850,3 +850,8 @@ claims must be rechecked during implementation and release validation.
   services from live managed status, group installed applications before the
   remaining catalog without changing either group's catalog order, and removed
   the obsolete preparation review already completed by onboarding.
+- 2026-08-11: Automated pristine Radarr, Sonarr, Lidarr, and Prowlarr Forms
+  authentication with unique Keychain passwords, local-address bypass for
+  backend reconciliation, manual-configuration preservation, login-time repair
+  of existing managed containers, and explicit native clipboard access from the
+  dashboard without returning secrets to TypeScript.

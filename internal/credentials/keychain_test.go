@@ -101,6 +101,22 @@ func TestDarwinKeychainRejectsUnknownKeyWithoutCommand(t *testing.T) {
 	}
 }
 
+func TestARRPasswordKeyAllowsOnlyManagedApplications(t *testing.T) {
+	want := map[string]Key{
+		"lidarr": KeyLidarrPassword, "prowlarr": KeyProwlarrPassword,
+		"radarr": KeyRadarrPassword, "sonarr": KeySonarrPassword,
+	}
+	for applicationID, expected := range want {
+		key, err := ARRPasswordKey(applicationID)
+		if err != nil || key != expected {
+			t.Fatalf("resolve %s credential: key=%q err=%v", applicationID, key, err)
+		}
+	}
+	if _, err := ARRPasswordKey("../../foreign"); err == nil {
+		t.Fatal("expected arbitrary application credential key to be rejected")
+	}
+}
+
 type keychainCall struct {
 	path string
 	args []string
