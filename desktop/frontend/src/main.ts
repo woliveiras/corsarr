@@ -55,6 +55,7 @@ if (!root) {
 
 root.innerHTML = [
   '<section id="onboarding" class="onboarding" hidden aria-label="Configuração inicial do Corsarr">',
+  '  <div id="onboarding-notification" class="onboarding-notification" role="alert" aria-live="assertive" hidden><span class="onboarding-notification-icon" aria-hidden="true">!</span><p id="onboarding-notification-message"></p><button id="onboarding-notification-dismiss" type="button" aria-label="Fechar notificação">Fechar</button></div>',
   '  <div class="onboarding-frame">',
   '    <header class="onboarding-header">',
   '      <div class="onboarding-brand"><span class="brand-mark" aria-hidden="true">C</span><span><strong>Corsarr</strong><small>Configuração inicial</small></span></div>',
@@ -65,7 +66,7 @@ root.innerHTML = [
   '      <div class="radar onboarding-radar" aria-hidden="true"><span></span><span></span><i></i><b>C</b></div>',
   '    </article>',
   '    <article id="onboarding-permissions" class="onboarding-step" hidden>',
-  '      <div class="onboarding-step-copy"><p class="eyebrow">ETAPA 1 DE 4 · AUTORIZAÇÃO</p><h1>Você mantém o controle.</h1><p>O Corsarr usará o Docker Desktop para executar os aplicativos em serviços isolados. Ele só instalará componentes, baixará imagens e criará serviços depois da sua autorização.</p><div class="onboarding-explanation"><strong>O que será autorizado</strong><ul><li>Usar ou instalar o Docker Desktop neste Mac.</li><li>Baixar somente imagens aprovadas e identificadas por versão.</li><li>Criar pastas e serviços apenas dentro da configuração do Corsarr.</li></ul></div><label class="onboarding-check"><input id="onboarding-terms" type="checkbox"><span>Li e autorizo o uso do Docker Desktop e dos aplicativos selecionados. Entendo que cada componente mantém sua própria licença.</span></label><button id="onboarding-open-docker-terms" class="onboarding-link" type="button">Abrir termos oficiais do Docker Desktop</button><label id="onboarding-login-setting" class="onboarding-check"><input id="onboarding-start-login" type="checkbox"><span>Iniciar meus serviços automaticamente quando eu entrar neste Mac.</span></label><p id="onboarding-permissions-message" class="onboarding-message"></p></div>',
+  '      <div class="onboarding-step-copy"><p class="eyebrow">ETAPA 1 DE 4 · AUTORIZAÇÃO</p><h1>Você mantém o controle.</h1><p>O Corsarr usará o Docker Desktop para executar os aplicativos em serviços isolados. Ele só instalará componentes, baixará imagens e criará serviços depois da sua autorização.</p><div class="onboarding-explanation"><strong>O que será autorizado</strong><ul><li>Usar ou instalar o Docker Desktop neste Mac.</li><li>Baixar somente imagens aprovadas e identificadas por versão.</li><li>Criar pastas e serviços apenas dentro da configuração do Corsarr.</li></ul></div><label class="onboarding-check"><input id="onboarding-terms" type="checkbox"><span>Li e autorizo o uso do Docker Desktop e dos aplicativos selecionados. Entendo que cada componente mantém sua própria licença.</span></label><button id="onboarding-open-docker-terms" class="onboarding-link" type="button">Abrir termos oficiais do Docker Desktop</button><label id="onboarding-login-setting" class="onboarding-check"><input id="onboarding-start-login" type="checkbox"><span>Iniciar meus serviços automaticamente quando eu entrar neste Mac.</span></label></div>',
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="splash">Voltar</button><button id="onboarding-permissions-next" class="onboarding-primary" type="button" disabled>Autorizar e continuar</button></footer>',
   '    </article>',
   '    <article id="onboarding-environment" class="onboarding-step" hidden>',
@@ -185,8 +186,12 @@ const onboardingPermissionsNext = document.querySelector<HTMLButtonElement>(
 const onboardingOpenDockerTerms = document.querySelector<HTMLButtonElement>(
   '#onboarding-open-docker-terms',
 );
-const onboardingPermissionsMessage = document.querySelector<HTMLElement>(
-  '#onboarding-permissions-message',
+const onboardingNotification = document.querySelector<HTMLElement>('#onboarding-notification');
+const onboardingNotificationMessage = document.querySelector<HTMLElement>(
+  '#onboarding-notification-message',
+);
+const onboardingNotificationDismiss = document.querySelector<HTMLButtonElement>(
+  '#onboarding-notification-dismiss',
 );
 const onboardingEnvironmentTitle = document.querySelector<HTMLElement>(
   '#onboarding-environment-title',
@@ -320,6 +325,16 @@ function persistedOnboardingStep(): OnboardingStep {
 
 function onboardingHasAdvancedPast(step: OnboardingStep): boolean {
   return onboardingStepOrder[persistedOnboardingStep()] > onboardingStepOrder[step];
+}
+
+function hideOnboardingNotification(): void {
+  if (onboardingNotification) onboardingNotification.hidden = true;
+}
+
+function showOnboardingNotification(message: string): void {
+  if (!onboardingNotification || !onboardingNotificationMessage) return;
+  onboardingNotificationMessage.textContent = message;
+  onboardingNotification.hidden = false;
 }
 
 function showOnboardingStep(step: OnboardingStep): void {
@@ -1697,28 +1712,30 @@ onboardingOpenDockerTerms?.addEventListener('click', async () => {
   }
 });
 
+onboardingNotificationDismiss?.addEventListener('click', hideOnboardingNotification);
+
 onboardingPermissionsNext?.addEventListener('click', async () => {
   if (!onboardingTermsCheckbox?.checked || !onboardingPermissionsNext) return;
   const resumeExistingProgress = onboardingHasAdvancedPast('permissions');
   const startAtLogin = onboardingStartLoginCheckbox?.checked ?? false;
   onboardingPermissionsNext.disabled = true;
-  if (onboardingPermissionsMessage) {
-    onboardingPermissionsMessage.textContent = 'Salvando suas escolhas…';
-    onboardingPermissionsMessage.classList.remove('error');
-  }
+  hideOnboardingNotification();
   try {
     applySetupStatus(await AcceptCurrentTerms());
     if (setupStatus?.startAtLoginSupported) {
       applySetupStatus(await SetStartAtLogin(startAtLogin));
     }
     if (!resumeExistingProgress) applySetupStatus(await AdvanceOnboarding());
-    if (onboardingPermissionsMessage) onboardingPermissionsMessage.textContent = '';
   } catch {
-    if (onboardingPermissionsMessage) {
-      onboardingPermissionsMessage.textContent =
-        'Não foi possível salvar a autorização. Nenhum componente foi instalado.';
-      onboardingPermissionsMessage.classList.add('error');
+    try {
+      applySetupStatus(await GetSetupStatus());
+    } catch {
+      // Preserve the last known safe state when even the refresh is unavailable.
     }
+    showOnboardingStep('permissions');
+    showOnboardingNotification(
+      'Não foi possível salvar sua autorização. Revise as opções e tente continuar novamente. Nenhum componente foi instalado.',
+    );
   } finally {
     onboardingPermissionsNext.disabled = !onboardingTermsCheckbox.checked;
   }

@@ -46,6 +46,45 @@ body {
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.27);
 }
 
+.onboarding-notification {
+  position: fixed;
+  z-index: 20;
+  top: 22px;
+  right: 22px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  width: min(470px, calc(100vw - 44px));
+  padding: 13px 14px;
+  color: #dcebea;
+  background: rgba(39, 24, 27, 0.97);
+  border: 1px solid rgba(238, 155, 143, 0.32);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.36);
+}
+
+.onboarding-notification[hidden] {
+  display: none;
+}
+
+.onboarding-notification-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #261517;
+  background: #ee9b8f;
+  border-radius: 9px;
+  font-weight: 900;
+}
+
+.onboarding-notification p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .onboarding-header {
   display: flex;
   align-items: center;
@@ -385,6 +424,17 @@ body {
 button,
 a {
   font: inherit;
+}
+
+.onboarding-notification button {
+  padding: 7px 9px;
+  color: #f4b0a6;
+  background: transparent;
+  border: 1px solid rgba(238, 155, 143, 0.2);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 button:focus-visible,
