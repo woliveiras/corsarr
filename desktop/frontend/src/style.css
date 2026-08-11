@@ -377,6 +377,10 @@ body {
 }
 
 .onboarding-integration-benefit {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 76px;
   margin: 12px 0 16px;
   padding: 12px 14px;
   color: #91aaa8;
@@ -396,15 +400,14 @@ body {
   line-height: 1.5;
 }
 
-.onboarding-integration-advice {
-  margin: 10px 0 0;
-  padding: 9px 11px;
+.onboarding-integration-benefit.warning {
   color: #efb18b;
   background: rgba(77, 49, 31, 0.35);
   border: 1px solid rgba(239, 177, 139, 0.18);
-  border-radius: 9px;
-  font-size: 10px;
-  line-height: 1.5;
+}
+
+.onboarding-integration-benefit.warning p {
+  margin: 0;
 }
 
 .onboarding-catalog-heading {
