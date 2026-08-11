@@ -835,3 +835,7 @@ claims must be rechecked during implementation and release validation.
   desktop now installs exactly the reviewed apps and auto-configures a
   relationship only when both managed services were selected; the complete
   recommended preset remains available as an explicit user choice.
+- 2026-08-11: Made optional integrations proactive but reversible in the
+  desktop. Selecting a consumer marks its recommended stack; removing a
+  suggestion removes only that item and instead explains which Corsarr
+  automation the user is choosing to configure manually.

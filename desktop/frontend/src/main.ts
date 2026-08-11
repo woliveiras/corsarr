@@ -35,6 +35,7 @@ import {
 } from '../wailsjs/go/main/App';
 import type { application, legal, main, storage } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime/runtime';
+import { missingSelectedIntegrations, toggleApplicationSelection } from './application-selection';
 
 type Application = application.ApplicationSummary;
 type ManagedStatus = application.ManagedApplicationStatus;
@@ -78,7 +79,7 @@ root.innerHTML = [
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="environment">Voltar</button><div><button id="onboarding-choose-storage" class="secondary-button" type="button">Escolher pasta</button><button id="onboarding-storage-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
   '    </article>',
   '    <article id="onboarding-applications" class="onboarding-step" hidden>',
-  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><p>O Corsarr instalará somente os aplicativos que você escolher. Quando serviços compatíveis forem selecionados juntos, ele poderá conectá-los automaticamente; serviços que você já usa continuam configuráveis pela interface original.</p><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
+  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><div class="onboarding-integration-benefit"><strong>Mais automação, menos configuração</strong><p>Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.</p></div><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><p id="onboarding-integration-advice" class="onboarding-integration-advice" role="status" aria-live="polite" hidden></p><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="storage">Voltar</button><button id="onboarding-install" class="onboarding-primary" type="button" disabled>Instalar aplicativos</button></footer>',
   '    </article>',
   '  </div>',
@@ -230,6 +231,9 @@ const onboardingCatalogCount = document.querySelector<HTMLElement>('#onboarding-
 const onboardingRecommended = document.querySelector<HTMLButtonElement>('#onboarding-recommended');
 const onboardingApplicationList = document.querySelector<HTMLElement>(
   '#onboarding-application-list',
+);
+const onboardingIntegrationAdvice = document.querySelector<HTMLElement>(
+  '#onboarding-integration-advice',
 );
 const onboardingJellyfinLANSetting = document.querySelector<HTMLElement>(
   '#onboarding-jellyfin-lan-setting',
@@ -581,11 +585,9 @@ function createApplicationCard(application: Application): HTMLElement {
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
     const previousSelection = new Set(selectedApplicationIDs);
-    if (selectedApplicationIDs.has(application.id)) {
-      selectedApplicationIDs.delete(application.id);
-    } else {
-      selectedApplicationIDs.add(application.id);
-    }
+    selectedApplicationIDs = new Set(
+      toggleApplicationSelection(selectedApplicationIDs, application.id, availableApplications),
+    );
     selectionSaving = true;
     renderApplications();
 
@@ -924,7 +926,7 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
     const dependencyNames = dependencies.map(
       (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
     );
-    metadata.textContent += ` · Integra com ${dependencyNames.join(', ')} se também selecionado`;
+    metadata.textContent += ` · Recomenda ${dependencyNames.join(', ')} para automatizar a configuração`;
   }
   information.append(title, description, metadata);
 
@@ -947,11 +949,9 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
     const previousSelection = new Set(selectedApplicationIDs);
-    if (selectedApplicationIDs.has(target.id)) {
-      selectedApplicationIDs.delete(target.id);
-    } else {
-      selectedApplicationIDs.add(target.id);
-    }
+    selectedApplicationIDs = new Set(
+      toggleApplicationSelection(selectedApplicationIDs, target.id, availableApplications),
+    );
     selectionSaving = true;
     renderApplications();
     try {
@@ -991,9 +991,33 @@ function renderApplications(): void {
   onboardingApplicationList?.replaceChildren(
     ...availableApplications.map(createOnboardingApplicationCard),
   );
+  renderIntegrationAdvice();
   if (onboardingCatalogCount) {
     onboardingCatalogCount.textContent = `${availableApplications.length} disponíveis`;
   }
+}
+
+function renderIntegrationAdvice(): void {
+  if (!onboardingIntegrationAdvice) return;
+  const missing = missingSelectedIntegrations(selectedApplicationIDs, availableApplications);
+  onboardingIntegrationAdvice.hidden = missing.length === 0;
+  if (missing.length === 0) {
+    onboardingIntegrationAdvice.textContent = '';
+    return;
+  }
+
+  const capabilityByIntegration: Record<string, string> = {
+    jellyfin: 'bibliotecas do Jellyfin',
+    prowlarr: 'buscas pelo Prowlarr',
+    qbittorrent: 'downloads pelo qBittorrent',
+    radarr: 'filmes pelo Radarr',
+    sonarr: 'séries pelo Sonarr',
+  };
+  const consequences = missing.map(({ consumerID, integrationID }) => {
+    const consumer = availableApplications.find(({ id }) => id === consumerID)?.name ?? consumerID;
+    return `${capabilityByIntegration[integrationID] ?? integrationID} para ${consumer}`;
+  });
+  onboardingIntegrationAdvice.textContent = `Você está deixando parte da automação do Corsarr: ${consequences.join(', ')} precisarão de configuração manual. Sua escolha será respeitada.`;
 }
 
 async function loadApplications(): Promise<void> {

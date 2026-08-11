@@ -405,12 +405,15 @@ backend reports installation authority only when the current terms version was
 explicitly accepted. A future terms version therefore requires new consent.
 
 Application selection is validated against the presentation-safe catalog and
-the exact deterministic selection is persisted. Catalog relationships order
-compatible applications only when both are selected; provisioning likewise
-skips an absent integration so existing external services remain the user's
-choice. The reviewed movie/TV preset explicitly selects its complete integrated
-stack and is owned by the Go catalog,
-not duplicated in TypeScript. Running and stopped applications remain selected;
+the exact deterministic selection is persisted. The frontend uses those catalog
+relationships as reversible recommendations: selecting a consumer recursively
+marks its integrations, deselecting any item removes only that item, and an
+inline advisory names the automation that will become manual. Catalog
+relationships order compatible applications only when both remain selected;
+provisioning likewise skips an absent integration so existing external services
+remain the user's choice. The reviewed movie/TV preset explicitly selects its
+complete integrated stack and is owned by the Go catalog, not duplicated in
+TypeScript. Running and stopped applications remain selected;
 during a runtime outage only previously persisted uncertain selections are
 retained, avoiding both accidental deselection and the false assumption that
 every catalog app is installed. The frontend cannot provide an arbitrary

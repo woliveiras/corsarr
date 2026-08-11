@@ -63,8 +63,10 @@ runtime or application terms on the user's behalf.
   interrupted journey instead of exposing the dashboard.
 - [ ] Choose a storage folder with at least 10 GiB available and confirm that
   the displayed folder, capacity, and hardlink result are understandable.
-- [ ] Review the recommended movie/TV selection and any optional applications,
-  then approve the real digest-pinned image downloads.
+- [ ] Select Radarr and confirm that qBittorrent and Prowlarr are suggested
+  automatically. Deselect each suggestion, confirm that Radarr remains selected
+  and that the inline copy explains which setup becomes manual, then approve
+  only the intended digest-pinned image downloads.
 - [ ] Install the selected stack and confirm that progress identifies the
   current application without exposing credentials or runtime logs. Confirm
   that the regular dashboard appears only after the whole selection succeeds
