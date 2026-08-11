@@ -128,6 +128,7 @@ logs:
   profile_use_instruction: "   Úsalo con: corsarr generate --profile {{.name}}"
 
 errors:
+  invalid_project_name: "Use solo letras minúsculas, números, guiones y guiones bajos; comience con una letra o un número"
   invalid_path: "✗ Ruta inválida: %s"
   path_not_writable: "✗ Ruta sin permisos de escritura: %s"
   port_conflict: "✗ Conflicto de puerto detectado: %d"

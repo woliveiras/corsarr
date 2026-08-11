@@ -128,6 +128,7 @@ logs:
   profile_use_instruction: "   Use com: corsarr generate --profile {{.name}}"
 
 errors:
+  invalid_project_name: "Use apenas letras minúsculas, números, hífens e underscores; comece com uma letra ou número"
   invalid_path: "✗ Caminho inválido: %s"
   path_not_writable: "✗ Caminho sem permissão de escrita: %s"
   port_conflict: "✗ Conflito de porta detectado: %d"

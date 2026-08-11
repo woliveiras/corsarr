@@ -1,9 +1,17 @@
 package prompts
 
 import (
+	"errors"
+	"regexp"
+
 	"github.com/charmbracelet/huh"
 	"github.com/woliveiras/corsarr/internal/generator"
 	"github.com/woliveiras/corsarr/internal/i18n"
+)
+
+var (
+	composeProjectNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+	errInvalidProjectName     = errors.New("invalid Docker Compose project name")
 )
 
 // ConfigureVPN prompts for VPN configuration if VPN is enabled
@@ -161,6 +169,10 @@ func AskProjectName(t *i18n.I18n, defaultName string) (string, error) {
 				Validate(func(s string) error {
 					if s == "" {
 						projectName = defaultName
+						return nil
+					}
+					if err := validateComposeProjectName(s); err != nil {
+						return errors.New(t.T("errors.invalid_project_name"))
 					}
 					return nil
 				}),
@@ -176,4 +188,11 @@ func AskProjectName(t *i18n.I18n, defaultName string) (string, error) {
 	}
 
 	return projectName, nil
+}
+
+func validateComposeProjectName(name string) error {
+	if !composeProjectNamePattern.MatchString(name) {
+		return errInvalidProjectName
+	}
+	return nil
 }
