@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -55,8 +56,16 @@ func init() {
 
 func runHealthCheck(t *i18n.I18n) error {
 	// Check if Docker is available
-	if !isDockerAvailable() {
+	docker := inspectDockerAvailability()
+	if !docker.installed {
 		return fmt.Errorf("%s", t.T("errors.docker_not_found"))
+	}
+	if !docker.available {
+		message := t.T("errors.docker_unavailable")
+		if docker.detail != "" {
+			return fmt.Errorf("%s: %s", message, docker.detail)
+		}
+		return fmt.Errorf("%s", message)
 	}
 
 	// Check if docker-compose.yml exists
@@ -145,12 +154,51 @@ type composePSOutput struct {
 	Health string `json:"Health"`
 }
 
-func isDockerAvailable() bool {
+type dockerAvailability struct {
+	installed bool
+	available bool
+	detail    string
+}
+
+type dockerLookPath func(string) (string, error)
+type dockerInfo func(context.Context, string) (string, error)
+
+func inspectDockerAvailability() dockerAvailability {
+	return inspectDockerAvailabilityWith(exec.LookPath, runDockerInfo)
+}
+
+func inspectDockerAvailabilityWith(
+	lookPath dockerLookPath,
+	info dockerInfo,
+) dockerAvailability {
+	dockerPath, err := lookPath("docker")
+	if err != nil {
+		return dockerAvailability{}
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "docker", "info")
-	return cmd.Run() == nil
+	detail, err := info(ctx, dockerPath)
+	if err != nil {
+		return dockerAvailability{installed: true, detail: strings.TrimSpace(detail)}
+	}
+
+	return dockerAvailability{installed: true, available: true}
+}
+
+func runDockerInfo(ctx context.Context, dockerPath string) (string, error) {
+	cmd := exec.CommandContext(ctx, dockerPath, "info")
+	_, err := cmd.Output()
+	if err == nil {
+		return "", nil
+	}
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return string(exitErr.Stderr), err
+	}
+	return "", err
 }
 
 func getContainerStatus(dir string) ([]ContainerInfo, error) {

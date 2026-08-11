@@ -134,6 +134,7 @@ errors:
   missing_dependency: "✗ Service '%s' requires '%s'"
   vpn_credentials_missing: "✗ VPN credentials are missing"
   docker_not_found: "✗ Docker is not installed"
+  docker_unavailable: "✗ Docker is installed but unavailable. Check that the daemon is running and your user has permission to access it"
   docker_compose_not_found: "✗ Docker Compose is not installed"
   no_services_selected: "✗ No services selected"
   generation_failed: "✗ Failed to generate files: %s"
