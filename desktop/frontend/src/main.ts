@@ -4,12 +4,14 @@ import {
   AdvanceOnboarding,
   ArchiveApplicationData,
   ChooseStorageLocation,
+  CopyARRPassword,
   CopyJellyfinNetworkURL,
   CopyJellyfinPassword,
   CopyQBittorrentPassword,
   ExportDiagnostics,
   GetApplicationDataStatuses,
   GetApplicationStatuses,
+  GetARRAccessStatuses,
   GetEnvironmentStatus,
   GetJellyfinAccessStatus,
   GetJellyfinNetworkStatus,
@@ -295,6 +297,7 @@ let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
 let managedStatuses = new Map<string, ManagedStatus>();
 let dataStatuses = new Map<string, DataStatus>();
+let arrAccesses = new Map<string, application.ServiceAccessStatus>();
 let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 let jellyfinAccess: application.ServiceAccessStatus | undefined;
 let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
@@ -662,6 +665,12 @@ function createApplicationCard(application: Application): HTMLElement {
     actions.append(qbittorrentCredentialButton());
   }
   if (
+    arrAccesses.get(application.id)?.available &&
+    (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
+  ) {
+    actions.append(arrCredentialButton(application));
+  }
+  if (
     application.id === 'jellyfin' &&
     jellyfinAccess?.available &&
     (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
@@ -837,6 +846,32 @@ function qbittorrentCredentialButton(): HTMLButtonElement {
     } catch {
       if (messageElement) {
         messageElement.textContent = 'Não foi possível copiar a senha do qBittorrent.';
+        messageElement.classList.add('error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
+function arrCredentialButton(target: Application): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'credential-button';
+  button.type = 'button';
+  button.textContent = 'Copiar senha';
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await CopyARRPassword(target.id);
+      if (messageElement) {
+        const access = arrAccesses.get(target.id);
+        messageElement.textContent = `Senha copiada. Use o usuário ${access?.username ?? 'corsarr'} para entrar no ${target.name}.`;
+        messageElement.classList.remove('error');
+      }
+    } catch {
+      if (messageElement) {
+        messageElement.textContent = `Não foi possível copiar a senha do ${target.name}.`;
         messageElement.classList.add('error');
       }
     } finally {
@@ -1165,6 +1200,16 @@ async function loadQBittorrentAccess(): Promise<void> {
     renderApplications();
   } catch {
     qbittorrentAccess = undefined;
+  }
+}
+
+async function loadARRAccesses(): Promise<void> {
+  try {
+    const statuses = await GetARRAccessStatuses();
+    arrAccesses = new Map(statuses.map((status) => [status.applicationId, status]));
+    renderApplications();
+  } catch {
+    arrAccesses = new Map();
   }
 }
 
@@ -1730,6 +1775,7 @@ async function installApplications(): Promise<void> {
         loadJellyfinAccess(),
         loadJellyfinNetwork(),
         loadQBittorrentAccess(),
+        loadARRAccesses(),
       ]);
     } else {
       const failed = result.items.find((item) => item.failed);
@@ -2047,6 +2093,7 @@ onboardingInstallButton?.addEventListener('click', async () => {
       loadJellyfinAccess(),
       loadJellyfinNetwork(),
       loadQBittorrentAccess(),
+      loadARRAccesses(),
     ]);
     if (messageElement) {
       messageElement.textContent = `${result.items.length} aplicativos instalados. A configuração inicial foi concluída.`;
@@ -2075,6 +2122,7 @@ async function loadInitialState(): Promise<void> {
     loadJellyfinAccess(),
     loadJellyfinNetwork(),
     loadQBittorrentAccess(),
+    loadARRAccesses(),
   ]);
 }
 
@@ -2085,6 +2133,7 @@ EventsOn('corsarr:background-recovery-complete', () => {
     loadJellyfinAccess(),
     loadJellyfinNetwork(),
     loadQBittorrentAccess(),
+    loadARRAccesses(),
   ]);
 });
 

@@ -18,6 +18,10 @@ export function ChooseStorageLocation() {
   return window['go']['main']['App']['ChooseStorageLocation']();
 }
 
+export function CopyARRPassword(arg1) {
+  return window['go']['main']['App']['CopyARRPassword'](arg1);
+}
+
 export function CopyJellyfinNetworkURL(arg1) {
   return window['go']['main']['App']['CopyJellyfinNetworkURL'](arg1);
 }
@@ -32,6 +36,10 @@ export function CopyQBittorrentPassword() {
 
 export function ExportDiagnostics() {
   return window['go']['main']['App']['ExportDiagnostics']();
+}
+
+export function GetARRAccessStatuses() {
+  return window['go']['main']['App']['GetARRAccessStatuses']();
 }
 
 export function GetApplicationDataStatuses() {

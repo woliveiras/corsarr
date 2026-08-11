@@ -14,6 +14,8 @@ export function ArchiveApplicationData(arg1:string):Promise<storage.ArchivedAppl
 
 export function ChooseStorageLocation():Promise<storage.Status>;
 
+export function CopyARRPassword(arg1:string):Promise<void>;
+
 export function CopyJellyfinNetworkURL(arg1:string):Promise<void>;
 
 export function CopyJellyfinPassword():Promise<void>;
@@ -21,6 +23,8 @@ export function CopyJellyfinPassword():Promise<void>;
 export function CopyQBittorrentPassword():Promise<void>;
 
 export function ExportDiagnostics():Promise<main.DiagnosticExportResult>;
+
+export function GetARRAccessStatuses():Promise<Array<application.ServiceAccessStatus>>;
 
 export function GetApplicationDataStatuses():Promise<Array<storage.ApplicationDataStatus>>;
 

@@ -86,7 +86,11 @@ runtime or application terms on the user's behalf.
   Confirm that each Arr download client reaches qBittorrent through the managed
   network on WebUI port 8081.
 - [ ] Open each installed application through its Corsarr shortcut and verify
-  that its local web interface is ready.
+  that its local web interface is ready. For Radarr, Sonarr, Lidarr, and
+  Prowlarr, confirm that first-run authentication no longer blocks local access,
+  “Copiar senha” uses the `corsarr` username, and the copied password signs in.
+  Configure one Arr app manually before reconciliation and confirm Corsarr does
+  not replace that account.
 - [ ] Verify stop, start, and restart for an application without using Docker
   Desktop or a terminal.
 - [ ] Update an application and confirm that health verification completes; a

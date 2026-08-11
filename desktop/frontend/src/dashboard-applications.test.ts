@@ -53,3 +53,11 @@ test('dashboard does not repeat onboarding guidance in the sidebar', () => {
   assert.equal(source.includes('class="sidebar-note"'), false);
   assert.equal(source.includes('Tudo em um só lugar'), false);
 });
+
+test('dashboard exposes managed Arr credentials only through the native clipboard bridge', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('GetARRAccessStatuses'), true);
+  assert.equal(source.includes('CopyARRPassword(target.id)'), true);
+  assert.equal(source.includes('arrAccesses.get(application.id)?.available'), true);
+});
