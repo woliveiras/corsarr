@@ -48,7 +48,12 @@ mutating it, and validates a user-selected storage folder for free space,
 writing, and hardlink support. It also persists the reviewed folder and
 application selection, includes catalog dependencies automatically, and creates
 an idempotent `Corsarr/` media/configuration tree only after explicit
-confirmation. A reviewed one-click preset selects the complete movie/TV stack
+confirmation. On first launch, a one-time, full-window onboarding presents a
+welcome radar, authorization and start-at-login choices, live Docker diagnosis,
+storage selection, and application selection as separate sequential screens.
+It reaches the regular dashboard only after the selected applications install
+successfully. Interrupted setup resumes from its last completed step, while
+migrated state starts at the welcome without inventing consent. A reviewed one-click preset selects the complete movie/TV stack
 while leaving music, books, and transcoding optional. Existing installed apps
 remain part of desired state, and removal is blocked while an installed app
 still depends on the target. The development build can now record explicit

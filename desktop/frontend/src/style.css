@@ -23,6 +23,365 @@ body {
   background: radial-gradient(circle at 72% 0%, rgba(31, 137, 134, 0.12), transparent 35%), #071419;
 }
 
+.onboarding[hidden],
+.shell[hidden] {
+  display: none;
+}
+
+.onboarding {
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(33, 151, 145, 0.13), transparent 34%), #071419;
+}
+
+.onboarding-frame {
+  width: min(1040px, 100%);
+  min-height: calc(100vh - 56px);
+  margin: 0 auto;
+  overflow: hidden;
+  background: rgba(8, 26, 32, 0.86);
+  border: 1px solid rgba(116, 205, 194, 0.13);
+  border-radius: 22px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.27);
+}
+
+.onboarding-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 82px;
+  padding: 17px 28px;
+  border-bottom: 1px solid rgba(132, 201, 193, 0.09);
+}
+
+.onboarding-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-brand strong,
+.onboarding-brand small {
+  display: block;
+}
+
+.onboarding-brand strong {
+  font:
+    700 17px "Avenir Next",
+    sans-serif;
+}
+
+.onboarding-brand small {
+  margin-top: 2px;
+  color: #6e888a;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-progress {
+  display: grid;
+  grid-template-columns: repeat(4, 30px) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.onboarding-progress span {
+  height: 4px;
+  background: rgba(109, 144, 143, 0.18);
+  border-radius: 999px;
+}
+
+.onboarding-progress span.active {
+  background: #5ccdbf;
+  box-shadow: 0 0 8px rgba(92, 205, 191, 0.26);
+}
+
+.onboarding-progress small {
+  margin-left: 7px;
+  color: #718b8c;
+  font-size: 9px;
+}
+
+.onboarding-step {
+  min-height: calc(100vh - 139px);
+  padding: clamp(34px, 6vh, 66px) clamp(34px, 7vw, 80px) 28px;
+}
+
+.onboarding-splash {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 139px);
+  overflow: hidden;
+}
+
+.onboarding-splash-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+}
+
+.onboarding-splash h1,
+.onboarding-step-copy > h1 {
+  margin: 8px 0 17px;
+  font:
+    600 clamp(34px, 5vw, 57px) / 1.08 "Avenir Next",
+    sans-serif;
+  letter-spacing: -2px;
+}
+
+.onboarding-splash h1 em {
+  color: #5ccdbf;
+  font-style: normal;
+}
+
+.onboarding-splash-copy > p:not(.eyebrow),
+.onboarding-step-copy > p:not(.eyebrow) {
+  max-width: 690px;
+  margin: 0 0 24px;
+  color: #91aaa9;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.radar.onboarding-radar {
+  width: 560px;
+  height: 560px;
+  right: -70px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 38px;
+}
+
+.onboarding-primary {
+  padding: 12px 18px;
+  color: #082126;
+  background: #5ccdbf;
+  border: 1px solid #5ccdbf;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.onboarding-primary:hover:not(:disabled) {
+  background: #76ddcf;
+}
+
+.onboarding-primary:disabled {
+  color: #607a79;
+  background: rgba(96, 122, 121, 0.1);
+  border-color: rgba(96, 122, 121, 0.14);
+  cursor: not-allowed;
+}
+
+.onboarding-step:not(.onboarding-splash) {
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-step[hidden] {
+  display: none;
+}
+
+.onboarding-step-copy {
+  width: min(780px, 100%);
+  margin: 0 auto;
+}
+
+.onboarding-step-copy > h1 {
+  font-size: clamp(29px, 4vw, 43px);
+}
+
+.onboarding-explanation,
+.onboarding-diagnostic,
+.onboarding-path-preview,
+.folder-tree {
+  margin: 18px 0;
+  padding: 18px 20px;
+  color: #87a09f;
+  background: rgba(14, 43, 49, 0.62);
+  border: 1px solid rgba(108, 192, 182, 0.12);
+  border-radius: 14px;
+}
+
+.onboarding-explanation strong {
+  color: #c7dcda;
+  font-size: 12px;
+}
+
+.onboarding-explanation ul {
+  margin: 11px 0 0;
+  padding-left: 20px;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.onboarding-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 13px 0;
+  color: #9bb1af;
+  font-size: 11px;
+  line-height: 1.55;
+  cursor: pointer;
+}
+
+.onboarding-check input {
+  margin-top: 2px;
+  accent-color: #5ccdbf;
+}
+
+.onboarding-link,
+.onboarding-back,
+.onboarding-license-button {
+  padding: 0;
+  color: #65bfb5;
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(780px, 100%);
+  margin: auto auto 0;
+  padding-top: 24px;
+}
+
+.onboarding-actions > div {
+  display: flex;
+  gap: 9px;
+}
+
+.onboarding-message {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: #66c6ba;
+  font-size: 10px;
+}
+
+.onboarding-message.error {
+  color: #ee9b8f;
+}
+
+.onboarding-diagnostic,
+.onboarding-path-preview {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+}
+
+.onboarding-diagnostic small,
+.onboarding-path-preview small {
+  display: block;
+  margin-bottom: 4px;
+  color: #4faea5;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+}
+
+.onboarding-diagnostic strong,
+.onboarding-path-preview strong {
+  display: block;
+  color: #d0e2df;
+  font-size: 14px;
+}
+
+.onboarding-diagnostic p,
+.onboarding-path-preview p {
+  margin: 4px 0 0;
+  color: #718c8d;
+  font-size: 10px;
+}
+
+.onboarding-diagnostic details {
+  margin-top: 7px;
+  color: #647f80;
+  font-size: 9px;
+}
+
+.onboarding-diagnostic summary {
+  width: max-content;
+  cursor: pointer;
+}
+
+.onboarding-diagnostic code,
+.onboarding-path-preview code {
+  display: block;
+  margin-top: 6px;
+  color: #8ba6a4;
+  font-size: 9px;
+  white-space: pre-wrap;
+}
+
+.folder-tree code {
+  color: #9db8b5;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.folder-tree span {
+  color: #577879;
+}
+
+.onboarding-applications-copy {
+  width: min(900px, 100%);
+}
+
+.onboarding-catalog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #728d8e;
+  font-size: 10px;
+}
+
+.onboarding-application-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 310px;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+.onboarding-application-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 92px;
+  padding: 13px;
+  background: rgba(11, 34, 40, 0.68);
+  border: 1px solid rgba(128, 192, 185, 0.09);
+  border-radius: 12px;
+}
+
+.onboarding-application-card.selected {
+  background: rgba(16, 58, 60, 0.78);
+  border-color: rgba(92, 205, 191, 0.28);
+}
+
+.onboarding-application-actions {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.onboarding-license-button {
+  font-size: 9px;
+}
+
 button,
 a {
   font: inherit;
@@ -448,6 +807,13 @@ nav {
     sans-serif;
   box-shadow: 0 0 35px rgba(82, 206, 190, 0.22);
 }
+.radar.onboarding-radar b {
+  width: 76px;
+  height: 76px;
+  border-width: 11px;
+  border-radius: 22px;
+  font-size: 30px;
+}
 @keyframes sweep {
   to {
     transform: rotate(360deg);
@@ -768,6 +1134,11 @@ nav {
 }
 .application-icon.prowlarr {
   color: #e4a268;
+}
+
+.onboarding-application-card .application-icon {
+  width: 42px;
+  height: 42px;
 }
 .application-info {
   min-width: 0;
@@ -1111,6 +1482,25 @@ nav {
 }
 
 @media (max-width: 980px) {
+  .onboarding {
+    padding: 16px;
+  }
+  .onboarding-frame {
+    min-height: calc(100vh - 32px);
+  }
+  .onboarding-step {
+    min-height: calc(100vh - 115px);
+    padding-inline: 32px;
+  }
+  .radar.onboarding-radar {
+    right: -220px;
+  }
+  .onboarding-splash-copy {
+    max-width: 470px;
+  }
+  .onboarding-application-list {
+    grid-template-columns: 1fr;
+  }
   .shell {
     grid-template-columns: 188px minmax(0, 1fr);
   }

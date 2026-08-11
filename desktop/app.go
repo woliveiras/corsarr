@@ -46,6 +46,8 @@ type setupManager interface {
 	SaveStorage(path string) (application.SetupStatus, error)
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
 	AcceptCurrentTerms() (application.SetupStatus, error)
+	CompleteOnboarding() (application.SetupStatus, error)
+	AdvanceOnboarding() (application.SetupStatus, error)
 	SetStartAtLogin(enabled bool) (application.SetupStatus, error)
 	SetJellyfinLAN(enabled bool) (application.SetupStatus, error)
 	OpenStartAtLoginSettings() error
@@ -547,6 +549,34 @@ func (a *App) AcceptCurrentTerms() (application.SetupStatus, error) {
 	return a.setup.AcceptCurrentTerms()
 }
 
+func (a *App) AdvanceOnboarding() (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
+
+	setup, err := a.setup.Load()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	switch setup.OnboardingStep {
+	case application.OnboardingStepEnvironment:
+		if a.environment == nil {
+			return application.SetupStatus{}, fmt.Errorf("environment diagnostics are unavailable")
+		}
+		environment := a.environment.Status(a.appContext())
+		if !environment.Host.Ready || environment.Runtime.State != runtimeenv.StateReady {
+			return application.SetupStatus{}, fmt.Errorf("environment must be ready before continuing onboarding")
+		}
+	case application.OnboardingStepStorage:
+		if err := a.ensureStorageReady(setup.StoragePath); err != nil {
+			return application.SetupStatus{}, err
+		}
+	}
+	return a.setup.AdvanceOnboarding()
+}
+
 func (a *App) SetStartAtLogin(enabled bool) (application.SetupStatus, error) {
 	release, err := a.beginChange()
 	if err != nil {
@@ -605,8 +635,9 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 		return application.InstallationResult{}, fmt.Errorf("runtime preparation did not become ready")
 	}
 	options := runtimeOptions(a.runtimeDefaults, setup)
+	var result application.InstallationResult
 	if installation, ok := a.installation.(progressiveInstallationManager); ok {
-		return installation.InstallSelectedWithProgress(
+		result, err = installation.InstallSelectedWithProgress(
 			a.appContext(),
 			options,
 			func(progress application.InstallationProgress) {
@@ -615,8 +646,16 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 				}
 			},
 		)
+	} else {
+		result, err = a.installation.InstallSelected(a.appContext(), options)
 	}
-	return a.installation.InstallSelected(a.appContext(), options)
+	if err != nil || !result.Complete {
+		return result, err
+	}
+	if _, err := a.setup.CompleteOnboarding(); err != nil {
+		return result, fmt.Errorf("complete first-run onboarding: %w", err)
+	}
+	return result, nil
 }
 
 func (a *App) GetApplicationStatuses() []application.ManagedApplicationStatus {

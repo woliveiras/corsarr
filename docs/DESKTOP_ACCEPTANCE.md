@@ -22,6 +22,7 @@ The following evidence has passed on that Mac:
 | Go backend | Unit, integration, race, vet, and golangci-lint checks | Passed |
 | Frontend | Biome formatting/lint, TypeScript checks, and production build | Passed |
 | Desktop bundle | Wails v2 macOS arm64 build and local self-signing | Passed |
+| First-run interface | Splash and separate authorization screen rendered in the local bundle; relaunch resumed authorization with consent unchecked | Passed |
 | Clean-state interface | Home and license screens rendered; runtime and storage states were accurate; mutating actions remained disabled without consent and storage | Passed |
 | Docker lifecycle | Owned network/container creation, inspection, logs, start, stop, restart, and cleanup using a local immutable image | Passed |
 | Docker installation | Transactional container creation and HTTP readiness using a local immutable image | Passed |
@@ -55,13 +56,19 @@ These checks deliberately require the user. An automated agent must not accept
 runtime or application terms on the user's behalf.
 
 - [ ] Launch the clean Desktop build and review the runtime/application terms
-  before giving explicit consent.
+  before giving explicit consent. Confirm that only the welcome screen appears
+  first, then advance to the separate authorization screen.
+- [ ] Confirm that environment diagnosis, storage selection, and application
+  selection appear one at a time, in that order, and that relaunch resumes an
+  interrupted journey instead of exposing the dashboard.
 - [ ] Choose a storage folder with at least 10 GiB available and confirm that
   the displayed folder, capacity, and hardlink result are understandable.
 - [ ] Review the recommended movie/TV selection and any optional applications,
   then approve the real digest-pinned image downloads.
 - [ ] Install the selected stack and confirm that progress identifies the
-  current application without exposing credentials or runtime logs.
+  current application without exposing credentials or runtime logs. Confirm
+  that the regular dashboard appears only after the whole selection succeeds
+  and that subsequent launches do not repeat onboarding.
 - [ ] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
 - [ ] Open each installed application through its Corsarr shortcut and verify
@@ -115,4 +122,3 @@ loop:
 - [Wails decision](decisions/0001-use-wails-v2-for-desktop.md)
 - [Runtime strategy](decisions/0002-docker-first-runtime-with-podman-gate.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
-

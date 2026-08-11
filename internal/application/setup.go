@@ -23,9 +23,20 @@ type SetupStatus struct {
 	StartAtLoginSupported        bool     `json:"startAtLoginSupported"`
 	StartAtLoginRequiresApproval bool     `json:"startAtLoginRequiresApproval"`
 	JellyfinLANEnabled           bool     `json:"jellyfinLanEnabled"`
+	OnboardingCompleted          bool     `json:"onboardingCompleted"`
+	OnboardingStep               string   `json:"onboardingStep"`
 }
 
 const CurrentTermsVersion = "2026-08-10.2"
+
+const (
+	OnboardingStepWelcome      = "welcome"
+	OnboardingStepPermissions  = "permissions"
+	OnboardingStepEnvironment  = "environment"
+	OnboardingStepStorage      = "storage"
+	OnboardingStepApplications = "applications"
+	OnboardingStepComplete     = "complete"
+)
 
 type SetupService struct {
 	catalog   *Catalog
@@ -60,6 +71,71 @@ func (s *SetupService) AcceptCurrentTerms() (SetupStatus, error) {
 	desktopState.RuntimeConsentAcceptedAt = s.now().UTC().Format(time.RFC3339)
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save runtime consent: %w", err)
+	}
+	return s.status(desktopState)
+}
+
+// CompleteOnboarding persists the one-time first-run boundary only after the
+// reviewed setup has current consent, storage, and at least one application.
+// The desktop calls this only after installation reports complete.
+func (s *SetupService) CompleteOnboarding() (SetupStatus, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Applications = s.knownApplications(desktopState.Applications)
+	termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
+		desktopState.RuntimeConsentAcceptedAt != ""
+	if desktopState.StoragePath == "" || len(desktopState.Applications) == 0 || !termsAccepted {
+		return SetupStatus{}, fmt.Errorf("onboarding setup is incomplete")
+	}
+	desktopState.OnboardingCompleted = true
+	desktopState.OnboardingStep = OnboardingStepComplete
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save onboarding completion: %w", err)
+	}
+	return s.status(desktopState)
+}
+
+// AdvanceOnboarding persists the furthest reviewed step so an interrupted
+// first run resumes without silently skipping consent or storage selection.
+func (s *SetupService) AdvanceOnboarding() (SetupStatus, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Applications = s.knownApplications(desktopState.Applications)
+	current := normalizedOnboardingStep(desktopState)
+	switch current {
+	case OnboardingStepWelcome:
+		desktopState.OnboardingStep = OnboardingStepPermissions
+	case OnboardingStepPermissions:
+		termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
+			desktopState.RuntimeConsentAcceptedAt != ""
+		if !termsAccepted {
+			return SetupStatus{}, fmt.Errorf("current terms must be accepted before continuing onboarding")
+		}
+		desktopState.OnboardingStep = OnboardingStepEnvironment
+	case OnboardingStepEnvironment:
+		desktopState.OnboardingStep = OnboardingStepStorage
+	case OnboardingStepStorage:
+		if strings.TrimSpace(desktopState.StoragePath) == "" {
+			return SetupStatus{}, fmt.Errorf("storage must be selected before continuing onboarding")
+		}
+		desktopState.OnboardingStep = OnboardingStepApplications
+	case OnboardingStepApplications, OnboardingStepComplete:
+		return s.status(desktopState)
+	default:
+		return SetupStatus{}, fmt.Errorf("unsupported onboarding step: %s", current)
+	}
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save onboarding progress: %w", err)
 	}
 	return s.status(desktopState)
 }
@@ -243,7 +319,19 @@ func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Stat
 		StartAtLoginSupported:        loginStatus.Supported,
 		StartAtLoginRequiresApproval: loginStatus.RequiresApproval,
 		JellyfinLANEnabled:           desktopState.AllowJellyfinLAN,
+		OnboardingCompleted:          desktopState.OnboardingCompleted,
+		OnboardingStep:               normalizedOnboardingStep(desktopState),
 	}
+}
+
+func normalizedOnboardingStep(desktopState statefile.DesktopState) string {
+	if desktopState.OnboardingCompleted {
+		return OnboardingStepComplete
+	}
+	if desktopState.OnboardingStep == "" {
+		return OnboardingStepWelcome
+	}
+	return desktopState.OnboardingStep
 }
 
 func containsApplication(applications []string, expected string) bool {

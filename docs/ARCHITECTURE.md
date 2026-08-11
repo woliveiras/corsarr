@@ -32,6 +32,15 @@ and configuration archival returns only whether it occurred. Recovery paths,
 backup checksums, runtime status objects, and raw backend errors are retained for
 Go control flow but carry `json:"-"` and do not appear in generated bindings.
 
+Desktop-state schema 5 owns the one-time setup journey independently of the
+frontend. It records only the furthest completed onboarding step and never
+backfills completion during migration. The application service enforces the
+sequence welcome, authorization, environment, storage, applications: current
+terms gate environment preparation, fresh runtime and storage checks gate their
+respective transitions, and only a complete successful installation marks the
+journey complete. An interrupted launch therefore resumes safely, while local
+Back navigation can explain an earlier screen without weakening those guards.
+
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,
 excludes infrastructure-only services without web UI metadata, and resolves

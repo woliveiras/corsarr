@@ -26,9 +26,10 @@ func TestFileStorePersistsDesktopStateWithPrivatePermissions(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "nested", "desktop-state.json")
 	store := NewFileStore(statePath)
 	want := DesktopState{
-		SchemaVersion: CurrentSchemaVersion,
-		StoragePath:   "/Users/test/Media",
-		Applications:  []string{"prowlarr", "radarr"},
+		SchemaVersion:       CurrentSchemaVersion,
+		StoragePath:         "/Users/test/Media",
+		Applications:        []string{"prowlarr", "radarr"},
+		OnboardingCompleted: true,
 	}
 
 	if err := store.Save(want); err != nil {
@@ -127,5 +128,21 @@ func TestFileStoreMigratesSchemaThreeWithoutInventingLANAccess(t *testing.T) {
 	}
 	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.AllowJellyfinLAN {
 		t.Fatalf("unexpected migrated state %#v", loaded)
+	}
+}
+
+func TestFileStoreMigratesSchemaFourWithoutInventingOnboardingCompletion(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":4,"storagePath":"/Users/test/Media","applications":["radarr"],"runtimeConsentVersion":"2026-08-10.2","runtimeConsentAcceptedAt":"2026-08-10T18:30:00Z"}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write schema four state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load schema four state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.OnboardingCompleted {
+		t.Fatalf("legacy setup was incorrectly treated as completed onboarding: %#v", loaded)
 	}
 }

@@ -25,7 +25,10 @@ platform gates.
 The Desktop is a Wails v2 application in the existing Go module. It persists a
 reviewed storage folder and application selection, validates the first Mac,
 obtains versioned runtime consent, prepares or starts Docker Desktop on macOS,
-and installs only digest-pinned containers owned by Corsarr. Its lifecycle UI
+and installs only digest-pinned containers owned by Corsarr. First launch is a
+persisted sequential journey through welcome, authorization, environment,
+storage, and application selection; it resumes after interruption and becomes
+the regular lifecycle dashboard only after a complete installation. Its lifecycle UI
 opens, starts, stops, restarts, updates, and removes each application while
 keeping container removal separate from recoverable configuration archival.
 The reviewed movie/TV preset includes its supporting dependencies; installed

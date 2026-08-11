@@ -285,10 +285,11 @@ func TestPrepareStorageLayoutRechecksPersistedStorageBeforeWriting(t *testing.T)
 func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) {
 	installation := &desktopInstallationManager{result: application.InstallationResult{Complete: true}}
 	runtime := &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}}
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		TermsAccepted: true, JellyfinLANEnabled: true,
+	}}
 	app := &App{
-		setup: &desktopSetupManager{status: application.SetupStatus{
-			TermsAccepted: true, JellyfinLANEnabled: true,
-		}},
+		setup:        setup,
 		installation: installation, runtimeOnboarding: runtime,
 	}
 
@@ -297,8 +298,28 @@ func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) 
 		t.Fatalf("install selected applications: %v", err)
 	}
 	if !result.Complete || installation.calls != 1 || runtime.calls != 1 ||
-		!installation.options.AllowJellyfinLAN {
+		!installation.options.AllowJellyfinLAN || setup.completeOnboardingCalls != 1 ||
+		!setup.status.OnboardingCompleted {
 		t.Fatalf("expected one completed installation call, got result=%#v calls=%d", result, installation.calls)
+	}
+}
+
+func TestInstallSelectedApplicationsDoesNotCompleteOnboardingAfterPartialFailure(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{TermsAccepted: true}}
+	installation := &desktopInstallationManager{result: application.InstallationResult{
+		Items: []application.InstallationItem{{ApplicationID: "jellyfin", Failed: true}},
+	}}
+	app := &App{
+		setup: setup, installation: installation,
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+	}
+
+	result, err := app.InstallSelectedApplications()
+	if err != nil {
+		t.Fatalf("return partial installation result: %v", err)
+	}
+	if result.Complete || setup.completeOnboardingCalls != 0 || setup.status.OnboardingCompleted {
+		t.Fatalf("partial installation completed onboarding: result=%#v setup=%#v", result, setup.status)
 	}
 }
 
@@ -632,6 +653,52 @@ func TestGetEnvironmentStatusUsesReadOnlyProbe(t *testing.T) {
 	}
 }
 
+func TestAdvanceOnboardingRequiresReadyEnvironmentBeforeStorageStep(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		OnboardingStep: application.OnboardingStepEnvironment,
+	}}
+	probe := &desktopRuntimeProbe{status: runtimeenv.Status{
+		Provider: runtimeenv.ProviderDocker, State: runtimeenv.StateStopped,
+	}}
+	app := &App{
+		setup:       setup,
+		environment: application.NewEnvironmentService(probe, "darwin", "arm64", nil),
+	}
+
+	if _, err := app.AdvanceOnboarding(); err == nil {
+		t.Fatal("expected stopped environment to block onboarding progress")
+	}
+	if setup.advanceOnboardingCalls != 0 {
+		t.Fatalf("blocked environment advanced persisted state %d times", setup.advanceOnboardingCalls)
+	}
+
+	probe.status.State = runtimeenv.StateReady
+	if _, err := app.AdvanceOnboarding(); err != nil {
+		t.Fatalf("advance ready environment: %v", err)
+	}
+	if setup.advanceOnboardingCalls != 1 {
+		t.Fatalf("expected one persisted advance, got %d", setup.advanceOnboardingCalls)
+	}
+}
+
+func TestAdvanceOnboardingRevalidatesStorageBeforeApplicationStep(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		OnboardingStep: application.OnboardingStepStorage,
+		StoragePath:    "/Users/test/Media",
+	}}
+	inspector := &desktopStorageInspector{status: storage.Status{
+		Path: "/Users/test/Media", State: storage.StateInvalid,
+	}}
+	app := &App{setup: setup, storageInspector: inspector}
+
+	if _, err := app.AdvanceOnboarding(); err == nil {
+		t.Fatal("expected stale storage to block onboarding progress")
+	}
+	if setup.advanceOnboardingCalls != 0 || inspector.calls != 1 {
+		t.Fatalf("unexpected advance=%d inspections=%d", setup.advanceOnboardingCalls, inspector.calls)
+	}
+}
+
 func TestPrepareRuntimeRequiresCurrentConsent(t *testing.T) {
 	preparer := &desktopRuntimePreparer{}
 	app := &App{setup: &desktopSetupManager{}, runtimeOnboarding: preparer}
@@ -892,11 +959,13 @@ func (f *desktopStorageInspector) Inspect(path string) storage.Status {
 }
 
 type desktopSetupManager struct {
-	status                application.SetupStatus
-	savedStorage          string
-	saveApplicationsCalls int
-	startAtLoginCalls     int
-	jellyfinLANCalls      int
+	status                  application.SetupStatus
+	savedStorage            string
+	saveApplicationsCalls   int
+	startAtLoginCalls       int
+	jellyfinLANCalls        int
+	completeOnboardingCalls int
+	advanceOnboardingCalls  int
 }
 
 func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
@@ -918,6 +987,27 @@ func (f *desktopSetupManager) SaveApplications(applicationIDs []string) (applica
 func (f *desktopSetupManager) AcceptCurrentTerms() (application.SetupStatus, error) {
 	f.status.TermsAccepted = true
 	f.status.CanInstall = f.status.CanPrepare
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) CompleteOnboarding() (application.SetupStatus, error) {
+	f.completeOnboardingCalls++
+	f.status.OnboardingCompleted = true
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) AdvanceOnboarding() (application.SetupStatus, error) {
+	f.advanceOnboardingCalls++
+	switch f.status.OnboardingStep {
+	case application.OnboardingStepWelcome, "":
+		f.status.OnboardingStep = application.OnboardingStepPermissions
+	case application.OnboardingStepPermissions:
+		f.status.OnboardingStep = application.OnboardingStepEnvironment
+	case application.OnboardingStepEnvironment:
+		f.status.OnboardingStep = application.OnboardingStepStorage
+	case application.OnboardingStepStorage:
+		f.status.OnboardingStep = application.OnboardingStepApplications
+	}
 	return f.status, nil
 }
 

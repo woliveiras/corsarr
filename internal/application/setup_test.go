@@ -136,6 +136,111 @@ func TestSetupServiceRequiresExplicitCurrentTermsForInstallation(t *testing.T) {
 	}
 }
 
+func TestSetupServiceCompletesOnboardingOnlyForInstallableSetup(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		StoragePath:   "/Users/test/Media", Applications: []string{"jellyfin"},
+		RuntimeConsentVersion:    CurrentTermsVersion,
+		RuntimeConsentAcceptedAt: "2026-08-11T05:00:00Z",
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.CompleteOnboarding()
+	if err != nil {
+		t.Fatalf("complete onboarding: %v", err)
+	}
+	if !status.OnboardingCompleted || !store.desktopState.OnboardingCompleted {
+		t.Fatalf("expected persisted onboarding completion, status=%#v state=%#v", status, store.desktopState)
+	}
+}
+
+func TestSetupServiceDoesNotRepeatCompletedOnboardingWhenTermsChange(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion:            statefile.CurrentSchemaVersion,
+		OnboardingCompleted:      true,
+		OnboardingStep:           OnboardingStepComplete,
+		RuntimeConsentVersion:    "previous-terms-version",
+		RuntimeConsentAcceptedAt: "2026-08-10T05:00:00Z",
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.Load()
+	if err != nil {
+		t.Fatalf("load completed onboarding: %v", err)
+	}
+	if !status.OnboardingCompleted || status.TermsAccepted {
+		t.Fatalf("terms renewal repeated one-time onboarding: %#v", status)
+	}
+}
+
+func TestSetupServiceRejectsOnboardingCompletionWithoutFullSetup(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		StoragePath:   "/Users/test/Media", Applications: []string{"jellyfin"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	if _, err := service.CompleteOnboarding(); err == nil {
+		t.Fatal("expected incomplete onboarding to be rejected")
+	}
+	if store.saveCalls != 0 || store.desktopState.OnboardingCompleted {
+		t.Fatalf("rejected onboarding completion changed state: %#v", store.desktopState)
+	}
+}
+
+func TestSetupServicePersistsSequentialOnboardingProgress(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.AdvanceOnboarding()
+	if err != nil || status.OnboardingStep != OnboardingStepPermissions {
+		t.Fatalf("advance welcome: status=%#v err=%v", status, err)
+	}
+	if _, err := service.AdvanceOnboarding(); err == nil {
+		t.Fatal("expected permissions step without consent to be rejected")
+	}
+	if _, err := service.AcceptCurrentTerms(); err != nil {
+		t.Fatalf("accept terms: %v", err)
+	}
+	status, err = service.AdvanceOnboarding()
+	if err != nil || status.OnboardingStep != OnboardingStepEnvironment {
+		t.Fatalf("advance permissions: status=%#v err=%v", status, err)
+	}
+	status, err = service.AdvanceOnboarding()
+	if err != nil || status.OnboardingStep != OnboardingStepStorage {
+		t.Fatalf("advance environment: status=%#v err=%v", status, err)
+	}
+	if _, err := service.AdvanceOnboarding(); err == nil {
+		t.Fatal("expected storage step without selected folder to be rejected")
+	}
+	if _, err := service.SaveStorage("/Users/test/Media"); err != nil {
+		t.Fatalf("save storage: %v", err)
+	}
+	status, err = service.AdvanceOnboarding()
+	if err != nil || status.OnboardingStep != OnboardingStepApplications {
+		t.Fatalf("advance storage: status=%#v err=%v", status, err)
+	}
+}
+
 func TestSetupServicePersistsExplicitStartAtLoginPreference(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

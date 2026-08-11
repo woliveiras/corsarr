@@ -28,6 +28,7 @@ func TestReporterBuildsBoundedRedactedSnapshot(t *testing.T) {
 		}},
 		&diagnosticSetup{status: application.SetupStatus{
 			StoragePath: "/Users/test/Media", Applications: []string{"radarr"},
+			OnboardingCompleted: true, OnboardingStep: application.OnboardingStepComplete,
 			TermsVersion: "2026-08-10.2", TermsAccepted: true,
 		}},
 		&diagnosticApplications{statuses: []application.ManagedApplicationStatus{{
@@ -70,6 +71,9 @@ func TestReporterBuildsBoundedRedactedSnapshot(t *testing.T) {
 	}
 	if report.Storage == nil || !report.Storage.Hardlinks || report.Storage.Path != "/Users/test/Media" {
 		t.Fatalf("unexpected storage report %#v", report.Storage)
+	}
+	if !report.Setup.OnboardingCompleted || report.Setup.OnboardingStep != application.OnboardingStepComplete {
+		t.Fatalf("unexpected onboarding report %#v", report.Setup)
 	}
 	if len(report.Environment.Runtime.TechnicalDetail) > maximumTechnicalDetailLength+len("…") {
 		t.Fatalf("runtime detail was not bounded: %d", len(report.Environment.Runtime.TechnicalDetail))

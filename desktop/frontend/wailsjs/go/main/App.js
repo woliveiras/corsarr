@@ -6,6 +6,10 @@ export function AcceptCurrentTerms() {
   return window['go']['main']['App']['AcceptCurrentTerms']();
 }
 
+export function AdvanceOnboarding() {
+  return window['go']['main']['App']['AdvanceOnboarding']();
+}
+
 export function ArchiveApplicationData(arg1) {
   return window['go']['main']['App']['ArchiveApplicationData'](arg1);
 }

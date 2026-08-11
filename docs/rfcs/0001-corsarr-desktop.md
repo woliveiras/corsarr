@@ -671,6 +671,13 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-11: replaced the first-run dashboard with a persisted, one-screen-at-a-time
+  onboarding for welcome, authorization/start-at-login, live Docker diagnosis,
+  storage, and application selection. Successful full installation is the only
+  completion transition; interrupted setup resumes its persisted step and
+  migrated setup begins at welcome without inventing consent or bypassing
+  backend guards.
+
 - 2026-08-11: removed raw application inspection failures from the Wails
   status model and replaced them with bounded issues rendered on each affected
   card. Explicit diagnostic export uses a separate projection so its sanitized

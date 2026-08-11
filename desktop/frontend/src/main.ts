@@ -1,6 +1,7 @@
 import './style.css';
 import {
   AcceptCurrentTerms,
+  AdvanceOnboarding,
   ArchiveApplicationData,
   ChooseStorageLocation,
   CopyJellyfinNetworkURL,
@@ -53,7 +54,35 @@ if (!root) {
 }
 
 root.innerHTML = [
-  '<div class="shell">',
+  '<section id="onboarding" class="onboarding" hidden aria-label="Configuração inicial do Corsarr">',
+  '  <div class="onboarding-frame">',
+  '    <header class="onboarding-header">',
+  '      <div class="onboarding-brand"><span class="brand-mark" aria-hidden="true">C</span><span><strong>Corsarr</strong><small>Configuração inicial</small></span></div>',
+  '      <div id="onboarding-progress" class="onboarding-progress" hidden><span class="active"></span><span></span><span></span><span></span><small id="onboarding-progress-label">Etapa 1 de 4</small></div>',
+  '    </header>',
+  '    <article id="onboarding-splash" class="onboarding-step onboarding-splash">',
+  '      <div class="onboarding-splash-copy"><p class="eyebrow">BEM-VINDO AO CORSARR</p><h1>Seu servidor de mídia,<br><em>sem complicação.</em></h1><p>Vamos preparar este computador juntos. Você entenderá cada escolha antes que o Corsarr instale qualquer componente.</p><button id="onboarding-start" class="onboarding-primary" type="button">Começar configuração</button></div>',
+  '      <div class="radar onboarding-radar" aria-hidden="true"><span></span><span></span><i></i><b>C</b></div>',
+  '    </article>',
+  '    <article id="onboarding-permissions" class="onboarding-step" hidden>',
+  '      <div class="onboarding-step-copy"><p class="eyebrow">ETAPA 1 DE 4 · AUTORIZAÇÃO</p><h1>Você mantém o controle.</h1><p>O Corsarr usará o Docker Desktop para executar os aplicativos em serviços isolados. Ele só instalará componentes, baixará imagens e criará serviços depois da sua autorização.</p><div class="onboarding-explanation"><strong>O que será autorizado</strong><ul><li>Usar ou instalar o Docker Desktop neste Mac.</li><li>Baixar somente imagens aprovadas e identificadas por versão.</li><li>Criar pastas e serviços apenas dentro da configuração do Corsarr.</li></ul></div><label class="onboarding-check"><input id="onboarding-terms" type="checkbox"><span>Li e autorizo o uso do Docker Desktop e dos aplicativos selecionados. Entendo que cada componente mantém sua própria licença.</span></label><button id="onboarding-open-docker-terms" class="onboarding-link" type="button">Abrir termos oficiais do Docker Desktop</button><label id="onboarding-login-setting" class="onboarding-check"><input id="onboarding-start-login" type="checkbox"><span>Iniciar meus serviços automaticamente quando eu entrar neste Mac.</span></label><p id="onboarding-permissions-message" class="onboarding-message"></p></div>',
+  '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="splash">Voltar</button><button id="onboarding-permissions-next" class="onboarding-primary" type="button" disabled>Autorizar e continuar</button></footer>',
+  '    </article>',
+  '    <article id="onboarding-environment" class="onboarding-step" hidden>',
+  '      <div class="onboarding-step-copy"><p class="eyebrow">ETAPA 2 DE 4 · AMBIENTE</p><h1>Preparando este computador.</h1><p>O Docker mantém cada aplicativo separado e permite que o Corsarr cuide de instalação, atualização e reinício por você.</p><div class="onboarding-diagnostic"><span class="environment-icon" aria-hidden="true">◎</span><div><small>DIAGNÓSTICO</small><strong id="onboarding-environment-title">Verificando…</strong><p id="onboarding-environment-description">Aguarde enquanto conferimos este Mac.</p><details><summary>Detalhes técnicos</summary><code id="onboarding-environment-technical"></code></details></div><span id="onboarding-environment-badge" class="runtime-badge checking">Verificando</span></div><p id="onboarding-environment-message" class="onboarding-message"></p></div>',
+  '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="permissions">Voltar</button><div><button id="onboarding-prepare-runtime" class="secondary-button" type="button" hidden>Preparar computador</button><button id="onboarding-environment-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
+  '    </article>',
+  '    <article id="onboarding-storage" class="onboarding-step" hidden>',
+  '      <div class="onboarding-step-copy"><p class="eyebrow">ETAPA 3 DE 4 · ARMAZENAMENTO</p><h1>Onde sua mídia ficará?</h1><p>Dentro da pasta escolhida, o Corsarr criará uma estrutura clara para configurações, downloads e bibliotecas. Você poderá encontrá-la depois sem conhecer containers.</p><div class="onboarding-path-preview"><span class="storage-icon" aria-hidden="true">▱</span><div><strong id="onboarding-storage-title">Nenhuma pasta selecionada</strong><p id="onboarding-storage-description">Escolha uma pasta com pelo menos 10 GB disponíveis.</p><code id="onboarding-storage-path"></code><small id="onboarding-storage-facts"></small></div><span id="onboarding-storage-badge" class="runtime-badge checking">Pendente</span></div><div class="folder-tree" aria-label="Estrutura que será criada"><code>Corsarr/<br>├── config/ <span>configurações dos aplicativos</span><br>└── media/<br>&nbsp;&nbsp;&nbsp;├── downloads/ <span>arquivos baixados</span><br>&nbsp;&nbsp;&nbsp;└── library/ <span>filmes, séries, músicas e livros</span></code></div><p id="onboarding-storage-message" class="onboarding-message"></p></div>',
+  '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="environment">Voltar</button><div><button id="onboarding-choose-storage" class="secondary-button" type="button">Escolher pasta</button><button id="onboarding-storage-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
+  '    </article>',
+  '    <article id="onboarding-applications" class="onboarding-step" hidden>',
+  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><p>O Corsarr incluirá automaticamente as dependências necessárias. Cada aplicativo será executado em seu próprio container e continuará disponível pela interface original.</p><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
+  '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="storage">Voltar</button><button id="onboarding-install" class="onboarding-primary" type="button" disabled>Instalar aplicativos</button></footer>',
+  '    </article>',
+  '  </div>',
+  '</section>',
+  '<div id="dashboard-shell" class="shell" hidden>',
   '  <aside class="sidebar">',
   '    <a class="brand" href="#" aria-label="Corsarr, início">',
   '      <span class="brand-mark" aria-hidden="true">C</span>',
@@ -142,6 +171,77 @@ root.innerHTML = [
 ].join('');
 
 const applicationsElement = document.querySelector<HTMLElement>('#applications');
+const onboardingElement = document.querySelector<HTMLElement>('#onboarding');
+const dashboardShell = document.querySelector<HTMLElement>('#dashboard-shell');
+const onboardingProgress = document.querySelector<HTMLElement>('#onboarding-progress');
+const onboardingProgressLabel = document.querySelector<HTMLElement>('#onboarding-progress-label');
+const onboardingStartButton = document.querySelector<HTMLButtonElement>('#onboarding-start');
+const onboardingTermsCheckbox = document.querySelector<HTMLInputElement>('#onboarding-terms');
+const onboardingStartLoginCheckbox =
+  document.querySelector<HTMLInputElement>('#onboarding-start-login');
+const onboardingPermissionsNext = document.querySelector<HTMLButtonElement>(
+  '#onboarding-permissions-next',
+);
+const onboardingOpenDockerTerms = document.querySelector<HTMLButtonElement>(
+  '#onboarding-open-docker-terms',
+);
+const onboardingPermissionsMessage = document.querySelector<HTMLElement>(
+  '#onboarding-permissions-message',
+);
+const onboardingEnvironmentTitle = document.querySelector<HTMLElement>(
+  '#onboarding-environment-title',
+);
+const onboardingEnvironmentDescription = document.querySelector<HTMLElement>(
+  '#onboarding-environment-description',
+);
+const onboardingEnvironmentTechnical = document.querySelector<HTMLElement>(
+  '#onboarding-environment-technical',
+);
+const onboardingEnvironmentBadge = document.querySelector<HTMLElement>(
+  '#onboarding-environment-badge',
+);
+const onboardingPrepareRuntime = document.querySelector<HTMLButtonElement>(
+  '#onboarding-prepare-runtime',
+);
+const onboardingEnvironmentNext = document.querySelector<HTMLButtonElement>(
+  '#onboarding-environment-next',
+);
+const onboardingEnvironmentMessage = document.querySelector<HTMLElement>(
+  '#onboarding-environment-message',
+);
+const onboardingStorageTitle = document.querySelector<HTMLElement>('#onboarding-storage-title');
+const onboardingStorageDescription = document.querySelector<HTMLElement>(
+  '#onboarding-storage-description',
+);
+const onboardingStoragePath = document.querySelector<HTMLElement>('#onboarding-storage-path');
+const onboardingStorageFacts = document.querySelector<HTMLElement>('#onboarding-storage-facts');
+const onboardingStorageBadge = document.querySelector<HTMLElement>('#onboarding-storage-badge');
+const onboardingChooseStorage = document.querySelector<HTMLButtonElement>(
+  '#onboarding-choose-storage',
+);
+const onboardingStorageNext = document.querySelector<HTMLButtonElement>('#onboarding-storage-next');
+const onboardingStorageMessage = document.querySelector<HTMLElement>('#onboarding-storage-message');
+const onboardingCatalogCount = document.querySelector<HTMLElement>('#onboarding-catalog-count');
+const onboardingRecommended = document.querySelector<HTMLButtonElement>('#onboarding-recommended');
+const onboardingApplicationList = document.querySelector<HTMLElement>(
+  '#onboarding-application-list',
+);
+const onboardingJellyfinLANSetting = document.querySelector<HTMLElement>(
+  '#onboarding-jellyfin-lan-setting',
+);
+const onboardingJellyfinLANCheckbox = document.querySelector<HTMLInputElement>(
+  '#onboarding-jellyfin-lan',
+);
+const onboardingInstallButton = document.querySelector<HTMLButtonElement>('#onboarding-install');
+const onboardingInstallationResult = document.querySelector<HTMLElement>(
+  '#onboarding-installation-result',
+);
+const onboardingOperationDetails = document.querySelector<HTMLDetailsElement>(
+  '#onboarding-operation-details',
+);
+const onboardingOperationTechnical = document.querySelector<HTMLElement>(
+  '#onboarding-operation-technical',
+);
 const countElement = document.querySelector<HTMLElement>('#catalog-count');
 const selectRecommendedButton = document.querySelector<HTMLButtonElement>('#select-recommended');
 const messageElement = document.querySelector<HTMLElement>('#message');
@@ -194,6 +294,91 @@ let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let currentRuntimeState = 'checking';
 let currentHostReady = true;
+
+type OnboardingStep = 'splash' | 'permissions' | 'environment' | 'storage' | 'applications';
+
+const onboardingStepNumbers: Partial<Record<OnboardingStep, number>> = {
+  permissions: 1,
+  environment: 2,
+  storage: 3,
+  applications: 4,
+};
+
+const onboardingStepOrder: Record<OnboardingStep, number> = {
+  splash: 0,
+  permissions: 1,
+  environment: 2,
+  storage: 3,
+  applications: 4,
+};
+
+function persistedOnboardingStep(): OnboardingStep {
+  const step = setupStatus?.onboardingStep;
+  if (!step || step === 'welcome' || step === 'complete') return 'splash';
+  return step as OnboardingStep;
+}
+
+function onboardingHasAdvancedPast(step: OnboardingStep): boolean {
+  return onboardingStepOrder[persistedOnboardingStep()] > onboardingStepOrder[step];
+}
+
+function showOnboardingStep(step: OnboardingStep): void {
+  for (const element of document.querySelectorAll<HTMLElement>('.onboarding-step')) {
+    const active = element.id === `onboarding-${step}`;
+    element.hidden = !active;
+    element.inert = !active;
+    element.setAttribute('aria-hidden', String(!active));
+  }
+  const stepNumber = onboardingStepNumbers[step];
+  if (onboardingProgress) onboardingProgress.hidden = stepNumber === undefined;
+  if (onboardingProgressLabel && stepNumber !== undefined) {
+    onboardingProgressLabel.textContent = `Etapa ${stepNumber} de 4`;
+  }
+  if (onboardingProgress && stepNumber !== undefined) {
+    const indicators = onboardingProgress.querySelectorAll<HTMLSpanElement>('span');
+    for (const [index, indicator] of [...indicators].entries()) {
+      indicator.classList.toggle('active', index < stepNumber);
+    }
+  }
+  document.querySelector('.onboarding-frame')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function syncOnboarding(status: application.SetupStatus): void {
+  const completed = status.onboardingCompleted;
+  if (onboardingElement) onboardingElement.hidden = completed;
+  if (dashboardShell) dashboardShell.hidden = !completed;
+  if (completed) return;
+
+  const step = (status.onboardingStep || 'welcome') as string;
+  const visibleStep: OnboardingStep =
+    step === 'welcome' || step === 'complete' ? 'splash' : (step as OnboardingStep);
+  showOnboardingStep(visibleStep);
+  if (onboardingTermsCheckbox) onboardingTermsCheckbox.checked = status.termsAccepted;
+  if (onboardingStartLoginCheckbox) {
+    onboardingStartLoginCheckbox.checked = status.startAtLogin;
+    onboardingStartLoginCheckbox.disabled = !status.startAtLoginSupported;
+  }
+  if (onboardingPermissionsNext) {
+    onboardingPermissionsNext.disabled = !onboardingTermsCheckbox?.checked;
+  }
+  if (onboardingStorageNext) onboardingStorageNext.disabled = !status.storagePath;
+  if (onboardingInstallButton) onboardingInstallButton.disabled = !status.canInstall;
+  if (onboardingJellyfinLANSetting) {
+    onboardingJellyfinLANSetting.hidden = !status.applications.includes('jellyfin');
+  }
+  if (onboardingJellyfinLANCheckbox) {
+    onboardingJellyfinLANCheckbox.checked = status.jellyfinLanEnabled;
+  }
+}
+
+function renderOnboardingIssue(issue?: application.OperationIssue): void {
+  if (!onboardingOperationDetails || !onboardingOperationTechnical) return;
+  onboardingOperationDetails.hidden = !issue;
+  onboardingOperationDetails.open = false;
+  onboardingOperationTechnical.textContent = issue
+    ? `${issue.summary}\n${issue.nextAction}\nCódigo: ${issue.code}`
+    : '';
+}
 
 function renderOperationIssue(issue?: application.OperationIssue): void {
   if (!operationDetailsElement || !operationTechnicalElement) return;
@@ -687,8 +872,87 @@ function jellyfinNetworkButton(url: string): HTMLButtonElement {
   return button;
 }
 
+function createOnboardingApplicationCard(target: Application): HTMLElement {
+  const card = document.createElement('article');
+  card.className = 'onboarding-application-card';
+  const selected = selectedApplicationIDs.has(target.id);
+  card.classList.toggle('selected', selected);
+
+  const icon = document.createElement('div');
+  icon.className = `application-icon ${target.id}`;
+  icon.textContent = symbols[target.id] ?? target.name.slice(0, 2);
+  icon.setAttribute('aria-hidden', 'true');
+
+  const information = document.createElement('div');
+  information.className = 'application-info';
+  const title = document.createElement('h3');
+  title.textContent = target.name;
+  const description = document.createElement('p');
+  description.textContent = target.description;
+  const metadata = document.createElement('div');
+  metadata.className = 'metadata';
+  const notice = legalNotices.find((candidate) => candidate.id === target.id);
+  metadata.textContent = `Container próprio${notice?.license ? ` · ${notice.license}` : ''}`;
+  if (target.dependencies.length > 0) {
+    const dependencyNames = target.dependencies.map(
+      (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
+    );
+    metadata.textContent += ` · Inclui ${dependencyNames.join(', ')}`;
+  }
+  information.append(title, description, metadata);
+
+  const actions = document.createElement('div');
+  actions.className = 'onboarding-application-actions';
+  if (notice?.links.some((link) => link.kind === 'license')) {
+    const licenseButton = document.createElement('button');
+    licenseButton.type = 'button';
+    licenseButton.className = 'onboarding-license-button';
+    licenseButton.textContent = 'Licença';
+    licenseButton.addEventListener('click', () => void OpenLegalLink(target.id, 'license'));
+    actions.append(licenseButton);
+  }
+  const selectButton = document.createElement('button');
+  selectButton.type = 'button';
+  selectButton.className = 'select-button';
+  selectButton.textContent = selected ? 'Selecionado' : 'Selecionar';
+  selectButton.setAttribute('aria-pressed', String(selected));
+  selectButton.disabled = selectionSaving;
+  selectButton.addEventListener('click', async () => {
+    if (selectionSaving) return;
+    const previousSelection = new Set(selectedApplicationIDs);
+    if (selectedApplicationIDs.has(target.id)) {
+      selectedApplicationIDs.delete(target.id);
+    } else {
+      selectedApplicationIDs.add(target.id);
+    }
+    selectionSaving = true;
+    renderApplications();
+    try {
+      applySetupStatus(await SaveApplicationSelection([...selectedApplicationIDs]));
+    } catch {
+      selectedApplicationIDs = previousSelection;
+      if (onboardingInstallationResult) {
+        onboardingInstallationResult.textContent = 'Não foi possível salvar a seleção.';
+        onboardingInstallationResult.classList.add('error');
+      }
+    } finally {
+      selectionSaving = false;
+      renderApplications();
+    }
+  });
+  actions.append(selectButton);
+  card.append(icon, information, actions);
+  return card;
+}
+
 function renderApplications(): void {
   applicationsElement?.replaceChildren(...availableApplications.map(createApplicationCard));
+  onboardingApplicationList?.replaceChildren(
+    ...availableApplications.map(createOnboardingApplicationCard),
+  );
+  if (onboardingCatalogCount) {
+    onboardingCatalogCount.textContent = `${availableApplications.length} disponíveis`;
+  }
 }
 
 async function loadApplications(): Promise<void> {
@@ -770,6 +1034,7 @@ async function loadLegalNotices(): Promise<void> {
   try {
     legalNotices = await ListLegalNotices();
     renderLegalNotices();
+    renderApplications();
   } catch {
     if (legalNoticesElement) {
       legalNoticesElement.textContent = 'Não foi possível carregar os créditos e licenças.';
@@ -843,6 +1108,17 @@ function applySetupStatus(status: application.SetupStatus): void {
       storageBadgeElement.className = 'runtime-badge ready';
     }
     if (chooseStorageButton) chooseStorageButton.textContent = 'Trocar pasta';
+    if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Pasta selecionada';
+    if (onboardingStorageDescription) {
+      onboardingStorageDescription.textContent =
+        'O Corsarr verificará novamente esta pasta antes de continuar.';
+    }
+    if (onboardingStoragePath) onboardingStoragePath.textContent = status.storagePath;
+    if (onboardingStorageBadge) {
+      onboardingStorageBadge.textContent = 'Selecionada';
+      onboardingStorageBadge.className = 'runtime-badge ready';
+    }
+    if (onboardingChooseStorage) onboardingChooseStorage.textContent = 'Trocar pasta';
   }
 
   if (installationSummaryElement) {
@@ -872,6 +1148,7 @@ function applySetupStatus(status: application.SetupStatus): void {
   }
   updateJellyfinLANControl();
   updateInstallAuthority();
+  syncOnboarding(status);
 }
 
 function updateJellyfinLANControl(): void {
@@ -990,12 +1267,41 @@ async function loadEnvironment(): Promise<void> {
         );
       }
       environmentTechnicalElement.textContent = details.join('\n');
+      if (onboardingEnvironmentTechnical) {
+        onboardingEnvironmentTechnical.textContent = details.join('\n');
+      }
     }
     if (prepareRuntimeButton) {
       prepareRuntimeButton.hidden = environment.runtime.state === 'ready';
       prepareRuntimeButton.disabled = !currentHostReady;
       prepareRuntimeButton.textContent =
         environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+    }
+    if (onboardingEnvironmentTitle) {
+      onboardingEnvironmentTitle.textContent = currentHostReady
+        ? runtimeMessage.title
+        : 'Este computador precisa de atenção';
+    }
+    if (onboardingEnvironmentDescription) {
+      onboardingEnvironmentDescription.textContent = currentHostReady
+        ? runtimeMessage.description
+        : environment.host.issues.join(' ');
+    }
+    if (onboardingEnvironmentBadge) {
+      onboardingEnvironmentBadge.textContent = currentHostReady
+        ? runtimeMessage.badge
+        : 'Requisitos';
+      onboardingEnvironmentBadge.className = `runtime-badge ${currentHostReady ? environment.runtime.state : 'error'}`;
+    }
+    if (onboardingPrepareRuntime) {
+      onboardingPrepareRuntime.hidden = environment.runtime.state === 'ready';
+      onboardingPrepareRuntime.disabled = !currentHostReady;
+      onboardingPrepareRuntime.textContent =
+        environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+    }
+    if (onboardingEnvironmentNext) {
+      onboardingEnvironmentNext.disabled =
+        !currentHostReady || environment.runtime.state !== 'ready';
     }
     updateInstallAuthority();
   } catch {
@@ -1009,6 +1315,17 @@ async function loadEnvironment(): Promise<void> {
       environmentBadgeElement.textContent = 'Atenção';
       environmentBadgeElement.className = 'runtime-badge error';
     }
+    if (onboardingEnvironmentTitle) {
+      onboardingEnvironmentTitle.textContent = 'Não foi possível verificar';
+    }
+    if (onboardingEnvironmentDescription) {
+      onboardingEnvironmentDescription.textContent = 'Tente novamente em alguns instantes.';
+    }
+    if (onboardingEnvironmentBadge) {
+      onboardingEnvironmentBadge.textContent = 'Atenção';
+      onboardingEnvironmentBadge.className = 'runtime-badge error';
+    }
+    if (onboardingEnvironmentNext) onboardingEnvironmentNext.disabled = true;
   } finally {
     refreshEnvironmentButton?.removeAttribute('disabled');
   }
@@ -1091,10 +1408,10 @@ function formatAvailableSpace(bytes: number): string {
   )} GB disponíveis`;
 }
 
-async function chooseStorage(): Promise<void> {
-  if (!chooseStorageButton) return;
-  chooseStorageButton.disabled = true;
-  chooseStorageButton.textContent = 'Verificando…';
+async function chooseStorage(activeButton = chooseStorageButton): Promise<void> {
+  if (!activeButton) return;
+  activeButton.disabled = true;
+  activeButton.textContent = 'Verificando…';
 
   try {
     const storage = await ChooseStorageLocation();
@@ -1118,7 +1435,21 @@ async function chooseStorage(): Promise<void> {
         storageBadgeElement.textContent = storage.hardlinks ? 'Pronto' : 'Compatível';
         storageBadgeElement.className = `runtime-badge ${storage.hardlinks ? 'ready' : 'stopped'}`;
       }
-      chooseStorageButton.textContent = 'Trocar pasta';
+      if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Pasta pronta';
+      if (onboardingStorageDescription) {
+        onboardingStorageDescription.textContent = storage.hardlinks
+          ? 'A pasta é gravável e permite organizar arquivos sem duplicação.'
+          : 'A pasta é gravável; algumas importações poderão copiar arquivos.';
+      }
+      if (onboardingStoragePath) onboardingStoragePath.textContent = storage.path;
+      if (onboardingStorageFacts) {
+        onboardingStorageFacts.textContent = `${formatAvailableSpace(storage.availableBytes ?? 0)} · ${storage.hardlinks ? 'Hardlinks disponíveis' : 'Sem hardlinks'}`;
+      }
+      if (onboardingStorageBadge) {
+        onboardingStorageBadge.textContent = storage.hardlinks ? 'Pronto' : 'Compatível';
+        onboardingStorageBadge.className = `runtime-badge ${storage.hardlinks ? 'ready' : 'stopped'}`;
+      }
+      activeButton.textContent = 'Trocar pasta';
       return;
     }
 
@@ -1138,6 +1469,19 @@ async function chooseStorage(): Promise<void> {
       storageBadgeElement.textContent = 'Atenção';
       storageBadgeElement.className = 'runtime-badge error';
     }
+    if (onboardingStorageTitle)
+      onboardingStorageTitle.textContent = 'Esta pasta não pode ser usada';
+    if (onboardingStorageDescription) {
+      onboardingStorageDescription.textContent =
+        storage.technicalDetail ??
+        'Escolha outra pasta com permissão de escrita e espaço disponível.';
+    }
+    if (onboardingStoragePath) onboardingStoragePath.textContent = storage.path;
+    if (onboardingStorageFacts) onboardingStorageFacts.textContent = '';
+    if (onboardingStorageBadge) {
+      onboardingStorageBadge.textContent = 'Atenção';
+      onboardingStorageBadge.className = 'runtime-badge error';
+    }
   } catch {
     if (storageTitleElement) storageTitleElement.textContent = 'Não foi possível verificar a pasta';
     if (storageDescriptionElement) storageDescriptionElement.textContent = 'Tente novamente.';
@@ -1145,15 +1489,21 @@ async function chooseStorage(): Promise<void> {
       storageBadgeElement.textContent = 'Atenção';
       storageBadgeElement.className = 'runtime-badge error';
     }
+    if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Não foi possível verificar';
+    if (onboardingStorageDescription) onboardingStorageDescription.textContent = 'Tente novamente.';
+    if (onboardingStorageBadge) {
+      onboardingStorageBadge.textContent = 'Atenção';
+      onboardingStorageBadge.className = 'runtime-badge error';
+    }
   } finally {
-    chooseStorageButton.disabled = false;
-    if (chooseStorageButton.textContent === 'Verificando…') {
-      chooseStorageButton.textContent = 'Escolher pasta';
+    activeButton.disabled = false;
+    if (activeButton.textContent === 'Verificando…') {
+      activeButton.textContent = 'Escolher pasta';
     }
   }
 }
 
-chooseStorageButton?.addEventListener('click', () => void chooseStorage());
+chooseStorageButton?.addEventListener('click', () => void chooseStorage(chooseStorageButton));
 
 async function prepareStorage(): Promise<void> {
   if (!prepareStorageButton || !setupStatus?.canPrepare) return;
@@ -1313,6 +1663,247 @@ async function installApplications(): Promise<void> {
 
 installApplicationsButton?.addEventListener('click', () => void installApplications());
 
+for (const backButton of document.querySelectorAll<HTMLButtonElement>('.onboarding-back')) {
+  backButton.addEventListener('click', () => {
+    showOnboardingStep(backButton.dataset.onboardingStep as OnboardingStep);
+  });
+}
+
+onboardingStartButton?.addEventListener('click', async () => {
+  onboardingStartButton.disabled = true;
+  try {
+    if (onboardingHasAdvancedPast('splash')) {
+      if (setupStatus) syncOnboarding(setupStatus);
+      return;
+    }
+    applySetupStatus(await AdvanceOnboarding());
+  } finally {
+    onboardingStartButton.disabled = false;
+  }
+});
+
+onboardingTermsCheckbox?.addEventListener('change', () => {
+  if (onboardingPermissionsNext) {
+    onboardingPermissionsNext.disabled = !onboardingTermsCheckbox.checked;
+  }
+});
+
+onboardingOpenDockerTerms?.addEventListener('click', async () => {
+  onboardingOpenDockerTerms.disabled = true;
+  try {
+    await OpenLegalLink('runtime-docker', 'license');
+  } finally {
+    onboardingOpenDockerTerms.disabled = false;
+  }
+});
+
+onboardingPermissionsNext?.addEventListener('click', async () => {
+  if (!onboardingTermsCheckbox?.checked || !onboardingPermissionsNext) return;
+  const resumeExistingProgress = onboardingHasAdvancedPast('permissions');
+  const startAtLogin = onboardingStartLoginCheckbox?.checked ?? false;
+  onboardingPermissionsNext.disabled = true;
+  if (onboardingPermissionsMessage) {
+    onboardingPermissionsMessage.textContent = 'Salvando suas escolhas…';
+    onboardingPermissionsMessage.classList.remove('error');
+  }
+  try {
+    applySetupStatus(await AcceptCurrentTerms());
+    if (setupStatus?.startAtLoginSupported) {
+      applySetupStatus(await SetStartAtLogin(startAtLogin));
+    }
+    if (!resumeExistingProgress) applySetupStatus(await AdvanceOnboarding());
+    if (onboardingPermissionsMessage) onboardingPermissionsMessage.textContent = '';
+  } catch {
+    if (onboardingPermissionsMessage) {
+      onboardingPermissionsMessage.textContent =
+        'Não foi possível salvar a autorização. Nenhum componente foi instalado.';
+      onboardingPermissionsMessage.classList.add('error');
+    }
+  } finally {
+    onboardingPermissionsNext.disabled = !onboardingTermsCheckbox.checked;
+  }
+});
+
+onboardingPrepareRuntime?.addEventListener('click', async () => {
+  if (!onboardingPrepareRuntime || !currentHostReady) return;
+  if (
+    currentRuntimeState === 'unavailable' &&
+    !window.confirm(
+      'O Corsarr baixará o Docker Desktop 4.86.0 da fonte oficial, verificará sua integridade e solicitará a autorização do macOS. Continuar?',
+    )
+  ) {
+    return;
+  }
+  onboardingPrepareRuntime.disabled = true;
+  onboardingPrepareRuntime.textContent =
+    currentRuntimeState === 'unavailable' ? 'Instalando…' : 'Iniciando…';
+  if (onboardingEnvironmentMessage) {
+    onboardingEnvironmentMessage.textContent =
+      'Preparando os componentes necessários. O macOS poderá solicitar sua senha.';
+    onboardingEnvironmentMessage.classList.remove('error');
+  }
+  try {
+    const result = await PrepareRuntime();
+    if (!result.ready) throw new Error('runtime not ready');
+    await loadEnvironment();
+    if (onboardingEnvironmentMessage) {
+      onboardingEnvironmentMessage.textContent = result.installed
+        ? 'Docker Desktop instalado e pronto.'
+        : 'Ambiente iniciado e pronto.';
+    }
+  } catch {
+    if (onboardingEnvironmentMessage) {
+      onboardingEnvironmentMessage.textContent =
+        'A preparação não terminou. Tente novamente ou consulte os detalhes técnicos.';
+      onboardingEnvironmentMessage.classList.add('error');
+    }
+    await loadEnvironment();
+  }
+});
+
+onboardingEnvironmentNext?.addEventListener('click', async () => {
+  if (!onboardingEnvironmentNext || onboardingEnvironmentNext.disabled) return;
+  onboardingEnvironmentNext.disabled = true;
+  try {
+    if (onboardingHasAdvancedPast('environment')) {
+      if (setupStatus) syncOnboarding(setupStatus);
+      return;
+    }
+    applySetupStatus(await AdvanceOnboarding());
+  } catch {
+    if (onboardingEnvironmentMessage) {
+      onboardingEnvironmentMessage.textContent =
+        'Confirme que o ambiente está pronto antes de continuar.';
+      onboardingEnvironmentMessage.classList.add('error');
+    }
+  } finally {
+    onboardingEnvironmentNext.disabled = currentRuntimeState !== 'ready' || !currentHostReady;
+  }
+});
+
+onboardingChooseStorage?.addEventListener(
+  'click',
+  () => void chooseStorage(onboardingChooseStorage),
+);
+
+onboardingStorageNext?.addEventListener('click', async () => {
+  if (!onboardingStorageNext || !setupStatus?.storagePath) return;
+  onboardingStorageNext.disabled = true;
+  if (onboardingStorageMessage) {
+    onboardingStorageMessage.textContent = 'Verificando a pasta novamente…';
+    onboardingStorageMessage.classList.remove('error');
+  }
+  try {
+    if (onboardingHasAdvancedPast('storage')) {
+      syncOnboarding(setupStatus);
+      return;
+    }
+    applySetupStatus(await AdvanceOnboarding());
+    if (onboardingStorageMessage) onboardingStorageMessage.textContent = '';
+  } catch {
+    if (onboardingStorageMessage) {
+      onboardingStorageMessage.textContent =
+        'A pasta não está mais disponível ou não possui espaço suficiente. Escolha outra pasta.';
+      onboardingStorageMessage.classList.add('error');
+    }
+  } finally {
+    onboardingStorageNext.disabled = !setupStatus?.storagePath;
+  }
+});
+
+onboardingRecommended?.addEventListener('click', async () => {
+  if (!onboardingRecommended || selectionSaving) return;
+  onboardingRecommended.disabled = true;
+  selectionSaving = true;
+  renderApplications();
+  try {
+    applySetupStatus(await SelectRecommendedApplications());
+    if (onboardingInstallationResult) {
+      onboardingInstallationResult.textContent =
+        'Configuração recomendada selecionada. Você ainda pode personalizá-la.';
+      onboardingInstallationResult.classList.remove('error');
+    }
+  } catch {
+    if (onboardingInstallationResult) {
+      onboardingInstallationResult.textContent =
+        'Não foi possível selecionar a configuração recomendada.';
+      onboardingInstallationResult.classList.add('error');
+    }
+  } finally {
+    selectionSaving = false;
+    onboardingRecommended.disabled = false;
+    renderApplications();
+  }
+});
+
+onboardingJellyfinLANCheckbox?.addEventListener('change', async () => {
+  if (!onboardingJellyfinLANCheckbox) return;
+  const enabled = onboardingJellyfinLANCheckbox.checked;
+  if (
+    enabled &&
+    !window.confirm('Permitir que TVs e celulares desta rede local acessem o Jellyfin?')
+  ) {
+    onboardingJellyfinLANCheckbox.checked = false;
+    return;
+  }
+  onboardingJellyfinLANCheckbox.disabled = true;
+  try {
+    applySetupStatus(await SetJellyfinLAN(enabled));
+  } catch {
+    applySetupStatus(await GetSetupStatus());
+  } finally {
+    onboardingJellyfinLANCheckbox.disabled = false;
+  }
+});
+
+onboardingInstallButton?.addEventListener('click', async () => {
+  if (!onboardingInstallButton || !setupStatus?.canInstall) return;
+  onboardingInstallButton.disabled = true;
+  onboardingInstallButton.textContent = 'Instalando…';
+  renderOnboardingIssue();
+  if (onboardingInstallationResult) {
+    onboardingInstallationResult.textContent =
+      'Baixando e configurando os aplicativos. Isso pode levar alguns minutos.';
+    onboardingInstallationResult.classList.remove('error');
+  }
+  try {
+    const result = await InstallSelectedApplications();
+    if (!result.complete) {
+      const failed = result.items.find((item) => item.failed);
+      renderOnboardingIssue(failed?.issue);
+      if (onboardingInstallationResult) {
+        onboardingInstallationResult.textContent = `${failed?.issue?.summary ?? 'A instalação não terminou.'} ${failed?.issue?.nextAction ?? 'Tente novamente.'}`;
+        onboardingInstallationResult.classList.add('error');
+      }
+      onboardingInstallButton.textContent = 'Tentar novamente';
+      return;
+    }
+    applySetupStatus(await GetSetupStatus());
+    await Promise.all([
+      loadApplicationStatuses(),
+      loadApplicationDataStatuses(),
+      loadJellyfinAccess(),
+      loadJellyfinNetwork(),
+      loadQBittorrentAccess(),
+    ]);
+    if (messageElement) {
+      messageElement.textContent = `${result.items.length} aplicativos instalados. A configuração inicial foi concluída.`;
+      messageElement.classList.remove('error');
+    }
+  } catch {
+    if (onboardingInstallationResult) {
+      onboardingInstallationResult.textContent =
+        'Não foi possível concluir a instalação. Suas escolhas foram preservadas.';
+      onboardingInstallationResult.classList.add('error');
+    }
+    onboardingInstallButton.textContent = 'Tentar novamente';
+  } finally {
+    if (!setupStatus?.onboardingCompleted) {
+      onboardingInstallButton.disabled = !setupStatus?.canInstall;
+    }
+  }
+});
+
 async function loadInitialState(): Promise<void> {
   await Promise.all([loadEnvironment(), loadSetup()]);
   await Promise.all([loadApplications(), loadLegalNotices()]);
@@ -1349,8 +1940,18 @@ EventsOn('corsarr:installation-progress', (progress: InstallationProgress) => {
     installationResultElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
     installationResultElement.classList.toggle('error', progress.stage === 'failed');
   }
+  if (onboardingInstallationResult && !onboardingElement?.hidden) {
+    onboardingInstallationResult.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    onboardingInstallationResult.classList.toggle('error', progress.stage === 'failed');
+  }
   if (installApplicationsButton && progress.stage !== 'failed') {
     installApplicationsButton.textContent = `${progress.position} de ${progress.total}`;
+  }
+  if (onboardingInstallButton && progress.stage !== 'failed') {
+    onboardingInstallButton.textContent =
+      progress.stage === 'ready' && progress.position === progress.total
+        ? 'Finalizando…'
+        : `${progress.position} de ${progress.total}`;
   }
 });
 

@@ -43,6 +43,8 @@ type StorageReader interface {
 type SetupReport struct {
 	StoragePath                  string   `json:"storagePath,omitempty"`
 	Applications                 []string `json:"applications"`
+	OnboardingCompleted          bool     `json:"onboardingCompleted"`
+	OnboardingStep               string   `json:"onboardingStep"`
 	TermsVersion                 string   `json:"termsVersion"`
 	TermsAccepted                bool     `json:"termsAccepted"`
 	StartAtLogin                 bool     `json:"startAtLogin"`
@@ -138,6 +140,8 @@ func (r *Reporter) Build(ctx context.Context) (Report, error) {
 		Setup: SetupReport{
 			StoragePath:                  setupStatus.StoragePath,
 			Applications:                 append([]string(nil), setupStatus.Applications...),
+			OnboardingCompleted:          setupStatus.OnboardingCompleted,
+			OnboardingStep:               setupStatus.OnboardingStep,
 			TermsVersion:                 setupStatus.TermsVersion,
 			TermsAccepted:                setupStatus.TermsAccepted,
 			StartAtLogin:                 setupStatus.StartAtLogin,
