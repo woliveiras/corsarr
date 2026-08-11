@@ -56,22 +56,22 @@ func (c *ARRClient) ActivateAuthentication(
 ) (ARRAuthenticationActivation, error) {
 	result := ARRAuthenticationActivation{}
 	if username != arrManagedUsername {
-		return result, fmt.Errorf("Arr authentication username is not approved")
+		return result, fmt.Errorf("arr authentication username is not approved")
 	}
 	if len(password.Reveal()) < 16 || len(password.Reveal()) > 256 ||
 		strings.ContainsRune(password.Reveal(), '\x00') {
-		return result, fmt.Errorf("Arr authentication credential is invalid")
+		return result, fmt.Errorf("arr authentication credential is invalid")
 	}
 	config, err := c.getHostConfig(ctx, applicationID, apiKey)
 	if err != nil {
 		return result, err
 	}
 	if !inspectARRAuthentication(config).BootstrapRequired {
-		return result, fmt.Errorf("Arr authentication bootstrap is no longer available")
+		return result, fmt.Errorf("arr authentication bootstrap is no longer available")
 	}
 	id, ok := numericID(config["id"])
 	if !ok || id < 1 {
-		return result, fmt.Errorf("Arr host configuration has invalid ID")
+		return result, fmt.Errorf("arr host configuration has invalid ID")
 	}
 	config["authenticationMethod"] = arrAuthenticationMethodForms
 	config["authenticationRequired"] = arrAuthenticationRequiredLocalAddresses
@@ -114,7 +114,7 @@ func (c *ARRClient) ActivateAuthentication(
 	inspection := inspectARRAuthentication(verified)
 	if !inspection.CorsarrManaged ||
 		stringValue(verified["authenticationRequired"]) != arrAuthenticationRequiredLocalAddresses {
-		return result, fmt.Errorf("Arr authentication did not persist the approved configuration")
+		return result, fmt.Errorf("arr authentication did not persist the approved configuration")
 	}
 	return result, nil
 }
@@ -156,7 +156,7 @@ func (c *ARRClient) getHostConfig(
 func (c *ARRClient) authenticationEndpoint(applicationID, suffix string) (string, error) {
 	version, supported := arrAuthenticationAPIVersions[applicationID]
 	if !supported {
-		return "", fmt.Errorf("Arr authentication is not supported: %s", applicationID)
+		return "", fmt.Errorf("arr authentication is not supported: %s", applicationID)
 	}
 	return c.apiEndpoint(applicationID, "/api/"+version+"/config/host"+suffix)
 }

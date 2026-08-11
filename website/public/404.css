@@ -1,0 +1,23 @@
+body {
+  display: grid;
+  min-height: 100vh;
+  margin: 0;
+  place-items: center;
+  color: #e9f4f2;
+  background: #071419;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+}
+
+a {
+  color: #5ccdbf;
+}
+
+h1 {
+  margin: 0;
+  font-size: 4rem;
+}
+
+p {
+  color: #91aaa9;
+}
