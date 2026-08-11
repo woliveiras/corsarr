@@ -63,7 +63,7 @@ func TestARRClientCreatesQBittorrentFromOfficialSchema(t *testing.T) {
 	}
 	fields := providerFieldsByName(t, created)
 	assertProviderField(t, fields, "host", "qbittorrent")
-	assertProviderField(t, fields, "port", float64(8080))
+	assertProviderField(t, fields, "port", float64(8081))
 	assertProviderField(t, fields, "username", "corsarr")
 	assertProviderField(t, fields, "password", "qbit-password")
 	assertProviderField(t, fields, "movieCategory", "radarr")

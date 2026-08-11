@@ -12,7 +12,10 @@ import (
 	"github.com/woliveiras/corsarr/internal/credentials"
 )
 
-const corsarrQBittorrentProviderName = "qBittorrent (Corsarr)"
+const (
+	corsarrQBittorrentProviderName = "qBittorrent (Corsarr)"
+	qbittorrentInternalPort        = 8081
+)
 
 var arrCategoryFields = map[string]string{
 	"lidarr": "musicCategory",
@@ -76,7 +79,7 @@ func (c *ARRClient) EnsureQBittorrentDownloadClient(
 	}
 	values := map[string]any{
 		"host":        "qbittorrent",
-		"port":        8080,
+		"port":        qbittorrentInternalPort,
 		"useSsl":      false,
 		"urlBase":     "",
 		"apiKey":      "",
