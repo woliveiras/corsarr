@@ -139,8 +139,8 @@ root.innerHTML = [
   '      <button id="choose-storage" class="choose-storage-button" type="button">Escolher pasta</button>',
   '    </section>',
   '    <section class="section-heading">',
-  '      <div><p class="eyebrow">APLICATIVOS</p><h2>Seus aplicativos</h2><p class="section-help">Não sabe por onde começar? O Corsarr pode escolher uma configuração completa para filmes e séries.</p></div>',
-  '      <div class="catalog-actions"><p id="catalog-count" class="catalog-count">Carregando…</p><button id="select-recommended" class="secondary-button recommended-button" type="button">Usar configuração recomendada</button></div>',
+  '      <div><p class="eyebrow">APLICATIVOS</p><h2>Seus aplicativos</h2></div>',
+  '      <p id="catalog-count" class="catalog-count">Carregando…</p>',
   '    </section>',
   '    <div id="message" class="message" role="status" aria-live="polite"></div>',
   '    <section id="applications" class="applications" aria-label="Aplicativos disponíveis">',
@@ -255,7 +255,6 @@ const onboardingCopySupportReport = document.querySelector<HTMLButtonElement>(
   '#onboarding-copy-support-report',
 );
 const countElement = document.querySelector<HTMLElement>('#catalog-count');
-const selectRecommendedButton = document.querySelector<HTMLButtonElement>('#select-recommended');
 const messageElement = document.querySelector<HTMLElement>('#message');
 const platformElement = document.querySelector<HTMLElement>('#platform-name');
 const architectureElement = document.querySelector<HTMLElement>('#architecture-name');
@@ -456,32 +455,6 @@ function showView(view: 'home' | 'licenses'): void {
 showHomeButton?.addEventListener('click', () => showView('home'));
 showLicensesButton?.addEventListener('click', () => showView('licenses'));
 licensesBackButton?.addEventListener('click', () => showView('home'));
-
-selectRecommendedButton?.addEventListener('click', async () => {
-  if (selectionSaving || !selectRecommendedButton) return;
-  selectionSaving = true;
-  selectRecommendedButton.disabled = true;
-  renderApplications();
-
-  try {
-    const status = await SelectRecommendedApplications();
-    applySetupStatus(status);
-    if (messageElement) {
-      messageElement.textContent =
-        'Configuração recomendada selecionada. Você ainda pode adicionar ou remover aplicativos.';
-      messageElement.classList.remove('error');
-    }
-  } catch {
-    if (messageElement) {
-      messageElement.textContent = 'Não foi possível selecionar a configuração recomendada.';
-      messageElement.classList.add('error');
-    }
-  } finally {
-    selectionSaving = false;
-    selectRecommendedButton.disabled = false;
-    renderApplications();
-  }
-});
 
 exportDiagnosticsButton?.addEventListener('click', async () => {
   if (!exportDiagnosticsButton) return;

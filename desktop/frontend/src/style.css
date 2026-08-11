@@ -1233,25 +1233,6 @@ nav {
   font-size: 11px;
 }
 
-.section-help {
-  max-width: 620px;
-  margin: 8px 0 0;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.catalog-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.recommended-button {
-  width: auto;
-  white-space: nowrap;
-}
-
 .message {
   min-height: 0;
   color: #79c9be;
@@ -1776,9 +1757,6 @@ nav {
     align-items: flex-start;
     flex-direction: column;
     gap: 14px;
-  }
-  .catalog-actions {
-    align-items: flex-start;
   }
   .legal-notices {
     grid-template-columns: 1fr;

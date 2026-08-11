@@ -54,6 +54,13 @@ test('dashboard does not repeat onboarding guidance in the sidebar', () => {
   assert.equal(source.includes('Tudo em um só lugar'), false);
 });
 
+test('dashboard does not repeat application selection guidance from onboarding', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('Não sabe por onde começar?'), false);
+  assert.equal(source.includes('id="select-recommended"'), false);
+});
+
 test('dashboard exposes managed Arr credentials only through the native clipboard bridge', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 
