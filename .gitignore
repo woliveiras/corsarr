@@ -1,6 +1,7 @@
 # Ignore compiled binaries
 corsarr
 corsarr-test
+!infra/cloudflare/corsarr/
 *.exe
 *.exe~
 *.dll
@@ -63,3 +64,10 @@ desktop/frontend/node_modules/
 desktop/frontend/dist/*
 !desktop/frontend/dist/.gitkeep
 desktop/frontend/package.json.md5
+website/node_modules/
+website/dist/
+.wrangler/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

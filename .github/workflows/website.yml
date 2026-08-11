@@ -1,0 +1,94 @@
+name: Publish website
+
+on:
+  pull_request:
+    paths:
+      - "website/**"
+      - ".github/workflows/website.yml"
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corsarr-website-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build website
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack install --global pnpm@11.1.3
+
+      - name: Install website dependencies
+        run: pnpm --dir website install --frozen-lockfile
+
+      - name: Check website quality
+        run: pnpm --dir website quality
+
+      - name: Build website
+        run: pnpm --dir website build
+
+      - name: Validate Worker package
+        run: pnpm --dir website exec wrangler deploy --dry-run --strict
+
+      - name: Retain website artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: corsarr-website-${{ github.sha }}
+          path: website/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish release website
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    environment: cloudflare-corsarr-production
+    steps:
+      - name: Check out exact release source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack install --global pnpm@11.1.3
+
+      - name: Install website dependencies
+        run: pnpm --dir website install --frozen-lockfile
+
+      - name: Download exact website artifact
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: corsarr-website-${{ github.sha }}
+          path: website/dist
+
+      - name: Publish website to Cloudflare
+        working-directory: website
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm exec wrangler deploy --strict

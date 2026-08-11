@@ -1,0 +1,157 @@
+name: Corsarr website infrastructure
+
+on:
+  pull_request:
+    paths:
+      - "infra/cloudflare/**"
+      - ".github/workflows/terraform-corsarr.yml"
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Read-only plan or approved Custom Domain apply"
+        required: true
+        type: choice
+        default: plan
+        options:
+          - plan
+          - apply-domain
+      enable_custom_domain:
+        description: "Attach corsarr.woliveiras.com to corsarr-site"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corsarr-terraform-${{ github.event_name == 'workflow_dispatch' && inputs.operation || github.ref }}
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  validate:
+    name: Validate Terraform
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.13.3
+          terraform_wrapper: false
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive infra/cloudflare
+
+      - name: Initialize without remote state
+        working-directory: infra/cloudflare/corsarr
+        run: terraform init -backend=false -lockfile=readonly
+
+      - name: Validate configuration
+        working-directory: infra/cloudflare/corsarr
+        run: terraform validate
+
+      - name: Keep Worker releases under Wrangler
+        run: |
+          if grep -R -E 'cloudflare_(workers_script|worker_version|workers_deployment)' infra/cloudflare --include='*.tf'; then
+            echo "Terraform must not own Wrangler release resources."
+            exit 1
+          fi
+
+  plan:
+    name: Plan Custom Domain
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'plan'
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment: cloudflare-corsarr-plan
+    env:
+      TF_BACKEND_BUCKET: ${{ vars.R2_STATE_BUCKET }}
+      TF_BACKEND_KEY: ${{ secrets.TF_BACKEND_KEY }}
+      TF_VAR_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_enable_custom_domain: ${{ inputs.enable_custom_domain }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PLAN_API_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_STATE_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_STATE_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.13.3
+          terraform_wrapper: false
+
+      - name: Initialize protected R2 state
+        working-directory: infra/cloudflare/corsarr
+        run: |
+          terraform init -reconfigure -lockfile=readonly \
+            -backend-config="bucket=${TF_BACKEND_BUCKET}" \
+            -backend-config="key=${TF_BACKEND_KEY}" \
+            -backend-config="region=auto" \
+            -backend-config="skip_credentials_validation=true" \
+            -backend-config="skip_metadata_api_check=true" \
+            -backend-config="skip_region_validation=true" \
+            -backend-config="skip_requesting_account_id=true" \
+            -backend-config="skip_s3_checksum=true" \
+            -backend-config="use_path_style=true" \
+            -backend-config="endpoints={s3=\"https://${TF_VAR_account_id}.r2.cloudflarestorage.com\"}"
+
+      - name: Create read-only plan
+        working-directory: infra/cloudflare/corsarr
+        run: terraform plan -lock-timeout=5m
+
+  apply-domain:
+    name: Apply Custom Domain
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'apply-domain' && inputs.enable_custom_domain
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment: cloudflare-corsarr-production
+    env:
+      TF_BACKEND_BUCKET: ${{ vars.R2_STATE_BUCKET }}
+      TF_BACKEND_KEY: ${{ secrets.TF_BACKEND_KEY }}
+      TF_VAR_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_enable_custom_domain: "true"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_APPLY_API_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_STATE_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_STATE_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.13.3
+          terraform_wrapper: false
+
+      - name: Initialize protected R2 state
+        working-directory: infra/cloudflare/corsarr
+        run: |
+          terraform init -reconfigure -lockfile=readonly \
+            -backend-config="bucket=${TF_BACKEND_BUCKET}" \
+            -backend-config="key=${TF_BACKEND_KEY}" \
+            -backend-config="region=auto" \
+            -backend-config="skip_credentials_validation=true" \
+            -backend-config="skip_metadata_api_check=true" \
+            -backend-config="skip_region_validation=true" \
+            -backend-config="skip_requesting_account_id=true" \
+            -backend-config="skip_s3_checksum=true" \
+            -backend-config="use_path_style=true" \
+            -backend-config="endpoints={s3=\"https://${TF_VAR_account_id}.r2.cloudflarestorage.com\"}"
+
+      - name: Plan approved Custom Domain
+        working-directory: infra/cloudflare/corsarr
+        run: terraform plan -lock-timeout=5m -out=corsarr-domain.tfplan
+
+      - name: Apply reviewed plan
+        working-directory: infra/cloudflare/corsarr
+        run: terraform apply -lock-timeout=5m -auto-approve corsarr-domain.tfplan
