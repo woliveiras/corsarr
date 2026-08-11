@@ -59,6 +59,7 @@ func (c *SeerrClient) EnsureSetup(
 	login := map[string]any{"username": jellyfinUsername, "password": jellyfinPassword.Reveal()}
 	if !initialized {
 		login["hostname"], login["port"], login["useSsl"], login["serverType"] = "jellyfin", 8096, false, 2
+		login["urlBase"] = ""
 	}
 	if _, err := c.jsonRequest(ctx, http.MethodPost, "/api/v1/auth/jellyfin", login, http.StatusOK); err != nil {
 		return fmt.Errorf("authenticate Seerr through Jellyfin: %w", err)

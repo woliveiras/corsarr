@@ -21,7 +21,8 @@ func TestSeerrClientInitializesFromJellyfinAndCreatesArrConnections(t *testing.T
 			var body map[string]any
 			_ = json.NewDecoder(request.Body).Decode(&body)
 			if body["username"] != "corsarr" || body["password"] != "private-password" ||
-				body["hostname"] != "jellyfin" || body["serverType"] != float64(2) {
+				body["hostname"] != "jellyfin" || body["serverType"] != float64(2) ||
+				body["urlBase"] != "" {
 				t.Errorf("unexpected Seerr login %#v", body)
 			}
 			http.SetCookie(response, &http.Cookie{Name: "connect.sid", Value: "local-session", Path: "/api"})
