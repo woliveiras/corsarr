@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -13,17 +14,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-tag:
-    name: Validate release tag
+  validate-trigger:
+    name: Validate release trigger
     runs-on: ubuntu-24.04
     steps:
       - name: Require a semantic version tag
+        if: github.event_name == 'push'
         shell: bash
         run: |
           if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Release tags must use semantic versioning, for example v1.2.3." >&2
             exit 1
           fi
+
+      - name: Confirm manual dry-run
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Manual execution is a dry-run and cannot publish a GitHub release."
 
   verify:
     name: Verify release candidate
@@ -70,7 +76,7 @@ jobs:
   desktop-macos:
     name: Desktop macOS universal (ad hoc)
     needs:
-      - validate-tag
+      - validate-trigger
       - verify
     runs-on: macos-15
     permissions:
@@ -103,7 +109,7 @@ jobs:
 
       - name: Set bundle version
         env:
-          RELEASE_VERSION: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v0.0.0' }}
           BUILD_VERSION: ${{ github.run_number }}
         run: |
           RELEASE_VERSION="${RELEASE_VERSION#v}"
@@ -150,7 +156,7 @@ jobs:
   desktop-windows:
     name: Desktop Windows x64 and x86 (unsigned)
     needs:
-      - validate-tag
+      - validate-trigger
       - verify
     runs-on: windows-2025
     permissions:
@@ -241,7 +247,7 @@ jobs:
   desktop-linux:
     name: Desktop Linux AMD64 (unsigned)
     needs:
-      - validate-tag
+      - validate-trigger
       - verify
     runs-on: ubuntu-24.04
     permissions:
@@ -312,8 +318,48 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  dry-run-cli:
+    name: CLI release snapshot
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - validate-trigger
+      - verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install pinned Syft for snapshot SBOMs
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          syft-version: v1.50.0
+
+      - name: Build CLI release snapshot
+        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7.0.0
+        with:
+          version: v2.17.1
+          args: release --snapshot --clean --skip=publish
+
+      - name: Upload CLI snapshot
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: corsarr-cli-dry-run-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
     name: Publish GitHub release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs:
       - desktop-macos
       - desktop-windows
