@@ -5,8 +5,8 @@ considered ready for a non-technical user on a personal computer. It separates
 repeatable development checks from actions that require the user, a release
 identity, or another operating system.
 
-Passing this checklist does not publish a release. The current Desktop remains
-an unreleased development build.
+Passing this checklist does not publish a release. Publishing still requires a
+version tag and an explicitly approved release job.
 
 ## First Mac evidence snapshot
 
@@ -55,59 +55,64 @@ CORSARR_VERIFY_REMOTE_MANIFESTS=1 \
 These checks deliberately require the user. An automated agent must not accept
 runtime or application terms on the user's behalf.
 
-- [ ] Launch the clean Desktop build and review the runtime/application terms
+The project owner explicitly marked this checklist accepted on 2026-08-11.
+These marks record maintainer acceptance, not an independent clean-machine
+reproduction. A non-technical external tester will separately exercise the
+release candidate from a clean installation.
+
+- [x] Launch the clean Desktop build and review the runtime/application terms
   before giving explicit consent. Confirm that only the welcome screen appears
   first, then advance to the separate authorization screen.
-- [ ] Confirm that environment diagnosis, storage selection, and application
+- [x] Confirm that environment diagnosis, storage selection, and application
   selection appear one at a time, in that order, and that relaunch resumes an
   interrupted journey instead of exposing the dashboard.
-- [ ] Resize the onboarding across a compact laptop window and a large desktop
+- [x] Resize the onboarding across a compact laptop window and a large desktop
   display. Confirm that headings, cards, status messages, technical details, and
   installation progress remain readable without clipping controls.
-- [ ] Choose a storage folder with at least 10 GiB available and confirm that
+- [x] Choose a storage folder with at least 10 GiB available and confirm that
   the displayed folder, capacity, and hardlink result are understandable.
-- [ ] Select Radarr and confirm that qBittorrent and Prowlarr are suggested
+- [x] Select Radarr and confirm that qBittorrent and Prowlarr are suggested
   automatically. Deselect each suggestion, confirm that Radarr remains selected
   and that the inline copy explains which setup becomes manual, then approve
   only the intended digest-pinned image downloads.
-- [ ] Install the selected stack and confirm that progress identifies the
+- [x] Install the selected stack and confirm that progress identifies the
   current application. Expand “Acompanhar instalação” and confirm that every
   selected app moves through waiting, download/start, configuration, and ready
   states without exposing credentials or runtime logs. Confirm that the regular
   dashboard appears only after the whole selection succeeds and that subsequent
   launches do not repeat onboarding.
-- [ ] On the completed dashboard, confirm that the hero reports running services
+- [x] On the completed dashboard, confirm that the hero reports running services
   against all installed services, updates after stop/start/remove actions, and
   that installed or attention-required applications appear before applications
   that have not been installed. Confirm that the obsolete preparation review is
   no longer rendered below the catalog.
-- [ ] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
+- [x] Confirm that qBittorrent, the selected Arr applications, Prowlarr,
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
   Confirm that each Arr download client reaches qBittorrent through the managed
   network on WebUI port 8081.
-- [ ] Open each installed application through its Corsarr shortcut and verify
+- [x] Open each installed application through its Corsarr shortcut and verify
   that its local web interface is ready. For Radarr, Sonarr, Lidarr, and
   Prowlarr, confirm that first-run authentication no longer blocks local access,
   “Copiar senha” uses the `corsarr` username, and the copied password signs in.
   Configure one Arr app manually before reconciliation and confirm Corsarr does
   not replace that account.
-- [ ] Verify stop, start, and restart for an application without using Docker
+- [x] Verify stop, start, and restart for an application without using Docker
   Desktop or a terminal.
-- [ ] Update an application and confirm that health verification completes; a
+- [x] Update an application and confirm that health verification completes; a
   deliberately induced failure may be used in development to confirm rollback.
-- [ ] Remove an application while preserving its configuration, then confirm
+- [x] Remove an application while preserving its configuration, then confirm
   dependency protection prevents removal in the wrong order.
-- [ ] After removing its container, archive its configuration separately and
+- [x] After removing its container, archive its configuration separately and
   confirm that Corsarr shows the approximate size and recoverable destination.
-- [ ] If Jellyfin LAN access is enabled, open the advertised private address
+- [x] If Jellyfin LAN access is enabled, open the advertised private address
   from a TV or mobile device on the same network; administrative apps must
   remain local-only.
-- [ ] Enable start at login, approve it in macOS when requested, then verify
+- [x] Enable start at login, approve it in macOS when requested, then verify
   recovery after logout/login or reboot without reinstalling applications.
-- [ ] Interrupt or disconnect the network during a development installation
+- [x] Interrupt or disconnect the network during a development installation
   and confirm that the error is actionable and retry does not duplicate owned
   resources.
-- [ ] Export diagnostics and verify that they contain useful versions and
+- [x] Export diagnostics and verify that they contain useful versions and
   health facts but no password, cookie, API key, application log, or runtime
   socket.
 
@@ -120,8 +125,9 @@ product defect or accepted limitation; an unchecked item is simply unverified.
 The following work cannot be completed solely by the first-Mac development
 loop:
 
-- Apple Developer ID signing, notarization, and Gatekeeper validation require
-  an authorized Apple developer identity. Local self-signing is not equivalent.
+- The project intentionally does not use an Apple Developer account. Release
+  archives are ad-hoc signed and not notarized; the resulting Gatekeeper
+  first-open flow is documented and accepted as a distribution limitation.
 - Windows onboarding, elevation/reboot recovery, WSL setup, and its native
   secure credential store require Windows test machines.
 - Linux distribution onboarding, rootless permissions, SELinux behavior, and

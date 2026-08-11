@@ -1,8 +1,7 @@
 # Corsarr documentation
 
-This directory separates released CLI behavior, the implemented but
-unreleased Desktop surface, and accepted work that still has empirical or
-platform gates.
+This directory separates released behavior, operational instructions, accepted
+architecture, and work that still has empirical or platform gates.
 
 ## Current product
 
@@ -11,6 +10,9 @@ platform gates.
 - [Troubleshooting](TROUBLESHOOTING.md) covers current operational failures.
 - [Desktop acceptance](DESKTOP_ACCEPTANCE.md) separates repeatable first-Mac
   evidence from human acceptance and external release gates.
+- [Desktop installation](DESKTOP_INSTALLATION.md) documents download,
+  first-open behavior, manual updates, uninstallation, data preservation, and
+  known limitations.
 
 ## Accepted product direction
 
@@ -51,10 +53,10 @@ database migration.
 The Desktop also supports explicit Jellyfin LAN access and local-address
 discovery, optional macOS login recovery for existing resources, redacted
 diagnostic export, localized catalogs, and catalog-generated legal credits.
-Windows/Linux onboarding, native secure stores on those platforms, Apple
-Developer ID signing/notarization, and the empirical Podman promotion matrix
-remain open gates. This is implemented development behavior, not a statement
-that a public Desktop release has shipped.
+Windows/Linux onboarding and native secure stores on those platforms remain
+open gates. The macOS release is intentionally ad-hoc signed and not notarized;
+the installation guide records the resulting first-open requirement. The
+empirical Podman promotion matrix also remains open.
 
 The local macOS arm64 bundle builds, self-signs, declares macOS 14+, and has
 passed deterministic suites plus visual smoke checks on the first Mac. No media

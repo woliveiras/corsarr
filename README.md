@@ -29,19 +29,18 @@ Corsarr is a CLI tool that generates complete Docker Compose configurations for 
 
 **The CLI handles all the complexity** - service dependencies, network configuration, environment variables, port management, and more.
 
-## 🧭 Project Direction
+## 🖥️ Corsarr Desktop
 
-Corsarr currently ships as the CLI documented below. Development has started on
-Corsarr Desktop: a focused visual application for non-technical
-users to install and operate the media stack on their personal computer while
-keeping Docker, Podman, WSL, and other runtime details out of the primary user
-experience.
+Corsarr ships as a CLI and as Corsarr Desktop: a visual application for
+non-technical users to install and operate a local media stack without using a
+terminal or managing containers directly.
 
 - [Documentation index](docs/README.md)
+- [Install, update, and uninstall Corsarr Desktop](docs/DESKTOP_INSTALLATION.md)
 - [Corsarr Desktop RFC](docs/rfcs/0001-corsarr-desktop.md)
 - [Accepted architecture decisions](docs/decisions/)
 
-The current development build provides a native Wails shell backed by the
+The Desktop provides a native Wails shell backed by the
 existing Go service catalog. It lists user-facing applications, opens their
 allowlisted local web interfaces, detects the local Docker runtime without
 mutating it, and validates a user-selected storage folder for free space,
@@ -63,7 +62,7 @@ inventing consent. A reviewed
 one-click preset selects the complete movie/TV stack while leaving music,
 books, and transcoding optional. Existing installed apps
 remain part of desired state, and removal is blocked while an installed app
-still depends on the target. The development build can now record explicit
+still depends on the target. The Desktop can record explicit
 consent, prepare or start the supported runtime, and install the selected,
 digest-pinned containers through the ownership-safe runtime boundary. Installation waits for
 each allowlisted local web endpoint to become responsive before moving to its
@@ -80,7 +79,10 @@ using their internal network URLs and generated API keys. Bazarr connects
 automatically only when Radarr and Sonarr are also selected, reads their
 generated keys only in Go, and uses Bazarr's authenticated settings API. On macOS, the
 desktop can install or start its pinned, verified runtime after explicit
-consent; Windows and Linux onboarding remain pending. Jellyfin's first-run
+consent. The first supported Desktop release targets macOS 14 or newer on
+Apple Silicon and Intel. Windows and Linux artifacts compile, but their
+automatic runtime preparation and native credential stores are not yet part of
+the supported release path. Jellyfin's first-run
 wizard is automated with a generated `corsarr` administrator stored in the
 macOS Keychain, remote access disabled by default, and reserved movie, TV, and
 music libraries. Installed
@@ -135,6 +137,16 @@ Jellyfin libraries, tests the internal Radarr/Sonarr connections, and reconciles
 only the reserved `Radarr (Corsarr)` and `Sonarr (Corsarr)` instances before
 marking its first-run setup complete.
 
+### Download Corsarr Desktop
+
+- [Download the latest macOS universal build](https://github.com/woliveiras/corsarr/releases/latest/download/corsarr_desktop_darwin_universal.zip)
+- [Open the complete GitHub Release page](https://github.com/woliveiras/corsarr/releases/latest)
+
+The macOS build is distributed without Apple Developer ID signing or
+notarization. macOS will therefore show a Gatekeeper warning on first launch.
+Follow the reviewed first-open steps in the
+[Desktop installation guide](docs/DESKTOP_INSTALLATION.md#install-on-macos).
+
 ### Run Corsarr Desktop from source
 
 Development currently targets macOS on Apple Silicon first and requires Go
@@ -186,9 +198,10 @@ approved contract; such changes require a separately reviewed migration.
 Idempotent installation applies the same check before reusing an existing
 container, so a matching image cannot conceal stale mounts or network exposure.
 
-This development build is self-signed and is not a published Corsarr release.
-Run `pnpm run quality` from `desktop/frontend` to check formatting, lint rules,
-and TypeScript types with Biome and `tsc`.
+Local builds are ad-hoc signed and identify their version as `development`;
+tagged release builds receive the repository version. Run `pnpm run quality`
+from `desktop/frontend` to check formatting, lint rules, and TypeScript types
+with Biome and `tsc`.
 
 Pull requests and `main` run Go dependency verification, vet, race-enabled
 tests with a retained coverage artifact, golangci-lint v2.11.1, the frontend
@@ -197,11 +210,11 @@ matrix. CI reads the Go version from `go.mod`, installs pnpm from the pinned
 `packageManager` field, grants only repository read access, and pins every
 third-party action to a reviewed commit SHA.
 
-Tag-triggered CLI releases install a pinned Syft binary and use GoReleaser to
-attach an SPDX JSON software bill of materials for every archive and for the
-source artifact. These SBOMs describe software actually packaged by the
-release; media applications and container images downloaded later remain
-identified separately in the desktop credits screen.
+Tag-triggered releases install a pinned Syft binary and attach SPDX JSON
+software bills of materials for the CLI and Desktop artifacts. These SBOMs
+describe software actually packaged by the release; media applications and
+container images downloaded later remain identified separately in the Desktop
+credits screen.
 
 ## ⚡ Quick Start
 
