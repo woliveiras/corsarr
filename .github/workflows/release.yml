@@ -464,11 +464,11 @@ jobs:
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
         with:
           pattern: corsarr-desktop-*-${{ github.sha }}
-          path: desktop-assets
+          path: ${{ runner.temp }}/desktop-assets
           merge-multiple: true
 
       - name: Generate desktop checksums
-        working-directory: desktop-assets
+        working-directory: ${{ runner.temp }}/desktop-assets
         run: sha256sum corsarr_desktop_* > desktop_checksums.txt
 
       - name: Install pinned Syft for release SBOMs
@@ -487,4 +487,4 @@ jobs:
       - name: Add desktop artifacts to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" desktop-assets/* --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" "${RUNNER_TEMP}"/desktop-assets/* --clobber
