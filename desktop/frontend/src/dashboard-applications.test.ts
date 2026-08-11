@@ -61,6 +61,18 @@ test('dashboard does not repeat application selection guidance from onboarding',
   assert.equal(source.includes('id="select-recommended"'), false);
 });
 
+test('dashboard installs unavailable applications instead of presenting onboarding selection', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+  const cardSource = source.slice(
+    source.indexOf('function createApplicationCard'),
+    source.indexOf('function updateApplicationButton'),
+  );
+
+  assert.match(cardSource, /'Instalar'/);
+  assert.doesNotMatch(cardSource, /'Selecionar'/);
+  assert.match(cardSource, /await InstallSelectedApplications\(\)/);
+});
+
 test('dashboard exposes managed Arr credentials only through the native clipboard bridge', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 

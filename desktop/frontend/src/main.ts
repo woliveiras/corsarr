@@ -38,7 +38,11 @@ import {
 } from '../wailsjs/go/main/App';
 import type { application, legal, main, storage } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime/runtime';
-import { missingSelectedIntegrations, toggleApplicationSelection } from './application-selection';
+import {
+  missingSelectedIntegrations,
+  selectApplicationWithIntegrations,
+  toggleApplicationSelection,
+} from './application-selection';
 import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
 import {
   applyInstallationProgress,
@@ -298,6 +302,7 @@ let availableApplications: Application[] = [];
 let applicationCatalogState: 'loading' | 'ready' | 'error' = 'loading';
 let selectedApplicationIDs = new Set<string>();
 let selectionSaving = false;
+let dashboardInstallingApplicationID: string | undefined;
 let managedStatuses = new Map<string, ManagedStatus>();
 let dataStatuses = new Map<string, DataStatus>();
 let arrAccesses = new Map<string, application.ServiceAccessStatus>();
@@ -563,44 +568,76 @@ function createApplicationCard(application: Application): HTMLElement {
   const selectButton = document.createElement('button');
   selectButton.className = 'select-button';
   selectButton.type = 'button';
-  selectButton.textContent = installed ? 'Instalado' : selected ? 'Selecionado' : 'Selecionar';
-  selectButton.setAttribute('aria-pressed', String(selected));
-  selectButton.setAttribute('aria-label', `Selecionar ${application.name} para instalação`);
+  selectButton.textContent = installed
+    ? 'Instalado'
+    : dashboardInstallingApplicationID === application.id
+      ? 'Instalando…'
+      : 'Instalar';
+  selectButton.setAttribute('aria-label', `Instalar ${application.name}`);
   selectButton.disabled = selectionSaving || installed || uncertainSelection;
   if (installed) {
-    selectButton.title = 'Remova o aplicativo antes de retirá-lo da seleção.';
-    selectButton.setAttribute(
-      'aria-label',
-      `${application.name} está instalado. Remova o aplicativo antes de retirá-lo da seleção.`,
-    );
+    selectButton.title = 'Este aplicativo já está instalado.';
+    selectButton.setAttribute('aria-label', `${application.name} está instalado.`);
   } else if (uncertainSelection) {
-    selectButton.title = 'Verifique o ambiente antes de retirar este aplicativo da seleção.';
+    selectButton.title = 'Verifique o ambiente antes de tentar instalar novamente.';
     selectButton.setAttribute(
       'aria-label',
-      `${application.name} continua selecionado enquanto o ambiente não pode ser verificado.`,
+      `${application.name} não pode ser instalado enquanto o ambiente não for verificado.`,
     );
   }
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
     const previousSelection = new Set(selectedApplicationIDs);
     selectedApplicationIDs = new Set(
-      toggleApplicationSelection(selectedApplicationIDs, application.id, availableApplications),
+      selectApplicationWithIntegrations(
+        selectedApplicationIDs,
+        application.id,
+        availableApplications,
+      ),
     );
     selectionSaving = true;
+    dashboardInstallingApplicationID = application.id;
+    let selectionSaved = false;
+    if (messageElement) {
+      messageElement.textContent = `Preparando a instalação de ${application.name}…`;
+      messageElement.classList.remove('error');
+    }
     renderApplications();
 
     try {
       const status = await SaveApplicationSelection([...selectedApplicationIDs]);
+      selectionSaved = true;
       applySetupStatus(status);
-      messageElement?.classList.remove('error');
-    } catch {
-      selectedApplicationIDs = previousSelection;
+      const result = await InstallSelectedApplications();
+      await Promise.allSettled([
+        loadApplicationStatuses(),
+        loadApplicationDataStatuses(),
+        loadJellyfinAccess(),
+        loadJellyfinNetwork(),
+        loadQBittorrentAccess(),
+        loadARRAccesses(),
+      ]);
+      if (!result.complete) {
+        const failed = result.items.find((item) => item.failed);
+        if (messageElement) {
+          messageElement.textContent = `${failed?.issue?.summary ?? `A instalação de ${application.name} não terminou.`} ${failed?.issue?.nextAction ?? 'Tente novamente.'}`;
+          messageElement.classList.add('error');
+        }
+        return;
+      }
       if (messageElement) {
-        messageElement.textContent = 'Não foi possível salvar sua seleção de aplicativos.';
+        messageElement.textContent = `${application.name} foi instalado e está pronto para uso.`;
+        messageElement.classList.remove('error');
+      }
+    } catch {
+      if (!selectionSaved) selectedApplicationIDs = previousSelection;
+      if (messageElement) {
+        messageElement.textContent = `Não foi possível instalar ${application.name}. Tente novamente.`;
         messageElement.classList.add('error');
       }
     } finally {
       selectionSaving = false;
+      dashboardInstallingApplicationID = undefined;
       renderApplications();
     }
   });
@@ -2167,6 +2204,10 @@ EventsOn('corsarr:installation-progress', (progress: InstallationProgressEvent) 
   if (installationResultElement) {
     installationResultElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
     installationResultElement.classList.toggle('error', progress.stage === 'failed');
+  }
+  if (dashboardInstallingApplicationID && messageElement) {
+    messageElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    messageElement.classList.toggle('error', progress.stage === 'failed');
   }
   if (onboardingInstallationResult && !onboardingElement?.hidden) {
     onboardingInstallationResult.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;

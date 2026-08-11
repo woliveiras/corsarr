@@ -8,6 +8,23 @@ export interface MissingIntegration {
   integrationID: string;
 }
 
+export function selectApplicationWithIntegrations(
+  current: Iterable<string>,
+  targetID: string,
+  applications: readonly SelectableApplication[],
+): string[] {
+  const selected = new Set(current);
+  const byID = new Map(applications.map((application) => [application.id, application]));
+  const includeWithIntegrations = (applicationID: string): void => {
+    selected.add(applicationID);
+    for (const integrationID of byID.get(applicationID)?.dependencies ?? []) {
+      if (!selected.has(integrationID)) includeWithIntegrations(integrationID);
+    }
+  };
+  includeWithIntegrations(targetID);
+  return [...selected].sort();
+}
+
 export function toggleApplicationSelection(
   current: Iterable<string>,
   targetID: string,
@@ -18,17 +35,7 @@ export function toggleApplicationSelection(
     selected.delete(targetID);
     return [...selected].sort();
   }
-
-  const byID = new Map(applications.map((application) => [application.id, application]));
-  const includeWithIntegrations = (applicationID: string): void => {
-    if (selected.has(applicationID)) return;
-    selected.add(applicationID);
-    for (const integrationID of byID.get(applicationID)?.dependencies ?? []) {
-      includeWithIntegrations(integrationID);
-    }
-  };
-  includeWithIntegrations(targetID);
-  return [...selected].sort();
+  return selectApplicationWithIntegrations(selected, targetID, applications);
 }
 
 export function missingSelectedIntegrations(

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   missingSelectedIntegrations,
+  selectApplicationWithIntegrations,
   toggleApplicationSelection,
 } from './application-selection.ts';
 
@@ -48,5 +49,13 @@ test('selecting another consumer restores a missing shared integration', () => {
     'qbittorrent',
     'radarr',
     'sonarr',
+  ]);
+});
+
+test('installing an already selected application restores its missing integrations', () => {
+  assert.deepEqual(selectApplicationWithIntegrations(['radarr'], 'radarr', applications), [
+    'prowlarr',
+    'qbittorrent',
+    'radarr',
   ]);
 });
