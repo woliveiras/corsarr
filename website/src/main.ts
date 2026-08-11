@@ -66,8 +66,9 @@ const copy: Record<Locale, Copy> = {
       title: "Tudo funcionando,",
       status: "7/7 serviços rodando",
       services: "Aplicativos conectados e prontos",
-      caption: "Interface real do Corsarr Desktop em execução no macOS.",
-      onboardingCaption: "Configuração inicial real, depois de remover a instalação anterior com segurança.",
+      caption:
+        "Prévia conceitual da experiência Corsarr. Capturas reais do aplicativo serão adicionadas em breve.",
+      onboardingCaption: "Uma visão da jornada de configuração, criada especialmente para esta landing page.",
     },
     problem: {
       eyebrow: "UMA EXPERIÊNCIA, NÃO UMA PILHA DE CONFIGURAÇÕES",
@@ -231,8 +232,8 @@ const copy: Record<Locale, Copy> = {
       title: "Everything is running,",
       status: "7/7 services online",
       services: "Apps connected and ready",
-      caption: "The real Corsarr Desktop interface running on macOS.",
-      onboardingCaption: "The real first-run experience after safely removing the previous installation.",
+      caption: "A conceptual preview of the Corsarr experience. Real app screenshots are coming soon.",
+      onboardingCaption: "A view of the setup journey, created especially for this landing page.",
     },
     problem: {
       eyebrow: "ONE EXPERIENCE, NOT A STACK OF CONFIG FILES",
@@ -424,20 +425,47 @@ root.innerHTML = `
     </section>
 
     <section class="product-preview section-shell" aria-labelledby="preview-title">
+      <h2 id="preview-title" class="sr-only">${t.preview.title} ${t.preview.status}</h2>
       <div class="window-frame">
         <div class="window-bar"><span></span><span></span><span></span><strong>Corsarr</strong></div>
-        <picture>
-          <img src="/screenshots/corsarr-dashboard.jpg" alt="${t.preview.caption}" width="1117" height="768">
-        </picture>
-        <div class="preview-fallback">
-          <p class="eyebrow">${t.preview.eyebrow}</p>
-          <h2 id="preview-title">${t.preview.title}<br><em>${t.preview.status}</em></h2>
-          <p>${t.preview.services}</p>
+        <div class="concept-dashboard" role="img" aria-label="${t.preview.caption}">
+          <aside class="concept-sidebar" aria-hidden="true">
+            <div class="concept-brand"><b>C</b><span>Corsarr<small>DESKTOP</small></span></div>
+            <span class="concept-nav active"></span>
+            <span class="concept-nav"></span>
+            <span class="concept-nav short"></span>
+          </aside>
+          <div class="concept-main" aria-hidden="true">
+            <div class="concept-heading">
+              <div><p class="eyebrow">${t.preview.eyebrow}</p><h2>${t.preview.title}<br><em>${t.preview.status}</em></h2></div>
+              <span class="concept-ready">${locale === "en" ? "READY" : "PRONTO"}</span>
+            </div>
+            <div class="concept-status">
+              <div><span>${t.preview.services}</span><strong>7 / 7</strong><small>${locale === "en" ? "Local services responding" : "Serviços locais respondendo"}</small></div>
+              <div class="concept-radar"><i></i><b>C</b></div>
+            </div>
+            <div class="concept-service-grid">
+              ${applications
+                .slice(0, 4)
+                .map((app) => `<span><i></i><b>${app.name}</b><small>${app.role[locale]}</small></span>`)
+                .join("")}
+            </div>
+          </div>
         </div>
       </div>
       <p class="image-caption">${t.preview.caption}</p>
-      <figure class="onboarding-shot">
-        <img src="/screenshots/corsarr-onboarding.jpg" alt="${t.preview.onboardingCaption}" width="1117" height="768" loading="lazy">
+      <figure class="onboarding-concept">
+        <div class="onboarding-window" role="img" aria-label="${t.preview.onboardingCaption}">
+          <div class="window-bar"><span></span><span></span><span></span><strong>Corsarr</strong></div>
+          <div class="setup-concept" aria-hidden="true">
+            <div class="setup-copy">
+              <p class="eyebrow">${t.steps.eyebrow}</p>
+              <h3>${t.steps.title}</h3>
+              <ol>${t.steps.items.map((item, index) => `<li><span>0${index + 1}</span><b>${item.title}</b></li>`).join("")}</ol>
+            </div>
+            <div class="setup-radar"><i></i><b>C</b><span></span></div>
+          </div>
+        </div>
         <figcaption>${t.preview.onboardingCaption}</figcaption>
       </figure>
     </section>
@@ -546,8 +574,3 @@ navigation?.addEventListener("click", (event) => {
     navigation.classList.remove("open");
   }
 });
-
-const screenshot = document.querySelector<HTMLImageElement>(".window-frame img");
-const revealScreenshot = () => screenshot?.closest(".window-frame")?.classList.add("has-image");
-if (screenshot?.complete) revealScreenshot();
-else screenshot?.addEventListener("load", revealScreenshot, { once: true });
