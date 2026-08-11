@@ -45,10 +45,10 @@ The current development build provides a native Wails shell backed by the
 existing Go service catalog. It lists user-facing applications, opens their
 allowlisted local web interfaces, detects the local Docker runtime without
 mutating it, and validates a user-selected storage folder for free space,
-writing, and hardlink support. It also persists the reviewed folder and
-application selection, includes catalog dependencies automatically, and creates
-an idempotent `Corsarr/` media/configuration tree only after explicit
-confirmation. On first launch, a one-time, full-window onboarding presents a
+writing, and hardlink support. It also persists the exact reviewed folder and
+application selection, connects compatible selected applications automatically,
+and creates an idempotent `Corsarr/` media/configuration tree only after
+explicit confirmation. On first launch, a one-time, full-window onboarding presents a
 welcome radar, authorization and start-at-login choices, live Docker diagnosis,
 storage selection, and application selection as separate sequential screens.
 It reaches the regular dashboard only after the selected applications install
@@ -65,12 +65,13 @@ folders idempotently through local authenticated APIs. qBittorrent's temporary
 administrator credential is replaced with a generated `corsarr` credential
 stored in the macOS Keychain; approved download paths and per-app categories are
 reconciled, and the user can copy the password explicitly from the desktop UI.
-Radarr, Sonarr, and Lidarr receive a dedicated `qBittorrent (Corsarr)` download
-client built from each app's live provider schema, without modifying providers
-created by the user. Prowlarr also receives reserved full-sync connections to
-those three apps using their internal network URLs and generated API keys.
-Bazarr requires Radarr and Sonarr, reads their generated keys only in Go, and
-connects to both through Bazarr's authenticated settings API. On macOS, the
+When qBittorrent is also selected, Radarr, Sonarr, and Lidarr receive a dedicated
+`qBittorrent (Corsarr)` download client built from each app's live provider
+schema, without modifying providers created by the user. When selected,
+Prowlarr also receives reserved full-sync connections to the selected Arr apps
+using their internal network URLs and generated API keys. Bazarr connects
+automatically only when Radarr and Sonarr are also selected, reads their
+generated keys only in Go, and uses Bazarr's authenticated settings API. On macOS, the
 desktop can install or start its pinned, verified runtime after explicit
 consent; Windows and Linux onboarding remain pending. Jellyfin's first-run
 wizard is automated with a generated `corsarr` administrator stored in the

@@ -831,3 +831,7 @@ claims must be rechecked during implementation and release validation.
   `jellyseerr` ID/config path for automatic data migration and compatibility.
 - 2026-08-10: Automated Seerr's Jellyfin login/library discovery, tested
   Radarr/Sonarr connections, reserved default instances, and initialization.
+- 2026-08-11: Made catalog integrations optional during custom selection. The
+  desktop now installs exactly the reviewed apps and auto-configures a
+  relationship only when both managed services were selected; the complete
+  recommended preset remains available as an explicit user choice.

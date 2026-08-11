@@ -92,7 +92,7 @@ func TestCatalogResolvesOnlyKnownApplicationURLs(t *testing.T) {
 	}
 }
 
-func TestCatalogOrdersDependenciesBeforeSelectedApplications(t *testing.T) {
+func TestCatalogOrdersSelectedIntegrationsBeforeConsumers(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {
 		t.Fatalf("create registry: %v", err)
@@ -108,11 +108,27 @@ func TestCatalogOrdersDependenciesBeforeSelectedApplications(t *testing.T) {
 		positions[id] = index
 	}
 	if positions["qbittorrent"] > positions["radarr"] || positions["prowlarr"] > positions["radarr"] {
-		t.Fatalf("expected dependencies before radarr, got %v", ordered)
+		t.Fatalf("expected selected integrations before radarr, got %v", ordered)
 	}
 }
 
-func TestCatalogRequiresArrApplicationsBeforeBazarr(t *testing.T) {
+func TestCatalogAllowsAConsumerWithoutManagedIntegrations(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	catalog := NewCatalog(registry)
+
+	ordered, err := catalog.InstallationOrder([]string{"sonarr"})
+	if err != nil {
+		t.Fatalf("order standalone Sonarr: %v", err)
+	}
+	if !reflect.DeepEqual(ordered, []string{"sonarr"}) {
+		t.Fatalf("expected only selected Sonarr, got %v", ordered)
+	}
+}
+
+func TestCatalogOrdersSelectedARRApplicationsBeforeBazarr(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {
 		t.Fatalf("create registry: %v", err)
@@ -131,8 +147,9 @@ func TestCatalogRequiresArrApplicationsBeforeBazarr(t *testing.T) {
 	if positions["radarr"] > positions["bazarr"] || positions["sonarr"] > positions["bazarr"] {
 		t.Fatalf("expected Radarr and Sonarr before Bazarr, got %v", ordered)
 	}
-	if _, err := catalog.InstallationOrder([]string{"bazarr"}); err == nil {
-		t.Fatal("expected Bazarr without Arr dependencies to be rejected")
+	standalone, err := catalog.InstallationOrder([]string{"bazarr"})
+	if err != nil || !reflect.DeepEqual(standalone, []string{"bazarr"}) {
+		t.Fatalf("expected standalone Bazarr to remain selected, got %v, err=%v", standalone, err)
 	}
 }
 

@@ -23,11 +23,11 @@ func TestSetupServicePersistsValidatedApplicationSelection(t *testing.T) {
 	}}
 	service := NewSetupService(NewCatalog(registry), store)
 
-	status, err := service.SaveApplications([]string{"radarr", "prowlarr", "radarr"})
+	status, err := service.SaveApplications([]string{"radarr", "radarr"})
 	if err != nil {
 		t.Fatalf("save application selection: %v", err)
 	}
-	want := []string{"prowlarr", "qbittorrent", "radarr"}
+	want := []string{"radarr"}
 	if !reflect.DeepEqual(status.Applications, want) {
 		t.Fatalf("expected deterministic unique selection %v, got %v", want, status.Applications)
 	}

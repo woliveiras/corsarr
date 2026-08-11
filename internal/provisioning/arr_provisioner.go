@@ -31,6 +31,7 @@ func (p *ARRProvisioner) Provision(
 	ctx context.Context,
 	rootPath string,
 	applicationID string,
+	_ []string,
 ) error {
 	applicationRoot, supported := approvedARRRootFolders[applicationID]
 	if !supported {

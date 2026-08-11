@@ -25,9 +25,18 @@ func NewSeerrProvisioner(
 	return &SeerrProvisioner{secrets: secrets, arrCredentials: arrCredentials, client: client}
 }
 
-func (p *SeerrProvisioner) Provision(ctx context.Context, rootPath, applicationID string) error {
+func (p *SeerrProvisioner) Provision(
+	ctx context.Context,
+	rootPath, applicationID string,
+	selected []string,
+) error {
 	if applicationID != "jellyseerr" {
 		return nil
+	}
+	for _, required := range []string{"jellyfin", "radarr", "sonarr"} {
+		if !selectedApplication(selected, required) {
+			return nil
+		}
 	}
 	jellyfinPassword, err := p.secrets.Load(ctx, credentials.KeyJellyfinPassword)
 	if err != nil {

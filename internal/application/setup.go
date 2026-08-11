@@ -249,9 +249,7 @@ func (s *SetupService) validatedApplications(applicationIDs []string) ([]string,
 		if _, known := s.catalog.byID[id]; !known {
 			return nil, fmt.Errorf("application is not available in the desktop catalog: %s", id)
 		}
-		if err := s.includeDependencies(id, unique); err != nil {
-			return nil, err
-		}
+		unique[id] = struct{}{}
 	}
 
 	applications := make([]string, 0, len(unique))
@@ -260,23 +258,6 @@ func (s *SetupService) validatedApplications(applicationIDs []string) ([]string,
 	}
 	sort.Strings(applications)
 	return applications, nil
-}
-
-func (s *SetupService) includeDependencies(id string, selected map[string]struct{}) error {
-	if _, alreadySelected := selected[id]; alreadySelected {
-		return nil
-	}
-	application, exists := s.catalog.byID[id]
-	if !exists {
-		return fmt.Errorf("required application is not available in the desktop catalog: %s", id)
-	}
-	selected[id] = struct{}{}
-	for _, dependencyID := range application.Dependencies {
-		if err := s.includeDependencies(dependencyID, selected); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *SetupService) knownApplications(applicationIDs []string) []string {

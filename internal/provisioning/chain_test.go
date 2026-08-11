@@ -14,7 +14,12 @@ func TestChainProvisionerRunsInDeclaredOrder(t *testing.T) {
 		chainStep{name: "qbittorrent", operations: &operations},
 	)
 
-	if err := chain.Provision(context.Background(), "/host/Corsarr", "radarr"); err != nil {
+	if err := chain.Provision(
+		context.Background(),
+		"/host/Corsarr",
+		"radarr",
+		[]string{"radarr", "qbittorrent"},
+	); err != nil {
 		t.Fatalf("run provisioning chain: %v", err)
 	}
 	want := []string{"arr:radarr", "qbittorrent:radarr"}
@@ -30,7 +35,7 @@ func TestChainProvisionerStopsAfterFailure(t *testing.T) {
 		chainStep{name: "qbittorrent", operations: &operations},
 	)
 
-	if err := chain.Provision(context.Background(), "/host/Corsarr", "radarr"); err == nil {
+	if err := chain.Provision(context.Background(), "/host/Corsarr", "radarr", []string{"radarr"}); err == nil {
 		t.Fatal("expected provisioning failure")
 	}
 	if !reflect.DeepEqual(operations, []string{"arr:radarr"}) {
@@ -44,7 +49,7 @@ type chainStep struct {
 	err        error
 }
 
-func (s chainStep) Provision(_ context.Context, _ string, applicationID string) error {
+func (s chainStep) Provision(_ context.Context, _ string, applicationID string, _ []string) error {
 	*s.operations = append(*s.operations, s.name+":"+applicationID)
 	return s.err
 }

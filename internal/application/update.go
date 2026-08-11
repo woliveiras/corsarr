@@ -100,7 +100,12 @@ func (s *UpdateService) Update(
 	if !result.Updated {
 		return result, nil
 	}
-	if err := s.provisioner.Provision(ctx, filepath.Join(setup.StoragePath, "Corsarr"), applicationID); err != nil {
+	if err := s.provisioner.Provision(
+		ctx,
+		filepath.Join(setup.StoragePath, "Corsarr"),
+		applicationID,
+		setup.Applications,
+	); err != nil {
 		result.Error = fmt.Sprintf("reconcile application configuration after update: %v", err)
 		result.RequiresAttention = true
 		result.Issue = configurationIssue()

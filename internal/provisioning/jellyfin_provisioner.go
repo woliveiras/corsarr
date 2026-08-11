@@ -33,6 +33,7 @@ func (p *JellyfinProvisioner) Provision(
 	ctx context.Context,
 	_ string,
 	applicationID string,
+	_ []string,
 ) error {
 	if applicationID != "jellyfin" {
 		return nil

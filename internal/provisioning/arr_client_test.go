@@ -123,7 +123,7 @@ func TestARRProvisionerUsesOnlyApprovedRootFolder(t *testing.T) {
 	client := &recordingRootFolderClient{}
 	provisioner := NewARRProvisioner(reader, client)
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "sonarr"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "sonarr", nil); err != nil {
 		t.Fatalf("provision Sonarr: %v", err)
 	}
 	if reader.rootPath != "/host/Corsarr" || reader.applicationID != "sonarr" {
@@ -134,7 +134,7 @@ func TestARRProvisionerUsesOnlyApprovedRootFolder(t *testing.T) {
 	}
 
 	reader.calls = 0
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin", nil); err != nil {
 		t.Fatalf("skip unsupported app: %v", err)
 	}
 	if reader.calls != 0 {

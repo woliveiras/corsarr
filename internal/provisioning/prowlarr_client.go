@@ -157,8 +157,12 @@ func (p *ProwlarrProvisioner) Provision(
 	ctx context.Context,
 	rootPath string,
 	applicationID string,
+	selected []string,
 ) error {
 	if _, supported := prowlarrTargets[applicationID]; !supported {
+		return nil
+	}
+	if !selectedApplication(selected, "prowlarr") {
 		return nil
 	}
 	prowlarrKey, err := p.credentials.Read(rootPath, "prowlarr")

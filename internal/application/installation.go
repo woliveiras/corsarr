@@ -30,7 +30,7 @@ type ApplicationInstaller interface {
 }
 
 type ApplicationProvisioner interface {
-	Provision(ctx context.Context, rootPath string, applicationID string) error
+	Provision(ctx context.Context, rootPath, applicationID string, selected []string) error
 }
 
 type InstallationItem struct {
@@ -130,7 +130,12 @@ func (s *InstallationService) InstallSelectedWithProgress(
 			return result, nil
 		}
 		notifyInstallationProgress(observer, applicationID, InstallationStageProvisioning, index+1, len(ordered))
-		if provisionErr := s.provisioner.Provision(ctx, layout.RootPath, applicationID); provisionErr != nil {
+		if provisionErr := s.provisioner.Provision(
+			ctx,
+			layout.RootPath,
+			applicationID,
+			setup.Applications,
+		); provisionErr != nil {
 			item.Error = provisionErr.Error()
 			item.Failed = true
 			item.Issue = configurationIssue()

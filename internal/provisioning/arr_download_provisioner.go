@@ -39,8 +39,12 @@ func (p *ARRDownloadClientProvisioner) Provision(
 	ctx context.Context,
 	rootPath string,
 	applicationID string,
+	selected []string,
 ) error {
 	if _, supported := arrCategoryFields[applicationID]; !supported {
+		return nil
+	}
+	if !selectedApplication(selected, "qbittorrent") {
 		return nil
 	}
 	arrKey, err := p.arrCredentials.Read(rootPath, applicationID)

@@ -152,8 +152,12 @@ func (p *BazarrProvisioner) Provision(
 	ctx context.Context,
 	rootPath string,
 	applicationID string,
+	selected []string,
 ) error {
 	if applicationID != "bazarr" {
+		return nil
+	}
+	if !selectedApplication(selected, "radarr") || !selectedApplication(selected, "sonarr") {
 		return nil
 	}
 	bazarrKey, err := p.bazarrCredentials.Read(rootPath)

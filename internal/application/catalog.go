@@ -64,7 +64,7 @@ func (c *Catalog) InstallationOrder(applicationIDs []string) ([]string, error) {
 		application := c.byID[id]
 		for _, dependencyID := range application.Dependencies {
 			if _, included := selected[dependencyID]; !included {
-				return fmt.Errorf("application %s requires unselected dependency %s", id, dependencyID)
+				continue
 			}
 			if err := visit(dependencyID); err != nil {
 				return err

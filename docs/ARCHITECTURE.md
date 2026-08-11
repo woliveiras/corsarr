@@ -84,8 +84,8 @@ panel.
 
 When that native setting is enabled, startup runs a non-installing recovery in
 the background. `DockerService.Recover` can start an existing Docker Desktop
-but has no installer path. `application.RecoveryService` then orders the saved
-selection by catalog dependencies and starts only stopped Corsarr containers
+but has no installer path. `application.RecoveryService` then orders selected
+related applications and starts only stopped Corsarr containers
 that already exist. Missing containers are skipped; images are not pulled,
 containers are not created, provisioning is not rerun, and no resource is
 removed. A bounded Wails event asks the frontend to refresh status after the
@@ -209,8 +209,8 @@ fresh install; a matching image alone is insufficient. A differently pinned
 image is never replaced implicitly by installation; that case is routed to the
 explicit update/backup/rollback flow described below.
 `internal/application.InstallationService` enforces current consent, prepares
-the reviewed layout, orders dependencies before consumers, and returns a
-structured per-application result while preserving already completed apps.
+the reviewed layout, orders selected integrations before consumers, and returns
+a structured per-application result while preserving already completed apps.
 Its optional observer emits only catalog ID, bounded stage, position, and total
 for desktop progress. Runtime output and provisioning errors are excluded from
 events so progress reporting cannot become a log or credential channel.
@@ -287,15 +287,16 @@ updates only the exact reserved provider name. Other user providers are never
 selected. Radarr and Sonarr use API v3; Lidarr uses API v1.
 
 `internal/provisioning.ProwlarrProvisioner` runs when each supported target Arr
-app becomes ready. It reads the Prowlarr and target keys from their fixed config
-files and reconciles only `<App> (Corsarr)` through Prowlarr API v1. The client
+app becomes ready and Prowlarr is also selected. It reads the Prowlarr and target
+keys from their fixed config files and reconciles only `<App> (Corsarr)` through
+Prowlarr API v1. The client
 starts from the live application schema, retains its default category lists,
 sets full sync plus the internal `prowlarr` and target network URLs, and relies
 on Prowlarr's provider create/update path to validate connectivity. User-created
 Prowlarr applications remain untouched.
 
-`internal/provisioning.BazarrProvisioner` runs only after its explicit Radarr
-and Sonarr dependencies are ready. It reads Bazarr's generated API key only
+`internal/provisioning.BazarrProvisioner` connects Bazarr only when Radarr and
+Sonarr are also selected and ready. It reads Bazarr's generated API key only
 from the fixed `config/bazarr/config/config.yaml` path and reuses the redacted
 Arr credential boundary for the other keys. `BazarrClient` submits only the
 documented settings fields to the loopback-only `/api/system/settings`
@@ -315,9 +316,9 @@ The HTTP client is loopback-only, proxy-free, redirect-free, and response
 bounded. The desktop can copy the stored password directly to the native
 clipboard without returning it to TypeScript.
 
-`internal/provisioning.SeerrProvisioner` runs after its Jellyfin, Radarr, and
-Sonarr dependencies. It loads their credentials only in Go, authenticates Seerr
-through the official Jellyfin login route, and retains the resulting HTTP-only
+`internal/provisioning.SeerrProvisioner` configures Seerr after its selected
+Jellyfin, Radarr, and Sonarr integrations are ready. It loads their credentials
+only in Go, authenticates Seerr through the official Jellyfin login route, and retains the resulting HTTP-only
 session in a private cookie jar. `SeerrClient` discovers/enables Jellyfin
 libraries, tests both Arr connections to obtain live profiles and root folders,
 prefers the `Any` quality profile (or the lowest returned ID), and reconciles
@@ -403,9 +404,12 @@ Folder preparation remains available after storage/application review, but the
 backend reports installation authority only when the current terms version was
 explicitly accepted. A future terms version therefore requires new consent.
 
-Application selection is validated against the presentation-safe catalog.
-Required catalog dependencies are included recursively and the deterministic
-selection is persisted. The reviewed movie/TV preset is owned by the Go catalog,
+Application selection is validated against the presentation-safe catalog and
+the exact deterministic selection is persisted. Catalog relationships order
+compatible applications only when both are selected; provisioning likewise
+skips an absent integration so existing external services remain the user's
+choice. The reviewed movie/TV preset explicitly selects its complete integrated
+stack and is owned by the Go catalog,
 not duplicated in TypeScript. Running and stopped applications remain selected;
 during a runtime outage only previously persisted uncertain selections are
 retained, avoiding both accidental deselection and the false assumption that

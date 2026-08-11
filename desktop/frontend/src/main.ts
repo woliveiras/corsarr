@@ -78,7 +78,7 @@ root.innerHTML = [
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="environment">Voltar</button><div><button id="onboarding-choose-storage" class="secondary-button" type="button">Escolher pasta</button><button id="onboarding-storage-next" class="onboarding-primary" type="button" disabled>Próximo</button></div></footer>',
   '    </article>',
   '    <article id="onboarding-applications" class="onboarding-step" hidden>',
-  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><p>O Corsarr incluirá automaticamente as dependências necessárias. Cada aplicativo será executado em seu próprio container e continuará disponível pela interface original.</p><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
+  '      <div class="onboarding-step-copy onboarding-applications-copy"><p class="eyebrow">ETAPA 4 DE 4 · APLICATIVOS</p><h1>Escolha o que deseja instalar.</h1><p>O Corsarr instalará somente os aplicativos que você escolher. Quando serviços compatíveis forem selecionados juntos, ele poderá conectá-los automaticamente; serviços que você já usa continuam configuráveis pela interface original.</p><div class="onboarding-catalog-heading"><span id="onboarding-catalog-count">Carregando…</span><button id="onboarding-recommended" class="secondary-button" type="button">Usar configuração recomendada</button></div><div id="onboarding-application-list" class="onboarding-application-list"></div><label id="onboarding-jellyfin-lan-setting" class="onboarding-check" hidden><input id="onboarding-jellyfin-lan" type="checkbox"><span>Permitir assistir no Jellyfin por TVs e aparelhos desta rede local.</span></label><p id="onboarding-installation-result" class="onboarding-message" aria-live="polite"></p><details id="onboarding-operation-details" class="operation-details" hidden><summary>Detalhes técnicos</summary><code id="onboarding-operation-technical"></code></details></div>',
   '      <footer class="onboarding-actions"><button class="onboarding-back" type="button" data-onboarding-step="storage">Voltar</button><button id="onboarding-install" class="onboarding-primary" type="button" disabled>Instalar aplicativos</button></footer>',
   '    </article>',
   '  </div>',
@@ -924,7 +924,7 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
     const dependencyNames = dependencies.map(
       (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
     );
-    metadata.textContent += ` · Inclui ${dependencyNames.join(', ')}`;
+    metadata.textContent += ` · Integra com ${dependencyNames.join(', ')} se também selecionado`;
   }
   information.append(title, description, metadata);
 
@@ -1180,7 +1180,7 @@ function applySetupStatus(status: application.SetupStatus): void {
         status.applications.length === 1
           ? '1 aplicativo selecionado'
           : `${status.applications.length} aplicativos selecionados`;
-      installationSummaryElement.textContent = `${applicationLabel}. As dependências necessárias são incluídas automaticamente.`;
+      installationSummaryElement.textContent = `${applicationLabel}. O Corsarr instalará somente esta seleção e conectará os serviços compatíveis escolhidos juntos.`;
     } else if (!status.storagePath && status.applications.length === 0) {
       installationSummaryElement.textContent = 'Escolha uma pasta e ao menos um aplicativo.';
     } else if (!status.storagePath) {

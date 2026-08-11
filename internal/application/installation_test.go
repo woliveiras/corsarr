@@ -172,6 +172,7 @@ func (p *recordingProvisioner) Provision(
 	_ context.Context,
 	_ string,
 	applicationID string,
+	_ []string,
 ) error {
 	p.applicationIDs = append(p.applicationIDs, applicationID)
 	return p.err

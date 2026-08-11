@@ -67,7 +67,12 @@ func TestBazarrProvisionerReadsOnlyFixedApplicationCredentials(t *testing.T) {
 	client := &recordingBazarrConfigurator{}
 	provisioner := NewBazarrProvisioner(bazarrReader, reader, client)
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "bazarr"); err != nil {
+	if err := provisioner.Provision(
+		context.Background(),
+		"/host/Corsarr",
+		"bazarr",
+		[]string{"bazarr", "radarr", "sonarr"},
+	); err != nil {
 		t.Fatalf("provision Bazarr: %v", err)
 	}
 	if bazarrReader.rootPath != "/host/Corsarr" {
@@ -78,6 +83,25 @@ func TestBazarrProvisionerReadsOnlyFixedApplicationCredentials(t *testing.T) {
 	}
 	if client.bazarrKey.Reveal() == "" || client.radarrKey.Reveal() == "" || client.sonarrKey.Reveal() == "" {
 		t.Fatal("expected all backend credentials")
+	}
+}
+
+func TestBazarrProvisionerSkipsConnectionsWithoutBothManagedARRApplications(t *testing.T) {
+	reader := &multiCredentialReader{}
+	bazarrReader := &recordingBazarrCredentialReader{}
+	client := &recordingBazarrConfigurator{}
+	provisioner := NewBazarrProvisioner(bazarrReader, reader, client)
+
+	if err := provisioner.Provision(
+		context.Background(),
+		"/host/Corsarr",
+		"bazarr",
+		[]string{"bazarr"},
+	); err != nil {
+		t.Fatalf("skip unselected Arr applications: %v", err)
+	}
+	if bazarrReader.rootPath != "" || len(reader.applications) != 0 || client.bazarrKey.Reveal() != "" {
+		t.Fatalf("expected external Arr applications to remain untouched")
 	}
 }
 

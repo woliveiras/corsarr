@@ -73,6 +73,7 @@ func (p *QBittorrentProvisioner) Provision(
 	ctx context.Context,
 	_ string,
 	applicationID string,
+	_ []string,
 ) error {
 	if applicationID != qbittorrentApplicationID {
 		return nil

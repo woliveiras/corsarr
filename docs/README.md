@@ -31,7 +31,8 @@ storage, and application selection; it resumes after interruption and becomes
 the regular lifecycle dashboard only after a complete installation. Its lifecycle UI
 opens, starts, stops, restarts, updates, and removes each application while
 keeping container removal separate from recoverable configuration archival.
-The reviewed movie/TV preset includes its supporting dependencies; installed
+The reviewed movie/TV preset explicitly selects its supporting integrations,
+while custom selection installs only what the user chose. Installed
 apps cannot be removed before their installed consumers or silently dropped
 from desired state. Storage requires a fresh writable, measurable 10 GiB free
 capacity check before preparation and installation, with missing hardlinks

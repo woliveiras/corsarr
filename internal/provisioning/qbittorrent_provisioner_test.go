@@ -18,7 +18,7 @@ func TestQBittorrentProvisionerBootstrapsTemporaryCredential(t *testing.T) {
 		return credentials.NewSecret("permanent-password"), nil
 	}
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent", nil); err != nil {
 		t.Fatalf("bootstrap qBittorrent: %v", err)
 	}
 	wantOperations := []string{
@@ -45,7 +45,7 @@ func TestQBittorrentProvisionerReusesStoredCredential(t *testing.T) {
 	client := &recordingQBittorrentAPI{}
 	provisioner := NewQBittorrentProvisioner(logs, store, client)
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent", nil); err != nil {
 		t.Fatalf("reconcile qBittorrent: %v", err)
 	}
 	want := []string{"login:corsarr:stored-password", "paths", "categories"}
@@ -66,7 +66,7 @@ func TestQBittorrentProvisionerDeletesPreparedCredentialWhenChangeFails(t *testi
 		return credentials.NewSecret("permanent-password"), nil
 	}
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent"); err == nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "qbittorrent", nil); err == nil {
 		t.Fatal("expected credential change failure")
 	}
 	if store.deleteCalls != 1 {
@@ -80,7 +80,7 @@ func TestQBittorrentProvisionerIgnoresOtherApplications(t *testing.T) {
 	client := &recordingQBittorrentAPI{}
 	provisioner := NewQBittorrentProvisioner(logs, store, client)
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "radarr"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "radarr", nil); err != nil {
 		t.Fatalf("skip non-qBittorrent app: %v", err)
 	}
 	if store.loadCalls != 0 || logs.calls != 0 || len(client.operations) != 0 {

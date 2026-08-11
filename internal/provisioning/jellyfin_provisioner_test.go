@@ -16,7 +16,7 @@ func TestJellyfinProvisionerStoresCredentialBeforeSetup(t *testing.T) {
 		return credentials.NewSecret("generated-password"), nil
 	}
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin"); err != nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin", nil); err != nil {
 		t.Fatalf("provision Jellyfin: %v", err)
 	}
 	if store.saved.Reveal() != "generated-password" || client.password.Reveal() != "generated-password" {
@@ -32,7 +32,7 @@ func TestJellyfinProvisionerRemovesUnusedGeneratedCredential(t *testing.T) {
 		return credentials.NewSecret("generated-password"), nil
 	}
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin"); err == nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin", nil); err == nil {
 		t.Fatal("expected setup failure")
 	}
 	if store.deleteCalls != 1 {
@@ -51,7 +51,7 @@ func TestJellyfinProvisionerKeepsAcceptedCredentialAfterLaterFailure(t *testing.
 		return credentials.NewSecret("generated-password"), nil
 	}
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin"); err == nil {
+	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "jellyfin", nil); err == nil {
 		t.Fatal("expected setup failure")
 	}
 	if store.deleteCalls != 0 {

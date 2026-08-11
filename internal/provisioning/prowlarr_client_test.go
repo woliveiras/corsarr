@@ -67,7 +67,12 @@ func TestProwlarrProvisionerReadsBothFixedCredentials(t *testing.T) {
 	client := &recordingProwlarrConfigurator{}
 	provisioner := NewProwlarrProvisioner(reader, client)
 
-	if err := provisioner.Provision(context.Background(), "/host/Corsarr", "sonarr"); err != nil {
+	if err := provisioner.Provision(
+		context.Background(),
+		"/host/Corsarr",
+		"sonarr",
+		[]string{"prowlarr", "sonarr"},
+	); err != nil {
 		t.Fatalf("provision Prowlarr application: %v", err)
 	}
 	if client.applicationID != "sonarr" || client.prowlarrKey.Reveal() == "" || client.targetKey.Reveal() == "" {
@@ -75,6 +80,24 @@ func TestProwlarrProvisionerReadsBothFixedCredentials(t *testing.T) {
 	}
 	if len(reader.applications) != 2 || reader.applications[0] != "prowlarr" || reader.applications[1] != "sonarr" {
 		t.Fatalf("unexpected credential reads %v", reader.applications)
+	}
+}
+
+func TestProwlarrProvisionerSkipsUnselectedProwlarr(t *testing.T) {
+	reader := &multiCredentialReader{}
+	client := &recordingProwlarrConfigurator{}
+	provisioner := NewProwlarrProvisioner(reader, client)
+
+	if err := provisioner.Provision(
+		context.Background(),
+		"/host/Corsarr",
+		"sonarr",
+		[]string{"sonarr"},
+	); err != nil {
+		t.Fatalf("skip unselected Prowlarr: %v", err)
+	}
+	if len(reader.applications) != 0 || client.applicationID != "" {
+		t.Fatalf("expected external indexer manager to remain untouched")
 	}
 }
 
