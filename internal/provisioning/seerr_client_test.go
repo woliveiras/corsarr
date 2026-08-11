@@ -12,14 +12,23 @@ import (
 
 func TestSeerrClientInitializesFromJellyfinAndCreatesArrConnections(t *testing.T) {
 	initialized := false
+	loginAttempts := 0
 	created := make(map[string]map[string]any)
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.Method + " " + request.URL.Path {
 		case "GET /api/v1/settings/public":
 			_ = json.NewEncoder(response).Encode(map[string]bool{"initialized": initialized})
 		case "POST /api/v1/auth/jellyfin":
+			loginAttempts++
 			var body map[string]any
 			_ = json.NewDecoder(request.Body).Decode(&body)
+			if loginAttempts == 1 {
+				if _, hasHostname := body["hostname"]; hasHostname {
+					t.Errorf("expected existing Jellyfin login before configuration %#v", body)
+				}
+				response.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			if body["username"] != "corsarr" || body["password"] != "private-password" ||
 				body["hostname"] != "jellyfin" || body["serverType"] != float64(2) ||
 				body["urlBase"] != "" {
@@ -78,6 +87,9 @@ func TestSeerrClientInitializesFromJellyfinAndCreatesArrConnections(t *testing.T
 	}
 	if !initialized {
 		t.Fatal("expected Seerr initialization")
+	}
+	if loginAttempts != 2 {
+		t.Fatalf("expected existing login followed by first-run configuration, got %d attempts", loginAttempts)
 	}
 	for _, app := range []string{"radarr", "sonarr"} {
 		settings := created[app]
