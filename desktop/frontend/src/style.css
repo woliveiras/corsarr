@@ -707,38 +707,6 @@ nav {
   color: #5cd1c1;
 }
 
-.sidebar-note {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-  padding: 15px 13px;
-  color: #668183;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(150, 198, 193, 0.08);
-  border-radius: 12px;
-}
-
-.status-dot {
-  flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: #54c7a8;
-  box-shadow: 0 0 10px #54c7a8;
-}
-.sidebar-note p {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.55;
-}
-.sidebar-note strong {
-  display: block;
-  margin-bottom: 2px;
-  color: #a7bfbd;
-  font-size: 12px;
-}
-
 .content {
   grid-column: 2;
   padding: 37px clamp(30px, 5vw, 72px) 60px;

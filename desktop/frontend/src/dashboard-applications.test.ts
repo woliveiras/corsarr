@@ -46,3 +46,10 @@ test('dashboard no longer renders the obsolete preparation review', () => {
   assert.equal(source.includes('Revise sua preparação'), false);
   assert.equal(source.includes('class="installation-review"'), false);
 });
+
+test('dashboard does not repeat onboarding guidance in the sidebar', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('class="sidebar-note"'), false);
+  assert.equal(source.includes('Tudo em um só lugar'), false);
+});
