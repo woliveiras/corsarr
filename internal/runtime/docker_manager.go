@@ -25,8 +25,9 @@ const (
 )
 
 var (
-	ErrResourceNotFound = errors.New("runtime resource not found")
-	ErrResourceNotOwned = errors.New("runtime resource is not owned by Corsarr")
+	ErrResourceNotFound      = errors.New("runtime resource not found")
+	ErrResourceNotOwned      = errors.New("runtime resource is not owned by Corsarr")
+	ErrBindMountAccessDenied = errors.New("runtime cannot access the selected storage")
 )
 
 type Manager interface {
@@ -176,9 +177,23 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 	arguments = append(arguments, spec.Image)
 
 	if _, err := m.run(ctx, arguments...); err != nil {
+		if indicatesBindMountAccessDenied(err.Error()) {
+			err = errors.Join(ErrBindMountAccessDenied, err)
+		}
 		return fmt.Errorf("create container for %s: %w", spec.ApplicationID, err)
 	}
 	return nil
+}
+
+func indicatesBindMountAccessDenied(detail string) bool {
+	normalized := strings.ToLower(detail)
+	if strings.Contains(normalized, "mounts denied") ||
+		strings.Contains(normalized, "is not shared from the host") {
+		return true
+	}
+	return strings.Contains(normalized, "mount config") &&
+		(strings.Contains(normalized, "operation not permitted") ||
+			strings.Contains(normalized, "permission denied"))
 }
 
 func (m *DockerManager) Inspect(

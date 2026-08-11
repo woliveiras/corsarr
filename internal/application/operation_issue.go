@@ -1,5 +1,11 @@
 package application
 
+import (
+	"errors"
+
+	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
+)
+
 // OperationIssue is a bounded, non-sensitive explanation that can cross the
 // desktop boundary. Raw runtime and provisioning errors remain backend-only.
 type OperationIssue struct {
@@ -8,7 +14,15 @@ type OperationIssue struct {
 	NextAction string `json:"nextAction"`
 }
 
-func installationIssue() *OperationIssue {
+func installationIssue(installErr error) *OperationIssue {
+	if errors.Is(installErr, containerruntime.ErrBindMountAccessDenied) {
+		return &OperationIssue{
+			Code:    "runtime_storage_access_denied",
+			Summary: "O Docker não conseguiu acessar a pasta escolhida.",
+			NextAction: "Escolha outra pasta e tente novamente. No macOS, Downloads, " +
+				"Mesa e Documentos podem exigir uma autorização separada para o Docker Desktop.",
+		}
+	}
 	return &OperationIssue{
 		Code:       "application_install_failed",
 		Summary:    "Não foi possível baixar ou iniciar o aplicativo.",

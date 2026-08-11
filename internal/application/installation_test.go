@@ -122,6 +122,35 @@ func TestInstallationServiceReturnsOnlyBoundedFailureStateToDesktop(t *testing.T
 	}
 }
 
+func TestInstallationServiceExplainsRuntimeStorageAccessFailure(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	service := NewInstallationService(
+		&installationSetup{status: SetupStatus{
+			StoragePath: "/Users/test/Downloads", Applications: []string{"qbittorrent"},
+			CanPrepare: true, CanInstall: true, TermsAccepted: true,
+		}},
+		&installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Downloads/Corsarr"}},
+		NewCatalog(registry),
+		&recordingInstaller{err: containerruntime.ErrBindMountAccessDenied},
+		&recordingProvisioner{},
+	)
+
+	result, err := service.InstallSelected(context.Background(), runtimecatalog.RuntimeOptions{})
+	if err != nil {
+		t.Fatalf("return structured storage access failure: %v", err)
+	}
+	issue := result.Items[0].Issue
+	if issue == nil || issue.Code != "runtime_storage_access_denied" {
+		t.Fatalf("expected actionable storage access issue, got %#v", issue)
+	}
+	if !strings.Contains(issue.NextAction, "outra pasta") {
+		t.Fatalf("expected safe folder guidance, got %#v", issue)
+	}
+}
+
 func TestInstallationServiceDistinguishesProvisioningFailure(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

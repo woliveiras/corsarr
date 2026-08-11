@@ -2078,6 +2078,26 @@ onboardingInstallButton?.addEventListener('click', async () => {
     const result = await InstallSelectedApplications();
     if (!result.complete) {
       const failed = result.items.find((item) => item.failed);
+      if (failed?.issue?.code === 'runtime_storage_access_denied') {
+        if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Escolha outra pasta';
+        if (onboardingStorageDescription) {
+          onboardingStorageDescription.textContent = failed.issue.summary;
+        }
+        if (onboardingStorageMessage) {
+          onboardingStorageMessage.textContent = failed.issue.nextAction;
+          onboardingStorageMessage.classList.add('error');
+        }
+        if (onboardingStorageBadge) {
+          onboardingStorageBadge.textContent = 'Acesso necessário';
+          onboardingStorageBadge.className = 'runtime-badge error';
+        }
+        showOnboardingStep('storage');
+        showOnboardingNotification(
+          'A pasta continua preservada, mas o Docker precisa conseguir acessá-la.',
+        );
+        onboardingInstallButton.textContent = 'Instalar aplicativos';
+        return;
+      }
       renderOnboardingIssue(failed?.issue);
       if (onboardingInstallationResult) {
         onboardingInstallationResult.textContent = `${failed?.issue?.summary ?? 'A instalação não terminou.'} ${failed?.issue?.nextAction ?? 'Tente novamente.'}`;

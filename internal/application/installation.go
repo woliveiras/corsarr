@@ -124,7 +124,7 @@ func (s *InstallationService) InstallSelectedWithProgress(
 		if installErr != nil {
 			item.Error = installErr.Error()
 			item.Failed = true
-			item.Issue = installationIssue()
+			item.Issue = installationIssue(installErr)
 			result.Items = append(result.Items, item)
 			notifyInstallationProgress(observer, applicationID, InstallationStageFailed, index+1, len(ordered))
 			return result, nil

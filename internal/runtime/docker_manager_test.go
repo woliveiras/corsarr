@@ -61,6 +61,28 @@ func TestDockerManagerCreatesValidatedOwnedContainer(t *testing.T) {
 	}
 }
 
+func TestDockerManagerClassifiesDeniedBindMount(t *testing.T) {
+	runner := &recordingCommandRunner{
+		path: "/usr/local/bin/docker",
+		results: []managerCommandResult{{err: errors.New(
+			`Error response from daemon: invalid mount config for type "bind": ` +
+				`stat /host_mnt/Users/test/Downloads/Corsarr/config/qbittorrent: operation not permitted`,
+		)}},
+	}
+	manager := NewDockerManager(runner, time.Second)
+
+	err := manager.Create(context.Background(), ContainerSpec{
+		ApplicationID: "qbittorrent",
+		Image:         "lscr.io/linuxserver/qbittorrent@" + testImageDigest,
+		Mounts: []BindMount{{
+			HostPath: "/Users/test/Downloads/Corsarr/config/qbittorrent", ContainerPath: "/config",
+		}},
+	})
+	if !errors.Is(err, ErrBindMountAccessDenied) {
+		t.Fatalf("expected denied bind mount classification, got %v", err)
+	}
+}
+
 func TestDockerManagerRejectsInvalidSpecBeforeRuntimeAccess(t *testing.T) {
 	runner := &recordingCommandRunner{path: "/usr/local/bin/docker"}
 	manager := NewDockerManager(runner, time.Second)
