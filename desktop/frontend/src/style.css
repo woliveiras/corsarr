@@ -311,6 +311,10 @@ body {
   color: #ee9b8f;
 }
 
+#onboarding-installation-result {
+  margin-top: 24px;
+}
+
 .onboarding-diagnostic,
 .onboarding-path-preview {
   display: grid;
