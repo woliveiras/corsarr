@@ -19,6 +19,11 @@ import (
 
 const jellyfinUsername = "corsarr"
 
+const (
+	jellyfinSetupAPITimeout      = 2 * time.Minute
+	jellyfinSetupAPIPollInterval = 500 * time.Millisecond
+)
+
 var jellyfinTokenPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16,512}$`)
 
 var jellyfinLibraries = []jellyfinLibrary{
@@ -79,6 +84,11 @@ func (c *JellyfinClient) EnsureSetup(
 	if err != nil {
 		return JellyfinSetupResult{}, err
 	}
+	if !completed {
+		if err := c.waitForSetupAPI(ctx); err != nil {
+			return JellyfinSetupResult{}, err
+		}
+	}
 	token, authenticated, err := c.authenticate(ctx, password)
 	if err != nil {
 		return JellyfinSetupResult{}, err
@@ -123,6 +133,35 @@ func (c *JellyfinClient) EnsureSetup(
 		return result, fmt.Errorf("jellyfin startup did not complete")
 	}
 	return result, nil
+}
+
+func (c *JellyfinClient) waitForSetupAPI(ctx context.Context) error {
+	waitContext, cancel := context.WithTimeout(ctx, jellyfinSetupAPITimeout)
+	defer cancel()
+
+	for {
+		response, _, err := c.do(waitContext, http.MethodGet, "/Startup/User", "", nil)
+		if err != nil {
+			return fmt.Errorf("check Jellyfin setup API readiness: %w", err)
+		}
+		if response.StatusCode == http.StatusOK {
+			return nil
+		}
+		if response.StatusCode != http.StatusServiceUnavailable {
+			return fmt.Errorf(
+				"check Jellyfin setup API readiness: unexpected HTTP status %d",
+				response.StatusCode,
+			)
+		}
+
+		timer := time.NewTimer(jellyfinSetupAPIPollInterval)
+		select {
+		case <-waitContext.Done():
+			timer.Stop()
+			return fmt.Errorf("wait for Jellyfin setup API: %w", waitContext.Err())
+		case <-timer.C:
+		}
+	}
 }
 
 func (c *JellyfinClient) startupCompleted(ctx context.Context) (bool, error) {

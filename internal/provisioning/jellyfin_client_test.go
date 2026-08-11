@@ -16,12 +16,26 @@ func TestJellyfinClientCompletesStartupAndCreatesApprovedLibraries(t *testing.T)
 	password := credentials.NewSecret("private-password")
 	userConfigured := false
 	wizardComplete := false
+	setupAPIReady := false
+	setupReadinessChecks := 0
 	createdLibraries := make([]string, 0, 3)
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.Method + " " + request.URL.Path {
 		case "GET /System/Info/Public":
 			_ = json.NewEncoder(response).Encode(map[string]any{"StartupWizardCompleted": wizardComplete})
+		case "GET /Startup/User":
+			setupReadinessChecks++
+			if setupReadinessChecks == 1 {
+				response.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+			setupAPIReady = true
+			_ = json.NewEncoder(response).Encode(map[string]string{"Name": "abc"})
 		case "POST /Users/AuthenticateByName":
+			if !setupAPIReady {
+				response.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
 			var body struct {
 				Username string `json:"Username"`
 				Password string `json:"Pw"`
@@ -72,6 +86,9 @@ func TestJellyfinClientCompletesStartupAndCreatesApprovedLibraries(t *testing.T)
 	}
 	if !result.CredentialAccepted {
 		t.Fatal("expected credential to be accepted")
+	}
+	if setupReadinessChecks != 2 {
+		t.Fatalf("expected Jellyfin setup API retry, got %d checks", setupReadinessChecks)
 	}
 	sort.Strings(createdLibraries)
 	want := []string{
