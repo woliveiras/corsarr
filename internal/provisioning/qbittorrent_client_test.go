@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 
@@ -61,6 +62,56 @@ func TestQBittorrentClientAuthenticatesAndSetsCredentials(t *testing.T) {
 	want := []string{"login:admin:temporary", "set:corsarr:permanent"}
 	if !reflect.DeepEqual(operations, want) {
 		t.Fatalf("unexpected operations\nwant: %v\n got: %v", want, operations)
+	}
+}
+
+func TestQBittorrentClientAcceptsNoContentLoginResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		http.SetCookie(response, &http.Cookie{Name: "SID", Value: "session", Path: "/"})
+		response.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client := NewQBittorrentClient(readinessResolver{url: server.URL})
+	if _, err := client.Login(
+		context.Background(),
+		"admin",
+		credentials.NewSecret("temporary"),
+	); err != nil {
+		t.Fatalf("accept successful qBittorrent login without a response body: %v", err)
+	}
+}
+
+func TestQBittorrentClientRejectsNoContentLoginWithoutSessionCookie(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		response.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client := NewQBittorrentClient(readinessResolver{url: server.URL})
+	if _, err := client.Login(
+		context.Background(),
+		"admin",
+		credentials.NewSecret("temporary"),
+	); err == nil {
+		t.Fatal("expected a qBittorrent login without a session cookie to fail")
+	}
+}
+
+func TestQBittorrentClientRealLoginContract(t *testing.T) {
+	endpoint := os.Getenv("CORSARR_TEST_QBITTORRENT_URL")
+	password := os.Getenv("CORSARR_TEST_QBITTORRENT_PASSWORD")
+	if endpoint == "" || password == "" {
+		t.Skip("set the bounded qBittorrent test endpoint and temporary credential")
+	}
+
+	client := NewQBittorrentClient(readinessResolver{url: endpoint})
+	if _, err := client.Login(
+		context.Background(),
+		"admin",
+		credentials.NewSecret(password),
+	); err != nil {
+		t.Fatalf("authenticate against the running qBittorrent contract: %v", err)
 	}
 }
 

@@ -64,7 +64,10 @@ func (c *QBittorrentClient) Login(
 	if err != nil {
 		return nil, fmt.Errorf("authenticate qBittorrent: %w", err)
 	}
-	if response.StatusCode != http.StatusOK || strings.TrimSpace(string(contents)) != "Ok." {
+	hasSessionCookie := len(session.client.Jar.Cookies(session.baseURL)) > 0
+	loginAccepted := response.StatusCode == http.StatusNoContent ||
+		(response.StatusCode == http.StatusOK && strings.TrimSpace(string(contents)) == "Ok.")
+	if !loginAccepted || !hasSessionCookie {
 		return nil, fmt.Errorf("authenticate qBittorrent: login rejected")
 	}
 	return session, nil
