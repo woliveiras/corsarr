@@ -905,6 +905,43 @@ nav {
     sans-serif;
 }
 
+.info-external-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.info-external-link > span:last-child {
+  color: #64bdb3;
+  font-size: 12px;
+  transition: transform 140ms ease;
+}
+
+.info-external-link:hover:not(:disabled) {
+  color: #75d4c8;
+}
+
+.info-external-link:hover:not(:disabled) > span:last-child {
+  transform: translate(2px, -2px);
+}
+
+.info-external-link:focus-visible {
+  outline: 2px solid rgba(92, 205, 191, 0.72);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.info-external-link:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .info-card p {
   margin: 0;
   color: #789291;

@@ -25,3 +25,10 @@ test('dashboard offers a dedicated product information view', () => {
   assert.match(mainSource, /trashGuidesCommit/);
   assert.match(mainSource, /automaticUpdates/);
 });
+
+test('quality component names open their official websites', () => {
+  assert.match(mainSource, /id="info-open-recyclarr"/);
+  assert.match(mainSource, /id="info-open-trash-guides"/);
+  assert.match(mainSource, /openInfoComponentWebsite\(infoOpenRecyclarr, 'runtime-recyclarr'\)/);
+  assert.match(mainSource, /openInfoComponentWebsite\(infoOpenTrashGuides, 'guide-trash'\)/);
+});

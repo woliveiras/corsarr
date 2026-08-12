@@ -175,8 +175,8 @@ root.innerHTML = [
   '      <div class="info-grid">',
   '        <article class="info-card info-card-primary"><span class="info-icon" aria-hidden="true">C</span><div><small>APLICATIVO</small><h2>Corsarr Desktop</h2><p>Versão instalada nesta máquina</p></div><strong id="info-corsarr-version">Carregando…</strong></article>',
   '        <article class="info-card"><small>POLÍTICA DE QUALIDADE</small><h2 id="info-quality-policy">Carregando…</h2><p>Versão das escolhas e recomendações oferecidas pelo Corsarr.</p></article>',
-  '        <article class="info-card"><small>SINCRONIZAÇÃO</small><h2>Recyclarr <span id="info-recyclarr-version">—</span></h2><p>Executado sob demanda para aplicar os perfis confirmados pelo usuário.</p></article>',
-  '        <article class="info-card"><small>RECOMENDAÇÕES</small><h2>TRaSH Guides</h2><p>Fonte fixada no commit <code id="info-trash-guides-commit">—</code>.</p></article>',
+  '        <article class="info-card"><small>SINCRONIZAÇÃO</small><h2><button id="info-open-recyclarr" class="info-external-link" type="button" aria-label="Abrir site oficial do Recyclarr">Recyclarr <span id="info-recyclarr-version">—</span><span aria-hidden="true">↗</span></button></h2><p>Executado sob demanda para aplicar os perfis confirmados pelo usuário.</p></article>',
+  '        <article class="info-card"><small>RECOMENDAÇÕES</small><h2><button id="info-open-trash-guides" class="info-external-link" type="button" aria-label="Abrir site oficial do TRaSH Guides">TRaSH Guides <span aria-hidden="true">↗</span></button></h2><p>Fonte fixada no commit <code id="info-trash-guides-commit">—</code>.</p></article>',
   '        <article class="info-card"><small>ATUALIZAÇÕES DE PERFIL</small><h2 id="info-automatic-updates">Desativadas</h2><p>O Corsarr não altera seus perfis automaticamente em segundo plano.</p></article>',
   '      </div>',
   '      <p id="info-message" class="message" role="status" aria-live="polite"></p>',
@@ -364,6 +364,8 @@ const infoCorsarrVersion = document.querySelector<HTMLElement>('#info-corsarr-ve
 const infoQualityPolicy = document.querySelector<HTMLElement>('#info-quality-policy');
 const infoRecyclarrVersion = document.querySelector<HTMLElement>('#info-recyclarr-version');
 const infoTrashGuidesCommit = document.querySelector<HTMLElement>('#info-trash-guides-commit');
+const infoOpenRecyclarr = document.querySelector<HTMLButtonElement>('#info-open-recyclarr');
+const infoOpenTrashGuides = document.querySelector<HTMLButtonElement>('#info-open-trash-guides');
 const infoAutomaticUpdates = document.querySelector<HTMLElement>('#info-automatic-updates');
 const infoMessage = document.querySelector<HTMLElement>('#info-message');
 
@@ -625,6 +627,30 @@ showInfoButton?.addEventListener('click', () => showView('info'));
 showLicensesButton?.addEventListener('click', () => showView('licenses'));
 licensesBackButton?.addEventListener('click', () => showView('home'));
 infoBackButton?.addEventListener('click', () => showView('home'));
+
+async function openInfoComponentWebsite(
+  button: HTMLButtonElement,
+  componentID: string,
+): Promise<void> {
+  button.disabled = true;
+  try {
+    await OpenLegalLink(componentID, 'official');
+  } catch {
+    if (infoMessage) {
+      infoMessage.textContent = 'Não foi possível abrir o site oficial.';
+      infoMessage.classList.add('error');
+    }
+  } finally {
+    button.disabled = false;
+  }
+}
+
+infoOpenRecyclarr?.addEventListener('click', () => {
+  void openInfoComponentWebsite(infoOpenRecyclarr, 'runtime-recyclarr');
+});
+infoOpenTrashGuides?.addEventListener('click', () => {
+  void openInfoComponentWebsite(infoOpenTrashGuides, 'guide-trash');
+});
 
 async function loadProductInfo(): Promise<void> {
   try {
