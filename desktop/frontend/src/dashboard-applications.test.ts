@@ -80,3 +80,21 @@ test('dashboard exposes managed Arr credentials only through the native clipboar
   assert.equal(source.includes('CopyARRPassword(target.id)'), true);
   assert.equal(source.includes('arrAccesses.get(application.id)?.available'), true);
 });
+
+test('managed credentials keep the username visible and confirm password copy locally', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /className = 'credential-access'/);
+  assert.match(source, /usernameLabel\.textContent = 'Usuário'/);
+  assert.match(source, /button\.textContent = '✓ Senha copiada'/);
+  assert.doesNotMatch(source, /Use o usuário .* para entrar/);
+});
+
+test('installed and removal actions have explicit status semantics', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /'✓ Instalado'/);
+  assert.match(source, /classList\.add\('installed-status'\)/);
+  assert.match(source, /classList\.add\('danger-button'\)/);
+  assert.match(source, /Para remover \$\{target\.name\}, remova primeiro/);
+});

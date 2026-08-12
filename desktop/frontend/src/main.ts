@@ -779,13 +779,14 @@ function createApplicationCard(application: Application): HTMLElement {
   selectButton.className = 'select-button';
   selectButton.type = 'button';
   selectButton.textContent = installed
-    ? 'Instalado'
+    ? '✓ Instalado'
     : dashboardInstallingApplicationID === application.id
       ? 'Instalando…'
       : 'Instalar';
   selectButton.setAttribute('aria-label', `Instalar ${application.name}`);
   selectButton.disabled = selectionSaving || installed || uncertainSelection;
   if (installed) {
+    selectButton.classList.add('installed-status');
     selectButton.title = 'Este aplicativo já está instalado.';
     selectButton.setAttribute('aria-label', `${application.name} está instalado.`);
   } else if (uncertainSelection) {
@@ -1014,16 +1015,25 @@ async function removeApplication(target: Application): Promise<void> {
 }
 
 function applicationRemovalButton(target: Application, status: ManagedStatus): HTMLButtonElement {
-  const button = lifecycleButton('Remover', () => removeApplication(target));
   const blockers = status.removalBlockedBy ?? [];
-  if (blockers.length === 0) return button;
+  if (blockers.length === 0) {
+    const button = lifecycleButton('Remover', () => removeApplication(target));
+    button.classList.add('danger-button');
+    return button;
+  }
 
   const blockerNames = blockers.map(
     (id) => availableApplications.find((application) => application.id === id)?.name ?? id,
   );
-  button.disabled = true;
+  const button = document.createElement('button');
+  button.className = 'lifecycle-button danger-button';
+  button.type = 'button';
+  button.textContent = 'Remover';
   button.title = `Remova primeiro: ${blockerNames.join(', ')}.`;
   button.setAttribute('aria-label', `Não é possível remover ${target.name}. ${button.title}`);
+  button.addEventListener('click', () => {
+    window.alert(`Para remover ${target.name}, remova primeiro: ${blockerNames.join(', ')}.`);
+  });
   return button;
 }
 
@@ -1074,7 +1084,17 @@ function formatApproximateBytes(bytes: number): string {
   return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(value)} ${units[unitIndex]}`;
 }
 
-function qbittorrentCredentialButton(): HTMLButtonElement {
+function credentialAccessControl(
+  username: string,
+  applicationName: string,
+  copyPassword: () => Promise<void>,
+): HTMLElement {
+  const access = document.createElement('div');
+  access.className = 'credential-access';
+  const usernameLabel = document.createElement('span');
+  usernameLabel.textContent = 'Usuário';
+  const usernameValue = document.createElement('strong');
+  usernameValue.textContent = username;
   const button = document.createElement('button');
   button.className = 'credential-button';
   button.type = 'button';
@@ -1082,72 +1102,50 @@ function qbittorrentCredentialButton(): HTMLButtonElement {
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
-      await CopyQBittorrentPassword();
+      await copyPassword();
+      button.textContent = '✓ Senha copiada';
       if (messageElement) {
-        messageElement.textContent = `Senha copiada. Use o usuário ${qbittorrentAccess?.username ?? 'corsarr'} para entrar no qBittorrent.`;
+        messageElement.textContent = '';
         messageElement.classList.remove('error');
       }
+      window.setTimeout(() => {
+        button.textContent = 'Copiar senha';
+      }, 2500);
     } catch {
       if (messageElement) {
-        messageElement.textContent = 'Não foi possível copiar a senha do qBittorrent.';
+        messageElement.textContent = `Não foi possível copiar a senha do ${applicationName}.`;
         messageElement.classList.add('error');
       }
     } finally {
       button.disabled = false;
     }
   });
-  return button;
+  access.append(usernameLabel, usernameValue, button);
+  return access;
 }
 
-function arrCredentialButton(target: Application): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.className = 'credential-button';
-  button.type = 'button';
-  button.textContent = 'Copiar senha';
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    try {
-      await CopyARRPassword(target.id);
-      if (messageElement) {
-        const access = arrAccesses.get(target.id);
-        messageElement.textContent = `Senha copiada. Use o usuário ${access?.username ?? 'corsarr'} para entrar no ${target.name}.`;
-        messageElement.classList.remove('error');
-      }
-    } catch {
-      if (messageElement) {
-        messageElement.textContent = `Não foi possível copiar a senha do ${target.name}.`;
-        messageElement.classList.add('error');
-      }
-    } finally {
-      button.disabled = false;
-    }
-  });
-  return button;
+function qbittorrentCredentialButton(): HTMLElement {
+  return credentialAccessControl(
+    qbittorrentAccess?.username ?? 'corsarr',
+    'qBittorrent',
+    CopyQBittorrentPassword,
+  );
 }
 
-function jellyfinCredentialButton(): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.className = 'credential-button';
-  button.type = 'button';
-  button.textContent = 'Copiar senha';
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    try {
-      await CopyJellyfinPassword();
-      if (messageElement) {
-        messageElement.textContent = `Senha copiada. Use o usuário ${jellyfinAccess?.username ?? 'corsarr'} para entrar no Jellyfin.`;
-        messageElement.classList.remove('error');
-      }
-    } catch {
-      if (messageElement) {
-        messageElement.textContent = 'Não foi possível copiar a senha do Jellyfin.';
-        messageElement.classList.add('error');
-      }
-    } finally {
-      button.disabled = false;
-    }
-  });
-  return button;
+function arrCredentialButton(target: Application): HTMLElement {
+  return credentialAccessControl(
+    arrAccesses.get(target.id)?.username ?? 'corsarr',
+    target.name,
+    () => CopyARRPassword(target.id),
+  );
+}
+
+function jellyfinCredentialButton(): HTMLElement {
+  return credentialAccessControl(
+    jellyfinAccess?.username ?? 'corsarr',
+    'Jellyfin',
+    CopyJellyfinPassword,
+  );
 }
 
 function jellyfinNetworkButton(url: string): HTMLButtonElement {

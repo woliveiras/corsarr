@@ -1617,7 +1617,7 @@ nav {
 .application-actions {
   display: grid;
   gap: 6px;
-  min-width: 76px;
+  min-width: 112px;
 }
 
 .open-button,
@@ -1657,6 +1657,18 @@ nav {
   background: rgba(99, 137, 134, 0.06);
   border-color: rgba(117, 157, 153, 0.12);
   font-size: 9px;
+}
+
+.lifecycle-button.danger-button {
+  color: #f0a097;
+  background: rgba(238, 125, 125, 0.08);
+  border-color: rgba(238, 125, 125, 0.3);
+}
+
+.lifecycle-button.danger-button:hover:not(:disabled) {
+  color: #ffd2cc;
+  background: rgba(238, 125, 125, 0.16);
+  border-color: rgba(238, 125, 125, 0.48);
 }
 
 .update-button {
@@ -1699,6 +1711,42 @@ nav {
   cursor: pointer;
 }
 
+.credential-access {
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 10px;
+  text-align: left;
+  background: linear-gradient(145deg, rgba(216, 200, 137, 0.09), rgba(12, 33, 39, 0.4));
+  border: 1px solid rgba(216, 200, 137, 0.24);
+  border-radius: 10px;
+}
+
+.credential-access > span {
+  color: #b7aa79;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.credential-access > strong {
+  margin-bottom: 4px;
+  overflow: hidden;
+  color: #f0e4b3;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.credential-access .credential-button {
+  width: 100%;
+  padding-block: 8px;
+  background: rgba(216, 200, 137, 0.12);
+  border-color: rgba(216, 200, 137, 0.34);
+}
+
 .credential-button:disabled {
   opacity: 0.45;
   cursor: wait;
@@ -1716,6 +1764,14 @@ nav {
   color: #092126;
   background: #5ccdbf;
   border-color: #5ccdbf;
+}
+
+.select-button.installed-status:disabled {
+  color: #8bd8b8;
+  background: rgba(98, 201, 159, 0.1);
+  border-color: rgba(98, 201, 159, 0.25);
+  cursor: default;
+  opacity: 1;
 }
 
 .installation-review {
