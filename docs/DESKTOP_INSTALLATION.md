@@ -18,6 +18,11 @@ application configuration separate from downloaded media.
 4. Complete the one-time onboarding. Review the Docker and application terms
    before authorizing downloads or installation.
 
+Corsarr initially follows the first supported macOS language and falls back to
+English. Use the language selector in the setup header or at the bottom of the
+Desktop sidebar to switch between English, Spanish, Brazilian Portuguese, and
+Italian. The selection is kept for future launches.
+
 Only download Corsarr from the official `woliveiras/corsarr` GitHub Releases
 page and compare the archive with `desktop_checksums.txt` from the same release.
 The workflow also publishes an artifact attestation and an SPDX JSON SBOM.

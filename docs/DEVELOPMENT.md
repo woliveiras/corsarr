@@ -38,11 +38,19 @@ Local macOS builds are ad-hoc signed and identify their version as
 go mod verify
 go vet ./...
 go test -race ./...
+pnpm --dir desktop/frontend test
 pnpm --dir desktop/frontend quality
 pnpm --dir desktop/frontend build
 pnpm --dir website quality
 pnpm --dir website build
 ```
+
+Desktop translations live under `desktop/frontend/src/i18n`. Every visible
+message key must exist in `en`, `es`, `pt-BR`, and `it`; the frontend test suite
+rejects missing or extra keys. The embedded Go catalogs live under
+`internal/i18n/locales` and have an equivalent recursive parity test. Persist
+only the canonical locale identifiers and translate stable operation issue
+codes in the frontend instead of branching on translated backend sentences.
 
 ## Opt-in container contracts
 

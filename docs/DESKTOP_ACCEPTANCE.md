@@ -81,6 +81,12 @@ release candidate from a clean installation.
   states without exposing credentials or runtime logs. Confirm that the regular
   dashboard appears only after the whole selection succeeds and that subsequent
   launches do not repeat onboarding.
+- [ ] On a clean Desktop state, verify that supported system locales select
+  English, Spanish, Brazilian Portuguese, or Italian and that an unsupported
+  locale falls back to English.
+- [ ] Change the language from both onboarding and the installed-app sidebar,
+  relaunch Corsarr, and verify the persisted language across onboarding,
+  application operations, storage errors, quality profiles, and legal links.
 - [x] On the completed dashboard, confirm that the hero reports running services
   against all installed services, updates after stop/start/remove actions, and
   that installed or attention-required applications appear before applications

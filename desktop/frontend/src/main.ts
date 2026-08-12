@@ -1632,14 +1632,14 @@ function renderLegalNotices(): void {
       const kind = document.createElement('span');
       kind.textContent =
         notice.componentType === 'runtime'
-          ? 'Infraestrutura'
+          ? t('legal.type.runtime')
           : notice.componentType === 'asset'
-            ? 'Recurso visual'
-            : 'Aplicativo';
+            ? t('legal.type.asset')
+            : t('legal.type.application');
       heading.append(title, kind);
 
       const purpose = document.createElement('p');
-      purpose.textContent = notice.purpose;
+      purpose.textContent = localizedLegalPurpose(notice);
       const license = document.createElement('strong');
       license.textContent = notice.license;
       const copyright = document.createElement('p');
@@ -1650,7 +1650,11 @@ function renderLegalNotices(): void {
         const image = document.createElement('p');
         image.className = 'legal-image';
         const installedImage = managedStatuses.get(notice.id)?.image;
-        image.textContent = `Imagem mantida por ${notice.imageMaintainer} · ${installedImage ? 'Instalada' : 'Aprovada'}: ${installedImage ?? notice.approvedImage}`;
+        image.textContent = t('legal.image', {
+          maintainer: notice.imageMaintainer,
+          state: installedImage ? t('legal.installed') : t('legal.approved'),
+          image: installedImage ?? notice.approvedImage,
+        });
         card.append(image);
       }
 
@@ -1664,7 +1668,7 @@ function renderLegalNotices(): void {
       for (const link of notice.links) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.textContent = link.label;
+        button.textContent = t(`legal.link.${link.kind}` as TranslationKey);
         button.addEventListener('click', async () => {
           button.disabled = true;
           try {
@@ -1681,6 +1685,14 @@ function renderLegalNotices(): void {
   );
 }
 
+function localizedLegalPurpose(notice: LegalNotice): string {
+  const application = availableApplications.find(({ id }) => id === notice.id);
+  if (application) return application.description;
+  const key = `legal.${notice.id}.purpose` as TranslationKey;
+  const translated = t(key);
+  return translated === key ? notice.purpose : translated;
+}
+
 async function loadLegalNotices(): Promise<void> {
   try {
     legalNotices = await ListLegalNotices();
@@ -1688,7 +1700,7 @@ async function loadLegalNotices(): Promise<void> {
     renderApplications();
   } catch {
     if (legalNoticesElement) {
-      legalNoticesElement.textContent = 'Não foi possível carregar os créditos e licenças.';
+      legalNoticesElement.textContent = t('legal.loadError');
     }
   }
 }
@@ -2088,16 +2100,18 @@ async function prepareRuntime(): Promise<void> {
 prepareRuntimeButton?.addEventListener('click', () => void prepareRuntime());
 
 function formatAvailableSpace(bytes: number): string {
-  if (bytes <= 0) return 'Espaço disponível não identificado';
-  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(
-    bytes / 1024 ** 3,
-  )} GB disponíveis`;
+  if (bytes <= 0) return t('storage.unknownSpace');
+  return t('storage.available', {
+    amount: new Intl.NumberFormat(currentLocale(), { maximumFractionDigits: 1 }).format(
+      bytes / 1024 ** 3,
+    ),
+  });
 }
 
 async function chooseStorage(activeButton = chooseStorageButton): Promise<void> {
   if (!activeButton) return;
   activeButton.disabled = true;
-  activeButton.textContent = 'Verificando…';
+  activeButton.textContent = t('storage.checking');
 
   try {
     const storage = await ChooseStorageLocation();
@@ -2105,86 +2119,90 @@ async function chooseStorage(activeButton = chooseStorageButton): Promise<void> 
 
     if (storage.state === 'ready') {
       applySetupStatus(await GetSetupStatus());
-      if (storageTitleElement) storageTitleElement.textContent = 'Armazenamento pronto';
+      if (storageTitleElement) storageTitleElement.textContent = t('storage.folderReady');
       if (storageDescriptionElement) {
         storageDescriptionElement.textContent = storage.hardlinks
-          ? 'A pasta é gravável e suporta organização eficiente sem duplicar arquivos.'
-          : 'A pasta é gravável, mas não oferece hardlinks. Algumas importações poderão copiar arquivos.';
+          ? t('storage.readyDescription')
+          : t('storage.compatibleDescription');
       }
       if (storagePathElement) storagePathElement.textContent = storage.path;
       if (storageFactsElement) {
         storageFactsElement.textContent = `${formatAvailableSpace(storage.availableBytes ?? 0)} · ${
-          storage.hardlinks ? 'Hardlinks disponíveis' : 'Sem hardlinks'
+          storage.hardlinks ? t('storage.hardlinks') : t('storage.noHardlinks')
         }`;
       }
       if (storageBadgeElement) {
-        storageBadgeElement.textContent = storage.hardlinks ? 'Pronto' : 'Compatível';
+        storageBadgeElement.textContent = storage.hardlinks
+          ? t('storage.ready')
+          : t('storage.compatible');
         storageBadgeElement.className = `runtime-badge ${storage.hardlinks ? 'ready' : 'stopped'}`;
       }
-      if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Pasta pronta';
+      if (onboardingStorageTitle) onboardingStorageTitle.textContent = t('storage.folderReady');
       if (onboardingStorageDescription) {
         onboardingStorageDescription.textContent = storage.hardlinks
-          ? 'A pasta é gravável e permite organizar arquivos sem duplicação.'
-          : 'A pasta é gravável; algumas importações poderão copiar arquivos.';
+          ? t('storage.onboardingReady')
+          : t('storage.onboardingCompatible');
       }
       if (onboardingStoragePath) onboardingStoragePath.textContent = storage.path;
       if (onboardingStorageFacts) {
-        onboardingStorageFacts.textContent = `${formatAvailableSpace(storage.availableBytes ?? 0)} · ${storage.hardlinks ? 'Hardlinks disponíveis' : 'Sem hardlinks'}`;
+        onboardingStorageFacts.textContent = `${formatAvailableSpace(storage.availableBytes ?? 0)} · ${storage.hardlinks ? t('storage.hardlinks') : t('storage.noHardlinks')}`;
       }
       if (onboardingStorageBadge) {
-        onboardingStorageBadge.textContent = storage.hardlinks ? 'Pronto' : 'Compatível';
+        onboardingStorageBadge.textContent = storage.hardlinks
+          ? t('storage.ready')
+          : t('storage.compatible');
         onboardingStorageBadge.className = `runtime-badge ${storage.hardlinks ? 'ready' : 'stopped'}`;
       }
-      activeButton.textContent = 'Trocar pasta';
+      activeButton.textContent = t('storage.changeFolder');
       return;
     }
 
-    if (storageTitleElement) storageTitleElement.textContent = 'Esta pasta não pode ser usada';
+    if (storageTitleElement) storageTitleElement.textContent = t('storage.cannotUse');
     if (storageDescriptionElement) {
       storageDescriptionElement.textContent =
         storage.availableBytes !== undefined &&
         storage.requiredBytes !== undefined &&
         storage.availableBytes < storage.requiredBytes
-          ? `Há apenas ${formatAvailableSpace(storage.availableBytes).replace(' disponíveis', '')}. O Corsarr precisa de pelo menos ${formatAvailableSpace(storage.requiredBytes).replace(' disponíveis', ' livres')}.`
-          : (storage.technicalDetail ??
-            'Escolha uma pasta existente com permissão de escrita e espaço disponível verificável.');
+          ? t('storage.insufficient', {
+              available: formatAvailableSpace(storage.availableBytes),
+              required: formatAvailableSpace(storage.requiredBytes),
+            })
+          : (storage.technicalDetail ?? t('storage.chooseWritable'));
     }
     if (storagePathElement) storagePathElement.textContent = storage.path;
     if (storageFactsElement) storageFactsElement.textContent = '';
     if (storageBadgeElement) {
-      storageBadgeElement.textContent = 'Atenção';
+      storageBadgeElement.textContent = t('environment.attentionBadge');
       storageBadgeElement.className = 'runtime-badge error';
     }
-    if (onboardingStorageTitle)
-      onboardingStorageTitle.textContent = 'Esta pasta não pode ser usada';
+    if (onboardingStorageTitle) onboardingStorageTitle.textContent = t('storage.cannotUse');
     if (onboardingStorageDescription) {
       onboardingStorageDescription.textContent =
-        storage.technicalDetail ??
-        'Escolha outra pasta com permissão de escrita e espaço disponível.';
+        storage.technicalDetail ?? t('storage.chooseAnotherWritable');
     }
     if (onboardingStoragePath) onboardingStoragePath.textContent = storage.path;
     if (onboardingStorageFacts) onboardingStorageFacts.textContent = '';
     if (onboardingStorageBadge) {
-      onboardingStorageBadge.textContent = 'Atenção';
+      onboardingStorageBadge.textContent = t('environment.attentionBadge');
       onboardingStorageBadge.className = 'runtime-badge error';
     }
   } catch {
-    if (storageTitleElement) storageTitleElement.textContent = 'Não foi possível verificar a pasta';
-    if (storageDescriptionElement) storageDescriptionElement.textContent = 'Tente novamente.';
+    if (storageTitleElement) storageTitleElement.textContent = t('storage.verifyError');
+    if (storageDescriptionElement) storageDescriptionElement.textContent = t('app.tryAgain');
     if (storageBadgeElement) {
-      storageBadgeElement.textContent = 'Atenção';
+      storageBadgeElement.textContent = t('environment.attentionBadge');
       storageBadgeElement.className = 'runtime-badge error';
     }
-    if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Não foi possível verificar';
-    if (onboardingStorageDescription) onboardingStorageDescription.textContent = 'Tente novamente.';
+    if (onboardingStorageTitle) onboardingStorageTitle.textContent = t('storage.verifyError');
+    if (onboardingStorageDescription) onboardingStorageDescription.textContent = t('app.tryAgain');
     if (onboardingStorageBadge) {
-      onboardingStorageBadge.textContent = 'Atenção';
+      onboardingStorageBadge.textContent = t('environment.attentionBadge');
       onboardingStorageBadge.className = 'runtime-badge error';
     }
   } finally {
     activeButton.disabled = false;
-    if (activeButton.textContent === 'Verificando…') {
-      activeButton.textContent = 'Escolher pasta';
+    if (activeButton.textContent === t('storage.checking')) {
+      activeButton.textContent = t('dashboard.chooseFolder');
     }
   }
 }
@@ -2204,13 +2222,12 @@ async function prepareStorage(): Promise<void> {
   try {
     const layout = await PrepareStorageLayout();
     if (installationResultElement) {
-      installationResultElement.textContent = `Estrutura pronta em ${layout.rootPath}. Nenhum aplicativo foi instalado ainda.`;
+      installationResultElement.textContent = t('storage.layoutReady', { path: layout.rootPath });
     }
     prepareStorageButton.textContent = 'Estrutura pronta';
   } catch {
     if (installationResultElement) {
-      installationResultElement.textContent =
-        'Não foi possível criar as pastas. Sua seleção foi preservada para uma nova tentativa.';
+      installationResultElement.textContent = t('storage.layoutError');
       installationResultElement.classList.add('error');
     }
     prepareStorageButton.textContent = 'Tentar novamente';
@@ -2480,7 +2497,7 @@ onboardingStorageNext?.addEventListener('click', async () => {
   if (!onboardingStorageNext || !setupStatus?.storagePath) return;
   onboardingStorageNext.disabled = true;
   if (onboardingStorageMessage) {
-    onboardingStorageMessage.textContent = 'Verificando a pasta novamente…';
+    onboardingStorageMessage.textContent = t('storage.rechecking');
     onboardingStorageMessage.classList.remove('error');
   }
   try {
@@ -2492,8 +2509,7 @@ onboardingStorageNext?.addEventListener('click', async () => {
     if (onboardingStorageMessage) onboardingStorageMessage.textContent = '';
   } catch {
     if (onboardingStorageMessage) {
-      onboardingStorageMessage.textContent =
-        'A pasta não está mais disponível ou não possui espaço suficiente. Escolha outra pasta.';
+      onboardingStorageMessage.textContent = t('storage.noLongerAvailable');
       onboardingStorageMessage.classList.add('error');
     }
   } finally {

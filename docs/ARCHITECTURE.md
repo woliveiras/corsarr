@@ -32,14 +32,27 @@ and configuration archival returns only whether it occurred. Recovery paths,
 backup checksums, runtime status objects, and raw backend errors are retained for
 Go control flow but carry `json:"-"` and do not appear in generated bindings.
 
-Desktop-state schema 5 owns the one-time setup journey independently of the
-frontend. It records only the furthest completed onboarding step and never
-backfills completion during migration. The application service enforces the
+Desktop-state schema 7 owns the one-time setup journey independently of the
+frontend. It records the canonical Desktop language and the furthest completed
+onboarding step, and never backfills completion during migration. The
+application service enforces the
 sequence welcome, authorization, environment, storage, applications: current
 terms gate environment preparation, fresh runtime and storage checks gate their
 respective transitions, and only a complete successful installation marks the
 journey complete. An interrupted launch therefore resumes safely, while local
 Back navigation can explain an earlier screen without weakening those guards.
+
+The Desktop localization boundary uses canonical locale identifiers `en`, `es`,
+`pt-BR`, and `it`. On first launch the frontend maps the first supported system
+locale, falls back to English, and persists the result through
+`SetupService.SaveLanguagePreference`. Later launches treat the Go state as
+authoritative; local storage is only a startup cache that avoids rendering in
+the previous language before the Wails bridge is ready. The frontend bundles
+i18next resources and checks exact key parity across all four catalogs. Go
+continues to own the CLI and service-description catalogs, whose YAML keys are
+also checked for parity. Backend operation contracts expose stable issue codes;
+the frontend translates known codes and uses backend prose only as a fallback
+for a code introduced by a newer backend.
 
 `internal/application.Catalog` is the first presentation-independent application
 service. It derives user-facing entries from `internal/services.Registry`,
