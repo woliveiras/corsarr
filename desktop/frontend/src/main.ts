@@ -36,6 +36,7 @@ import {
   SaveQualityProfilePreset,
   SelectRecommendedApplications,
   SetJellyfinLAN,
+  SetLanguagePreference,
   SetStartAtLogin,
   StartApplication,
   StopApplication,
@@ -50,6 +51,14 @@ import {
 } from './application-selection';
 import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
 import {
+  currentLocale,
+  detectLocale,
+  initializeLocalization,
+  languageStorageKey,
+  normalizeLocale,
+  translate as t,
+} from './i18n';
+import {
   applyInstallationProgress,
   createInstallationProgress,
   type InstallationProgressEvent,
@@ -63,10 +72,15 @@ type ManagedStatus = application.ManagedApplicationStatus;
 type DataStatus = storage.ApplicationDataStatus;
 type LegalNotice = legal.Notice;
 type QualityPreset = quality.Preset;
+const detectedLocale = detectLocale(
+  window.localStorage.getItem(languageStorageKey),
+  navigator.languages,
+);
+initializeLocalization(detectedLocale);
 const root = document.querySelector<HTMLDivElement>('#app');
 
 if (!root) {
-  throw new Error('Elemento principal do Corsarr não encontrado.');
+  throw new Error('Corsarr root element was not found.');
 }
 
 root.innerHTML = [
@@ -75,6 +89,7 @@ root.innerHTML = [
   '  <div class="onboarding-frame">',
   '    <header class="onboarding-header">',
   '      <div class="onboarding-brand"><span class="brand-mark" aria-hidden="true">C</span><span><strong>Corsarr</strong><small>Configuração inicial</small></span></div>',
+  `      <label class="language-control"><span>${t('language.label')}</span><select class="language-select" aria-label="${t('language.label')}"><option value="en">${t('language.en')}</option><option value="es">${t('language.es')}</option><option value="pt-BR">${t('language.pt-BR')}</option><option value="it">${t('language.it')}</option></select></label>`,
   '      <div id="onboarding-progress" class="onboarding-progress" hidden><span class="active"></span><span></span><span></span><span></span><span></span><small id="onboarding-progress-label">Etapa 1 de 4</small></div>',
   '    </header>',
   '    <article id="onboarding-splash" class="onboarding-step onboarding-splash">',
@@ -109,77 +124,78 @@ root.innerHTML = [
   '</section>',
   '<div id="dashboard-shell" class="shell" hidden>',
   '  <aside class="sidebar">',
-  '    <a class="brand" href="#" aria-label="Corsarr, início">',
+  `    <a class="brand" href="#" aria-label="${t('dashboard.aria')}">`,
   '      <span class="brand-mark" aria-hidden="true">C</span>',
   '      <span><strong>Corsarr</strong><small>Desktop</small></span>',
   '    </a>',
-  '    <nav aria-label="Navegação principal">',
-  '      <button id="show-home" class="nav-item active" type="button"><span aria-hidden="true">⌂</span>Início</button>',
-  '      <button id="show-info" class="nav-item" type="button"><span aria-hidden="true">ⓘ</span>Info</button>',
-  '      <button id="show-licenses" class="nav-item" type="button"><span aria-hidden="true">§</span>Licenças</button>',
-  '      <button id="export-diagnostics" class="nav-item" type="button"><span aria-hidden="true">⇩</span>Exportar diagnóstico</button>',
+  `    <nav aria-label="${t('nav.aria')}">`,
+  `      <button id="show-home" class="nav-item active" type="button"><span aria-hidden="true">⌂</span>${t('nav.home')}</button>`,
+  `      <button id="show-info" class="nav-item" type="button"><span aria-hidden="true">ⓘ</span>${t('nav.info')}</button>`,
+  `      <button id="show-licenses" class="nav-item" type="button"><span aria-hidden="true">§</span>${t('nav.licenses')}</button>`,
+  `      <button id="export-diagnostics" class="nav-item" type="button"><span aria-hidden="true">⇩</span>${t('nav.exportDiagnostics')}</button>`,
   '    </nav>',
+  `    <label class="language-control sidebar-language"><span>${t('language.label')}</span><select class="language-select" aria-label="${t('language.label')}"><option value="en">${t('language.en')}</option><option value="es">${t('language.es')}</option><option value="pt-BR">${t('language.pt-BR')}</option><option value="it">${t('language.it')}</option></select></label>`,
   '  </aside>',
   '  <main class="content">',
   '    <div id="home-view">',
   '    <header class="topbar">',
-  '      <div><p class="eyebrow">SEU SERVIDOR DE MÍDIA</p><h1>Olá.</h1></div>',
-  '      <div class="machine"><span class="machine-icon" aria-hidden="true">⌘</span><span><small id="platform-name">Verificando computador</small><strong id="architecture-name">Aguarde…</strong></span></div>',
+  `      <div><p class="eyebrow">${t('dashboard.eyebrow')}</p><h1>${t('dashboard.greeting')}</h1></div>`,
+  `      <div class="machine"><span class="machine-icon" aria-hidden="true">⌘</span><span><small id="platform-name">${t('dashboard.checkingComputer')}</small><strong id="architecture-name">${t('dashboard.wait')}</strong></span></div>`,
   '    </header>',
   '    <section class="hero" aria-labelledby="hero-title">',
   '      <div>',
-  '        <span class="phase">CONTROLE LOCAL</span>',
-  '        <h2 id="hero-title">Tudo funcionando,<br><em>0/0 serviços rodando</em></h2>',
-  '        <p>Instale, atualize e cuide dos seus aplicativos de mídia por uma única interface.</p>',
+  `        <span class="phase">${t('dashboard.localControl')}</span>`,
+  `        <h2 id="hero-title">${t('dashboard.heroTitle')}<br><em>${t('dashboard.runningServices', { running: 0, installed: 0 })}</em></h2>`,
+  `        <p>${t('dashboard.heroDescription')}</p>`,
   '      </div>',
   '      <div class="radar" aria-hidden="true"><span></span><span></span><i></i><b>C</b></div>',
   '    </section>',
   '    <section class="environment-card" aria-labelledby="environment-title">',
   '      <span class="environment-icon" aria-hidden="true">◎</span>',
   '      <div class="environment-copy">',
-  '        <p class="eyebrow">ESTE COMPUTADOR</p>',
-  '        <h2 id="environment-title">Verificando o ambiente…</h2>',
-  '        <p id="environment-description">O Corsarr está conferindo os componentes necessários.</p>',
-  '        <details id="environment-details"><summary>Detalhes técnicos</summary><code id="environment-technical">Executando diagnóstico…</code></details>',
+  `        <p class="eyebrow">${t('dashboard.thisComputer')}</p>`,
+  `        <h2 id="environment-title">${t('dashboard.checkingEnvironment')}</h2>`,
+  `        <p id="environment-description">${t('dashboard.environmentDescription')}</p>`,
+  `        <details id="environment-details"><summary>${t('common.technicalDetails')}</summary><code id="environment-technical">${t('dashboard.runningDiagnostics')}</code></details>`,
   '      </div>',
-  '      <span id="environment-badge" class="runtime-badge checking">Verificando</span>',
-  '      <button id="prepare-runtime" class="choose-storage-button" type="button" hidden>Preparar computador</button>',
-  '      <button id="refresh-environment" class="refresh-button" type="button" aria-label="Verificar ambiente novamente">↻</button>',
+  `      <span id="environment-badge" class="runtime-badge checking">${t('dashboard.checking')}</span>`,
+  `      <button id="prepare-runtime" class="choose-storage-button" type="button" hidden>${t('dashboard.prepareComputer')}</button>`,
+  `      <button id="refresh-environment" class="refresh-button" type="button" aria-label="${t('dashboard.refreshEnvironment')}">↻</button>`,
   '    </section>',
   '    <section class="storage-card" aria-labelledby="storage-title">',
   '      <span class="storage-icon" aria-hidden="true">▱</span>',
   '      <div class="storage-copy">',
-  '        <p class="eyebrow">ARMAZENAMENTO</p>',
-  '        <h2 id="storage-title">Escolha onde guardar sua mídia</h2>',
-  '        <p id="storage-description">O Corsarr verificará espaço, permissão de escrita e suporte a hardlinks.</p>',
+  `        <p class="eyebrow">${t('dashboard.storage')}</p>`,
+  `        <h2 id="storage-title">${t('dashboard.chooseMediaStorage')}</h2>`,
+  `        <p id="storage-description">${t('dashboard.storageDescription')}</p>`,
   '        <p id="storage-path" class="storage-path"></p>',
   '        <p id="storage-facts" class="storage-facts"></p>',
   '      </div>',
-  '      <span id="storage-badge" class="runtime-badge checking">Não verificado</span>',
-  '      <button id="choose-storage" class="choose-storage-button" type="button">Escolher pasta</button>',
+  `      <span id="storage-badge" class="runtime-badge checking">${t('dashboard.notChecked')}</span>`,
+  `      <button id="choose-storage" class="choose-storage-button" type="button">${t('dashboard.chooseFolder')}</button>`,
   '    </section>',
   '    <section class="section-heading">',
-  '      <div><p class="eyebrow">APLICATIVOS</p><h2>Seus aplicativos</h2></div>',
-  '      <p id="catalog-count" class="catalog-count">Carregando…</p>',
+  `      <div><p class="eyebrow">${t('dashboard.applications')}</p><h2>${t('dashboard.yourApplications')}</h2></div>`,
+  `      <p id="catalog-count" class="catalog-count">${t('common.loading')}</p>`,
   '    </section>',
   '    <div id="message" class="message" role="status" aria-live="polite"></div>',
-  '    <section id="applications" class="applications" aria-label="Aplicativos disponíveis">',
+  `    <section id="applications" class="applications" aria-label="${t('dashboard.availableAppsAria')}">`,
   '      <div class="loading-card"></div><div class="loading-card"></div><div class="loading-card"></div>',
   '    </section>',
   '    </div>',
   '    <section id="licenses-view" class="licenses-view" hidden aria-labelledby="licenses-title">',
-  '      <header class="credits-header"><div><p class="eyebrow">CRÉDITOS E TRANSPARÊNCIA</p><h1 id="licenses-title">Aplicativos e licenças</h1><p>O Corsarr existe graças a estes projetos e mantenedores. Cada componente mantém seus próprios termos, marcas e direitos autorais.</p></div><button id="licenses-back" class="secondary-button" type="button">Voltar ao início</button></header>',
-  '      <p class="affiliation-note">O Corsarr facilita a instalação e a administração, mas não é afiliado ou endossado pelos projetos listados, salvo indicação expressa.</p>',
+  `      <header class="credits-header"><div><p class="eyebrow">${t('licenses.eyebrow')}</p><h1 id="licenses-title">${t('licenses.title')}</h1><p>${t('licenses.description')}</p></div><button id="licenses-back" class="secondary-button" type="button">${t('common.backHome')}</button></header>`,
+  `      <p class="affiliation-note">${t('licenses.affiliation')}</p>`,
   '      <div id="legal-notices" class="legal-notices"><div class="loading-card"></div></div>',
   '    </section>',
   '    <section id="info-view" class="info-view" hidden aria-labelledby="info-title">',
-  '      <header class="credits-header"><div><p class="eyebrow">SOBRE ESTA INSTALAÇÃO</p><h1 id="info-title">Informações do Corsarr</h1><p>Versões e políticas em uso nesta máquina.</p></div><button id="info-back" class="secondary-button" type="button">Voltar ao início</button></header>',
+  `      <header class="credits-header"><div><p class="eyebrow">${t('info.eyebrow')}</p><h1 id="info-title">${t('info.title')}</h1><p>${t('info.description')}</p></div><button id="info-back" class="secondary-button" type="button">${t('common.backHome')}</button></header>`,
   '      <div class="info-grid">',
-  '        <article class="info-card info-card-primary"><span class="info-icon" aria-hidden="true">C</span><div><small>APLICATIVO</small><h2>Corsarr Desktop</h2><p>Versão instalada nesta máquina</p></div><strong id="info-corsarr-version">Carregando…</strong></article>',
-  '        <article class="info-card"><small>POLÍTICA DE QUALIDADE</small><h2 id="info-quality-policy">Carregando…</h2><p>Versão das escolhas e recomendações oferecidas pelo Corsarr.</p></article>',
-  '        <article class="info-card"><small>SINCRONIZAÇÃO</small><h2><button id="info-open-recyclarr" class="info-external-link" type="button" aria-label="Abrir site oficial do Recyclarr">Recyclarr <span id="info-recyclarr-version">—</span><span aria-hidden="true">↗</span></button></h2><p>Executado sob demanda para aplicar os perfis confirmados pelo usuário.</p></article>',
-  '        <article class="info-card"><small>RECOMENDAÇÕES</small><h2><button id="info-open-trash-guides" class="info-external-link" type="button" aria-label="Abrir site oficial do TRaSH Guides">TRaSH Guides <span aria-hidden="true">↗</span></button></h2><p>Fonte fixada no commit <code id="info-trash-guides-commit">—</code>.</p></article>',
-  '        <article class="info-card"><small>ATUALIZAÇÕES DE PERFIL</small><h2 id="info-automatic-updates">Desativadas</h2><p>O Corsarr não altera seus perfis automaticamente em segundo plano.</p></article>',
+  `        <article class="info-card info-card-primary"><span class="info-icon" aria-hidden="true">C</span><div><small>${t('info.application')}</small><h2>Corsarr Desktop</h2><p>${t('info.installedVersion')}</p></div><strong id="info-corsarr-version">${t('common.loading')}</strong></article>`,
+  `        <article class="info-card"><small>${t('info.qualityPolicy')}</small><h2 id="info-quality-policy">${t('common.loading')}</h2><p>${t('info.qualityPolicyDescription')}</p></article>`,
+  `        <article class="info-card"><small>${t('info.synchronization')}</small><h2><button id="info-open-recyclarr" class="info-external-link" type="button" aria-label="${t('info.openRecyclarr')}">Recyclarr <span id="info-recyclarr-version">—</span><span aria-hidden="true">↗</span></button></h2><p>${t('info.recyclarrDescription')}</p></article>`,
+  `        <article class="info-card"><small>${t('info.recommendations')}</small><h2><button id="info-open-trash-guides" class="info-external-link" type="button" aria-label="${t('info.openTrash')}">TRaSH Guides <span aria-hidden="true">↗</span></button></h2><p>${t('info.trashSource')} <code id="info-trash-guides-commit">—</code>.</p></article>`,
+  `        <article class="info-card"><small>${t('info.profileUpdates')}</small><h2 id="info-automatic-updates">${t('info.disabled')}</h2><p>${t('info.profileUpdatesDescription')}</p></article>`,
   '      </div>',
   '      <p id="info-message" class="message" role="status" aria-live="polite"></p>',
   '    </section>',
@@ -370,6 +386,26 @@ const infoOpenRecyclarr = document.querySelector<HTMLButtonElement>('#info-open-
 const infoOpenTrashGuides = document.querySelector<HTMLButtonElement>('#info-open-trash-guides');
 const infoAutomaticUpdates = document.querySelector<HTMLElement>('#info-automatic-updates');
 const infoMessage = document.querySelector<HTMLElement>('#info-message');
+const languageSelects = document.querySelectorAll<HTMLSelectElement>('.language-select');
+
+for (const select of languageSelects) {
+  select.value = currentLocale();
+  select.addEventListener('change', async () => {
+    const locale = normalizeLocale(select.value);
+    if (!locale || locale === currentLocale()) return;
+    for (const control of languageSelects) control.disabled = true;
+    try {
+      await SetLanguagePreference(locale);
+      window.localStorage.setItem(languageStorageKey, locale);
+      window.location.reload();
+    } catch {
+      for (const control of languageSelects) {
+        control.value = currentLocale();
+        control.disabled = false;
+      }
+    }
+  });
+}
 
 let setupStatus: application.SetupStatus | undefined;
 let availableApplications: Application[] = [];
@@ -663,12 +699,14 @@ async function loadProductInfo(): Promise<void> {
     if (infoRecyclarrVersion) infoRecyclarrVersion.textContent = productInfo.recyclarrVersion;
     if (infoTrashGuidesCommit) infoTrashGuidesCommit.textContent = productInfo.trashGuidesCommit;
     if (infoAutomaticUpdates) {
-      infoAutomaticUpdates.textContent = productInfo.automaticUpdates ? 'Ativadas' : 'Desativadas';
+      infoAutomaticUpdates.textContent = productInfo.automaticUpdates
+        ? t('info.enabled')
+        : t('info.disabled');
     }
     if (infoMessage) infoMessage.textContent = '';
   } catch {
     if (infoMessage) {
-      infoMessage.textContent = 'Não foi possível carregar as informações desta instalação.';
+      infoMessage.textContent = t('info.loadError');
       infoMessage.classList.add('error');
     }
   }
@@ -681,13 +719,13 @@ exportDiagnosticsButton?.addEventListener('click', async () => {
     const result = await ExportDiagnostics();
     if (!result.exported) return;
     if (messageElement) {
-      messageElement.textContent = `Diagnóstico salvo em ${result.path}. O arquivo não inclui logs nem credenciais.`;
+      messageElement.textContent = t('diagnostics.saved', { path: result.path });
       messageElement.classList.remove('error');
     }
     showView('home');
   } catch {
     if (messageElement) {
-      messageElement.textContent = 'Não foi possível exportar o diagnóstico.';
+      messageElement.textContent = t('diagnostics.exportError');
       messageElement.classList.add('error');
     }
     showView('home');
@@ -776,9 +814,9 @@ function createApplicationCard(application: Application): HTMLElement {
     const details = document.createElement('details');
     details.className = 'application-status-details';
     const summary = document.createElement('summary');
-    summary.textContent = 'Ver detalhes';
+    summary.textContent = t('app.details');
     const diagnostic = document.createElement('code');
-    diagnostic.textContent = `${managedStatus.issue.summary}\n${managedStatus.issue.nextAction}\nCódigo: ${managedStatus.issue.code}`;
+    diagnostic.textContent = `${managedStatus.issue.summary}\n${managedStatus.issue.nextAction}\n${t('app.issueCode', { code: managedStatus.issue.code })}`;
     details.append(summary, diagnostic);
     information.append(details);
   }
@@ -791,7 +829,7 @@ function createApplicationCard(application: Application): HTMLElement {
   ) {
     const networkAddress = document.createElement('p');
     networkAddress.className = 'network-address';
-    networkAddress.textContent = `TV e celular: ${jellyfinNetwork.urls[0]}`;
+    networkAddress.textContent = t('app.networkAddress', { url: jellyfinNetwork.urls[0] });
     networkAddress.title = jellyfinNetwork.urls.join('\n');
     information.append(networkAddress);
   }
@@ -803,12 +841,12 @@ function createApplicationCard(application: Application): HTMLElement {
   selectButton.className = 'select-button';
   selectButton.type = 'button';
   selectButton.textContent = installed
-    ? '✓ Instalado'
+    ? t('app.installed')
     : !application.automatedSetup
-      ? 'Configuração manual'
+      ? t('app.manualSetup')
       : dashboardInstallingApplicationID === application.id
-        ? 'Instalando…'
-        : 'Instalar';
+        ? t('app.installing')
+        : t('app.install');
   selectButton.setAttribute('aria-label', `Instalar ${application.name}`);
   selectButton.disabled =
     selectionSaving || installed || uncertainSelection || !application.automatedSetup;
@@ -891,7 +929,7 @@ function createApplicationCard(application: Application): HTMLElement {
   const openButton = document.createElement('button');
   openButton.className = 'open-button';
   openButton.type = 'button';
-  openButton.textContent = 'Abrir';
+  openButton.textContent = t('app.open');
   openButton.disabled = managedStatus?.state !== 'running';
   openButton.setAttribute('aria-label', `Abrir ${application.name} no navegador`);
   openButton.addEventListener('click', async () => {
@@ -922,13 +960,13 @@ function createApplicationCard(application: Application): HTMLElement {
   }
   if (managedStatus?.state === 'running') {
     actions.append(
-      lifecycleButton('Reiniciar', () => RestartApplication(application.id)),
-      lifecycleButton('Parar', () => StopApplication(application.id)),
+      lifecycleButton(t('app.restart'), () => RestartApplication(application.id)),
+      lifecycleButton(t('app.stop'), () => StopApplication(application.id)),
       applicationRemovalButton(application, managedStatus),
     );
   } else if (managedStatus?.state === 'stopped') {
     actions.append(
-      lifecycleButton('Iniciar', () => StartApplication(application.id)),
+      lifecycleButton(t('app.start'), () => StartApplication(application.id)),
       applicationRemovalButton(application, managedStatus),
     );
   } else if (
@@ -987,7 +1025,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'update-button';
   button.type = 'button';
-  button.textContent = 'Atualizar';
+  button.textContent = t('app.update');
   button.addEventListener('click', async () => {
     const confirmed = window.confirm(
       `Atualizar ${target.name}? O Corsarr criará um backup privado das configurações e verificará a nova versão antes de concluir. O aplicativo ficará indisponível por alguns instantes. Se a versão migrar o banco de dados, restaurar a imagem anterior pode não desfazer essa migração.`,
@@ -995,7 +1033,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
     if (!confirmed) return;
 
     button.disabled = true;
-    button.textContent = 'Atualizando…';
+    button.textContent = t('app.installing');
     if (messageElement) {
       messageElement.textContent = `Criando backup e verificando a atualização de ${target.name}…`;
       messageElement.classList.remove('error');
@@ -1027,7 +1065,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
       }
     } finally {
       button.disabled = false;
-      button.textContent = 'Atualizar';
+      button.textContent = t('app.update');
     }
   });
   return button;
@@ -1066,7 +1104,7 @@ async function removeApplication(target: Application): Promise<void> {
 function applicationRemovalButton(target: Application, status: ManagedStatus): HTMLButtonElement {
   const blockers = status.removalBlockedBy ?? [];
   if (blockers.length === 0) {
-    const button = lifecycleButton('Remover', () => removeApplication(target));
+    const button = lifecycleButton(t('app.remove'), () => removeApplication(target));
     button.classList.add('danger-button');
     return button;
   }
@@ -1077,7 +1115,7 @@ function applicationRemovalButton(target: Application, status: ManagedStatus): H
   const button = document.createElement('button');
   button.className = 'lifecycle-button danger-button';
   button.type = 'button';
-  button.textContent = 'Remover';
+  button.textContent = t('app.remove');
   button.title = `Remova primeiro: ${blockerNames.join(', ')}.`;
   button.setAttribute('aria-label', `Não é possível remover ${target.name}. ${button.title}`);
   button.addEventListener('click', () => {
@@ -1090,7 +1128,7 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'data-removal-button';
   button.type = 'button';
-  button.textContent = 'Remover dados';
+  button.textContent = t('app.removeData');
   button.addEventListener('click', async () => {
     const dataStatus = dataStatuses.get(target.id);
     const approximateSize = formatApproximateBytes(dataStatus?.sizeBytes ?? 0);
@@ -1130,7 +1168,7 @@ function formatApproximateBytes(bytes: number): string {
     unitIndex += 1;
   }
   const maximumFractionDigits = unitIndex === 0 ? 0 : 1;
-  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(value)} ${units[unitIndex]}`;
+  return `${new Intl.NumberFormat(currentLocale(), { maximumFractionDigits }).format(value)} ${units[unitIndex]}`;
 }
 
 function credentialAccessControl(
@@ -1142,7 +1180,7 @@ function credentialAccessControl(
   const access = document.createElement('div');
   access.className = 'credential-access';
   const usernameLabel = document.createElement('span');
-  usernameLabel.textContent = 'Usuário';
+  usernameLabel.textContent = t('app.username');
   if (options.usernameLabel) {
     usernameLabel.textContent = options.usernameLabel;
   }
@@ -1151,13 +1189,13 @@ function credentialAccessControl(
   const button = document.createElement('button');
   button.className = 'credential-button';
   button.type = 'button';
-  const buttonLabel = options.buttonLabel ?? 'Copiar senha';
+  const buttonLabel = options.buttonLabel ?? t('app.copyPassword');
   button.textContent = buttonLabel;
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
       await copyPassword();
-      button.textContent = '✓ Senha copiada';
+      button.textContent = t('app.passwordCopied');
       if (messageElement) {
         messageElement.textContent = '';
         messageElement.classList.remove('error');
@@ -1205,9 +1243,9 @@ function jellyfinCredentialButton(): HTMLElement {
 function seerrCredentialButton(): HTMLElement {
   return credentialAccessControl(
     jellyfinAccess?.username ?? 'corsarr',
-    'Seerr · conta do Jellyfin',
+    t('seerr.account'),
     CopyJellyfinPassword,
-    { usernameLabel: 'Login do Jellyfin', buttonLabel: 'Copiar senha do Jellyfin' },
+    { usernameLabel: t('seerr.login'), buttonLabel: t('seerr.copyPassword') },
   );
 }
 
@@ -1223,7 +1261,7 @@ function jellyfinNetworkButton(url: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'network-button';
   button.type = 'button';
-  button.textContent = 'Copiar endereço';
+  button.textContent = t('app.copyAddress');
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
@@ -1342,7 +1380,9 @@ function renderApplications(): void {
   );
   renderIntegrationAdvice();
   if (onboardingCatalogCount) {
-    onboardingCatalogCount.textContent = `${availableApplications.length} disponíveis`;
+    onboardingCatalogCount.textContent = t('catalog.available', {
+      count: availableApplications.length,
+    });
   }
 }
 
@@ -1350,10 +1390,10 @@ function renderRunningServicesSummary(): void {
   if (!heroTitleElement) return;
   const summary = runningServicesSummary([...managedStatuses.values()]);
   heroTitleElement.replaceChildren(
-    'Tudo funcionando,',
+    t('dashboard.heroTitle'),
     document.createElement('br'),
     Object.assign(document.createElement('em'), {
-      textContent: `${summary.running}/${summary.installed} serviços rodando`,
+      textContent: t('dashboard.runningServices', summary),
     }),
   );
 }
@@ -1396,16 +1436,18 @@ async function loadApplications(): Promise<void> {
     if (availableApplications.length === 0) throw new Error('empty application catalog');
     applicationCatalogState = 'ready';
     renderApplications();
-    if (countElement) countElement.textContent = `${availableApplications.length} disponíveis`;
+    if (countElement) {
+      countElement.textContent = t('catalog.available', { count: availableApplications.length });
+    }
   } catch {
     applicationCatalogState = 'error';
     availableApplications = [];
     applicationsElement?.replaceChildren();
-    if (countElement) countElement.textContent = 'Indisponível';
+    if (countElement) countElement.textContent = t('common.unavailable');
     if (onboardingCatalogCount) onboardingCatalogCount.textContent = 'Catálogo indisponível';
     renderApplicationCatalogError();
     if (messageElement) {
-      messageElement.textContent = 'Não foi possível carregar o catálogo do Corsarr.';
+      messageElement.textContent = t('catalog.loadError');
       messageElement.classList.add('error');
     }
   } finally {
@@ -1640,7 +1682,17 @@ function updateInstallAuthority(): void {
 
 async function loadSetup(): Promise<void> {
   try {
-    applySetupStatus(await GetSetupStatus());
+    let status = await GetSetupStatus();
+    const persistedLocale = normalizeLocale(status.language);
+    if (persistedLocale && persistedLocale !== currentLocale()) {
+      window.localStorage.setItem(languageStorageKey, persistedLocale);
+      window.location.reload();
+      return;
+    }
+    if (!persistedLocale) {
+      status = await SetLanguagePreference(currentLocale());
+    }
+    applySetupStatus(status);
   } catch {
     if (installationSummaryElement) {
       installationSummaryElement.textContent =

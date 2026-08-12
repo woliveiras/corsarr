@@ -442,7 +442,15 @@ func (a *App) runBackgroundRecovery(ctx context.Context) {
 
 // ListApplications returns the user-facing applications known by Corsarr.
 func (a *App) ListApplications() []application.ApplicationSummary {
-	return a.catalog.ListApplications()
+	setup, err := a.setup.Load()
+	if err != nil || setup.Language == "" {
+		return a.catalog.ListApplications()
+	}
+	translator, err := i18n.New(setup.Language)
+	if err != nil {
+		return a.catalog.ListApplications()
+	}
+	return a.catalog.ListLocalizedApplications(translator)
 }
 
 func (a *App) GetProductInfo() ProductInfo {

@@ -76,6 +76,30 @@ func TestLocalizedCatalogUsesEmbeddedDesktopTranslations(t *testing.T) {
 	}
 }
 
+func TestCatalogCanLocalizePresentationWithoutChangingItsStoredLanguage(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	catalog := NewCatalog(registry)
+	italian, err := i18n.New("it")
+	if err != nil {
+		t.Fatalf("create Italian translator: %v", err)
+	}
+
+	localized, ok := findApplication(catalog.ListLocalizedApplications(italian), "radarr")
+	if !ok {
+		t.Fatal("expected Radarr in localized catalog")
+	}
+	if localized.Description != "ricerca e gestisce film" {
+		t.Fatalf("unexpected Italian description %q", localized.Description)
+	}
+	original, _ := findApplication(catalog.ListApplications(), "radarr")
+	if original.Description == localized.Description {
+		t.Fatal("expected localization not to mutate the stored catalog")
+	}
+}
+
 func TestCatalogResolvesOnlyKnownApplicationURLs(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

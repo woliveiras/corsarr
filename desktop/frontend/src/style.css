@@ -153,6 +153,29 @@ body {
   font-size: 9px;
 }
 
+.language-control {
+  display: grid;
+  gap: 5px;
+  color: #718b8c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.language-control select {
+  min-width: 132px;
+  padding: 8px 30px 8px 10px;
+  color: #cde5e1;
+  background: #102d33;
+  border: 1px solid rgba(95, 196, 184, 0.22);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .onboarding-step {
   min-height: calc(100vh - 139px);
   padding: clamp(34px, 6vh, 66px) clamp(34px, 7vw, 80px) 28px;
@@ -809,6 +832,10 @@ a:focus-visible {
 nav {
   display: grid;
   gap: 7px;
+}
+
+.sidebar-language {
+  margin: auto 8px 0;
 }
 
 .nav-item {

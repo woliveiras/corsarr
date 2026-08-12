@@ -161,6 +161,26 @@ func (c *Catalog) ListApplications() []ApplicationSummary {
 	return applications
 }
 
+// ListLocalizedApplications returns a presentation-only copy translated for
+// the current Desktop language without changing installation invariants.
+func (c *Catalog) ListLocalizedApplications(translator *i18n.I18n) []ApplicationSummary {
+	applications := c.ListApplications()
+	if translator == nil {
+		return applications
+	}
+	for index := range applications {
+		nameKey := "services_" + applications[index].ID + "_name"
+		if translated := translator.T(nameKey); translated != nameKey {
+			applications[index].Name = translated
+		}
+		descriptionKey := "services_" + applications[index].ID + "_description"
+		if translated := translator.T(descriptionKey); translated != descriptionKey {
+			applications[index].Description = translated
+		}
+	}
+	return applications
+}
+
 // RecommendedApplicationIDs returns the reviewed starter stack for people who
 // want movies and TV shows without choosing every supporting application.
 func (c *Catalog) RecommendedApplicationIDs() ([]string, error) {
