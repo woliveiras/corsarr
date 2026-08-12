@@ -1463,16 +1463,16 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   const metadata = document.createElement('div');
   metadata.className = 'metadata';
   const notice = legalNotices.find((candidate) => candidate.id === target.id);
-  metadata.textContent = `Container próprio${notice?.license ? ` · ${notice.license}` : ''}`;
+  metadata.textContent = `${t('onboarding.ownContainer')}${notice?.license ? ` · ${notice.license}` : ''}`;
   if (!target.automatedSetup) {
-    metadata.textContent += ' · Configuração automática ainda indisponível';
+    metadata.textContent += ` · ${t('onboarding.autoUnavailable')}`;
   }
   const dependencies = target.dependencies ?? [];
   if (dependencies.length > 0) {
     const dependencyNames = dependencies.map(
       (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
     );
-    metadata.textContent += ` · Recomenda ${dependencyNames.join(', ')} para automatizar a configuração`;
+    metadata.textContent += ` · ${t('onboarding.recommends', { names: dependencyNames.join(', ') })}`;
   }
   information.append(title, description, metadata);
 
@@ -1572,17 +1572,22 @@ function renderIntegrationAdvice(): void {
   }
 
   const capabilityByIntegration: Record<string, string> = {
-    jellyfin: 'bibliotecas do Jellyfin',
-    prowlarr: 'buscas pelo Prowlarr',
-    qbittorrent: 'downloads pelo qBittorrent',
-    radarr: 'filmes pelo Radarr',
-    sonarr: 'séries pelo Sonarr',
+    jellyfin: t('onboarding.capability.jellyfin'),
+    prowlarr: t('onboarding.capability.prowlarr'),
+    qbittorrent: t('onboarding.capability.qbittorrent'),
+    radarr: t('onboarding.capability.radarr'),
+    sonarr: t('onboarding.capability.sonarr'),
   };
   const consequences = missing.map(({ consumerID, integrationID }) => {
     const consumer = availableApplications.find(({ id }) => id === consumerID)?.name ?? consumerID;
-    return `${capabilityByIntegration[integrationID] ?? integrationID} para ${consumer}`;
+    return t('onboarding.forConsumer', {
+      capability: capabilityByIntegration[integrationID] ?? integrationID,
+      consumer,
+    });
   });
-  onboardingIntegrationCopy.textContent = `Você está deixando parte da automação do Corsarr: ${consequences.join(', ')} precisarão de configuração manual. Sua escolha será respeitada.`;
+  onboardingIntegrationCopy.textContent = t('onboarding.integrationWarning', {
+    consequences: consequences.join(', '),
+  });
 }
 
 async function loadApplications(): Promise<void> {
@@ -2423,9 +2428,7 @@ onboardingPermissionsNext?.addEventListener('click', async () => {
       // Preserve the last known safe state when even the refresh is unavailable.
     }
     showOnboardingStep('permissions');
-    showOnboardingNotification(
-      'Não foi possível salvar sua autorização. Revise as opções e tente continuar novamente. Nenhum componente foi instalado.',
-    );
+    showOnboardingNotification(t('onboarding.authorizationError'));
   } finally {
     onboardingPermissionsNext.disabled = !onboardingTermsCheckbox.checked;
   }
@@ -2433,20 +2436,14 @@ onboardingPermissionsNext?.addEventListener('click', async () => {
 
 onboardingPrepareRuntime?.addEventListener('click', async () => {
   if (!onboardingPrepareRuntime || !currentHostReady) return;
-  if (
-    currentRuntimeState === 'unavailable' &&
-    !window.confirm(
-      'O Corsarr baixará o Docker Desktop 4.86.0 da fonte oficial, verificará sua integridade e solicitará a autorização do macOS. Continuar?',
-    )
-  ) {
+  if (currentRuntimeState === 'unavailable' && !window.confirm(t('runtime.installConfirm'))) {
     return;
   }
   onboardingPrepareRuntime.disabled = true;
   onboardingPrepareRuntime.textContent =
-    currentRuntimeState === 'unavailable' ? 'Instalando…' : 'Iniciando…';
+    currentRuntimeState === 'unavailable' ? t('runtime.installing') : t('runtime.starting');
   if (onboardingEnvironmentMessage) {
-    onboardingEnvironmentMessage.textContent =
-      'Preparando os componentes necessários. O macOS poderá solicitar sua senha.';
+    onboardingEnvironmentMessage.textContent = t('onboarding.runtimePreparing');
     onboardingEnvironmentMessage.classList.remove('error');
   }
   try {
@@ -2455,13 +2452,12 @@ onboardingPrepareRuntime?.addEventListener('click', async () => {
     await loadEnvironment();
     if (onboardingEnvironmentMessage) {
       onboardingEnvironmentMessage.textContent = result.installed
-        ? 'Docker Desktop instalado e pronto.'
-        : 'Ambiente iniciado e pronto.';
+        ? t('runtime.installedReady')
+        : t('runtime.startedReady');
     }
   } catch {
     if (onboardingEnvironmentMessage) {
-      onboardingEnvironmentMessage.textContent =
-        'A preparação não terminou. Tente novamente ou consulte os detalhes técnicos.';
+      onboardingEnvironmentMessage.textContent = t('onboarding.runtimeIncomplete');
       onboardingEnvironmentMessage.classList.add('error');
     }
     await loadEnvironment();
@@ -2479,8 +2475,7 @@ onboardingEnvironmentNext?.addEventListener('click', async () => {
     applySetupStatus(await AdvanceOnboarding());
   } catch {
     if (onboardingEnvironmentMessage) {
-      onboardingEnvironmentMessage.textContent =
-        'Confirme que o ambiente está pronto antes de continuar.';
+      onboardingEnvironmentMessage.textContent = t('onboarding.environmentNotReady');
       onboardingEnvironmentMessage.classList.add('error');
     }
   } finally {
@@ -2525,14 +2520,12 @@ onboardingRecommended?.addEventListener('click', async () => {
   try {
     applySetupStatus(await SelectRecommendedApplications());
     if (onboardingApplicationMessage) {
-      onboardingApplicationMessage.textContent =
-        'Configuração recomendada selecionada. Você ainda pode personalizá-la.';
+      onboardingApplicationMessage.textContent = t('onboarding.recommendedSelected');
       onboardingApplicationMessage.classList.remove('error');
     }
   } catch {
     if (onboardingApplicationMessage) {
-      onboardingApplicationMessage.textContent =
-        'Não foi possível selecionar a configuração recomendada.';
+      onboardingApplicationMessage.textContent = t('onboarding.recommendedError');
       onboardingApplicationMessage.classList.add('error');
     }
   } finally {
@@ -2557,9 +2550,7 @@ onboardingJellyfinLANCheckbox?.addEventListener('change', async () => {
     }
     showOnboardingStep('applications');
     showOnboardingNotification(
-      enabled
-        ? 'Não foi possível liberar o Jellyfin para esta rede. Confirme que o Jellyfin está selecionado e tente novamente.'
-        : 'Não foi possível remover o acesso do Jellyfin à rede. Tente novamente.',
+      enabled ? t('onboarding.jellyfinEnableError') : t('onboarding.jellyfinDisableError'),
     );
   } finally {
     onboardingJellyfinLANCheckbox.disabled = false;
@@ -2568,11 +2559,11 @@ onboardingJellyfinLANCheckbox?.addEventListener('change', async () => {
 
 function installationStageLabel(stage: TrackedInstallationStage): string {
   const labels: Record<TrackedInstallationStage, string> = {
-    waiting: 'Aguardando',
-    installing: 'Baixando e iniciando',
-    provisioning: 'Configurando',
-    ready: 'Pronto',
-    failed: 'Precisa de atenção',
+    waiting: t('onboarding.stage.waiting'),
+    installing: t('onboarding.stage.installing'),
+    provisioning: t('onboarding.stage.provisioning'),
+    ready: t('onboarding.stage.ready'),
+    failed: t('onboarding.stage.failed'),
   };
   return labels[stage];
 }
@@ -2750,8 +2741,11 @@ async function installSelectedFromOnboarding(): Promise<void> {
         }
         return;
       }
+      const issue = failed?.issue ? localizedIssue(failed.issue) : undefined;
       showOnboardingInstallationFailure(
-        `${failed?.issue?.summary ?? 'A instalação não terminou.'} ${failed?.issue?.nextAction ?? 'Tente novamente.'}`,
+        issue
+          ? `${issue.summary} ${issue.nextAction}`
+          : `${t('issue.installation_failed.summary')} ${t('issue.installation_failed.next')}`,
         failed?.issue,
       );
       return;

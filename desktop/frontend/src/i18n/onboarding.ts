@@ -120,6 +120,34 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Access required',
     'onboarding.storageAccessPreserved':
       'The folder remains saved, but Docker must be able to access it.',
+    'onboarding.ownContainer': 'Dedicated container',
+    'onboarding.autoUnavailable': 'Automatic setup not yet available',
+    'onboarding.recommends': 'Recommends {{names}} to automate setup',
+    'onboarding.integrationWarning':
+      'Some Corsarr automation is disabled: {{consequences}} will require manual setup. Your choice will be respected.',
+    'onboarding.capability.jellyfin': 'Jellyfin libraries',
+    'onboarding.capability.prowlarr': 'Prowlarr searches',
+    'onboarding.capability.qbittorrent': 'qBittorrent downloads',
+    'onboarding.capability.radarr': 'Radarr movies',
+    'onboarding.capability.sonarr': 'Sonarr series',
+    'onboarding.forConsumer': '{{capability}} for {{consumer}}',
+    'onboarding.authorizationError':
+      'Could not save your authorization. Review the options and try again. No component was installed.',
+    'onboarding.runtimePreparing':
+      'Preparing required components. macOS may request your password.',
+    'onboarding.runtimeIncomplete':
+      'Preparation did not finish. Try again or see technical details.',
+    'onboarding.environmentNotReady': 'Confirm that the environment is ready before continuing.',
+    'onboarding.recommendedSelected': 'Recommended setup selected. You can still customize it.',
+    'onboarding.recommendedError': 'Could not select the recommended setup.',
+    'onboarding.jellyfinEnableError':
+      'Could not enable Jellyfin on this network. Confirm that Jellyfin is selected and try again.',
+    'onboarding.jellyfinDisableError': 'Could not remove Jellyfin network access. Try again.',
+    'onboarding.stage.waiting': 'Waiting',
+    'onboarding.stage.installing': 'Installing',
+    'onboarding.stage.provisioning': 'Configuring',
+    'onboarding.stage.ready': 'Ready',
+    'onboarding.stage.failed': 'Needs attention',
   },
   es: {
     'onboarding.aria': 'Configuración inicial de Corsarr',
@@ -248,6 +276,36 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Acceso necesario',
     'onboarding.storageAccessPreserved':
       'La carpeta sigue guardada, pero Docker debe poder acceder a ella.',
+    'onboarding.ownContainer': 'Contenedor propio',
+    'onboarding.autoUnavailable': 'Configuración automática aún no disponible',
+    'onboarding.recommends': 'Recomienda {{names}} para automatizar la configuración',
+    'onboarding.integrationWarning':
+      'Parte de la automatización de Corsarr está desactivada: {{consequences}} requerirán configuración manual. Se respetará tu elección.',
+    'onboarding.capability.jellyfin': 'bibliotecas de Jellyfin',
+    'onboarding.capability.prowlarr': 'búsquedas de Prowlarr',
+    'onboarding.capability.qbittorrent': 'descargas de qBittorrent',
+    'onboarding.capability.radarr': 'películas de Radarr',
+    'onboarding.capability.sonarr': 'series de Sonarr',
+    'onboarding.forConsumer': '{{capability}} para {{consumer}}',
+    'onboarding.authorizationError':
+      'No se pudo guardar tu autorización. Revisa las opciones e inténtalo de nuevo. No se instaló ningún componente.',
+    'onboarding.runtimePreparing':
+      'Preparando los componentes necesarios. macOS puede solicitar tu contraseña.',
+    'onboarding.runtimeIncomplete':
+      'La preparación no terminó. Inténtalo de nuevo o consulta los detalles técnicos.',
+    'onboarding.environmentNotReady': 'Confirma que el entorno esté listo antes de continuar.',
+    'onboarding.recommendedSelected':
+      'Configuración recomendada seleccionada. Aún puedes personalizarla.',
+    'onboarding.recommendedError': 'No se pudo seleccionar la configuración recomendada.',
+    'onboarding.jellyfinEnableError':
+      'No se pudo habilitar Jellyfin en esta red. Confirma que Jellyfin esté seleccionado e inténtalo de nuevo.',
+    'onboarding.jellyfinDisableError':
+      'No se pudo eliminar el acceso de Jellyfin a la red. Inténtalo de nuevo.',
+    'onboarding.stage.waiting': 'En espera',
+    'onboarding.stage.installing': 'Instalando',
+    'onboarding.stage.provisioning': 'Configurando',
+    'onboarding.stage.ready': 'Lista',
+    'onboarding.stage.failed': 'Necesita atención',
   },
   'pt-BR': {
     'onboarding.aria': 'Configuração inicial do Corsarr',
@@ -375,6 +433,36 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Acesso necessário',
     'onboarding.storageAccessPreserved':
       'A pasta continua preservada, mas o Docker precisa conseguir acessá-la.',
+    'onboarding.ownContainer': 'Container próprio',
+    'onboarding.autoUnavailable': 'Configuração automática ainda indisponível',
+    'onboarding.recommends': 'Recomenda {{names}} para automatizar a configuração',
+    'onboarding.integrationWarning':
+      'Parte da automação do Corsarr está desativada: {{consequences}} precisarão de configuração manual. Sua escolha será respeitada.',
+    'onboarding.capability.jellyfin': 'bibliotecas do Jellyfin',
+    'onboarding.capability.prowlarr': 'buscas pelo Prowlarr',
+    'onboarding.capability.qbittorrent': 'downloads pelo qBittorrent',
+    'onboarding.capability.radarr': 'filmes pelo Radarr',
+    'onboarding.capability.sonarr': 'séries pelo Sonarr',
+    'onboarding.forConsumer': '{{capability}} para {{consumer}}',
+    'onboarding.authorizationError':
+      'Não foi possível salvar sua autorização. Revise as opções e tente novamente. Nenhum componente foi instalado.',
+    'onboarding.runtimePreparing':
+      'Preparando os componentes necessários. O macOS poderá solicitar sua senha.',
+    'onboarding.runtimeIncomplete':
+      'A preparação não terminou. Tente novamente ou consulte os detalhes técnicos.',
+    'onboarding.environmentNotReady': 'Confirme que o ambiente está pronto antes de continuar.',
+    'onboarding.recommendedSelected':
+      'Configuração recomendada selecionada. Você ainda pode personalizá-la.',
+    'onboarding.recommendedError': 'Não foi possível selecionar a configuração recomendada.',
+    'onboarding.jellyfinEnableError':
+      'Não foi possível liberar o Jellyfin para esta rede. Confirme que o Jellyfin está selecionado e tente novamente.',
+    'onboarding.jellyfinDisableError':
+      'Não foi possível remover o acesso do Jellyfin à rede. Tente novamente.',
+    'onboarding.stage.waiting': 'Aguardando',
+    'onboarding.stage.installing': 'Instalando',
+    'onboarding.stage.provisioning': 'Configurando',
+    'onboarding.stage.ready': 'Pronto',
+    'onboarding.stage.failed': 'Precisa de atenção',
   },
   it: {
     'onboarding.aria': 'Configurazione iniziale di Corsarr',
@@ -505,5 +593,35 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Accesso necessario',
     'onboarding.storageAccessPreserved':
       'La cartella resta salvata, ma Docker deve potervi accedere.',
+    'onboarding.ownContainer': 'Container dedicato',
+    'onboarding.autoUnavailable': 'Configurazione automatica non ancora disponibile',
+    'onboarding.recommends': 'Consiglia {{names}} per automatizzare la configurazione',
+    'onboarding.integrationWarning':
+      'Parte dell’automazione di Corsarr è disattivata: {{consequences}} richiederanno configurazione manuale. La tua scelta sarà rispettata.',
+    'onboarding.capability.jellyfin': 'librerie Jellyfin',
+    'onboarding.capability.prowlarr': 'ricerche Prowlarr',
+    'onboarding.capability.qbittorrent': 'download qBittorrent',
+    'onboarding.capability.radarr': 'film Radarr',
+    'onboarding.capability.sonarr': 'serie Sonarr',
+    'onboarding.forConsumer': '{{capability}} per {{consumer}}',
+    'onboarding.authorizationError':
+      'Impossibile salvare l’autorizzazione. Rivedi le opzioni e riprova. Nessun componente è stato installato.',
+    'onboarding.runtimePreparing':
+      'Preparazione dei componenti necessari. macOS potrebbe richiedere la password.',
+    'onboarding.runtimeIncomplete':
+      'La preparazione non è terminata. Riprova o consulta i dettagli tecnici.',
+    'onboarding.environmentNotReady': 'Verifica che l’ambiente sia pronto prima di continuare.',
+    'onboarding.recommendedSelected':
+      'Configurazione consigliata selezionata. Puoi ancora personalizzarla.',
+    'onboarding.recommendedError': 'Impossibile selezionare la configurazione consigliata.',
+    'onboarding.jellyfinEnableError':
+      'Impossibile abilitare Jellyfin su questa rete. Verifica che Jellyfin sia selezionato e riprova.',
+    'onboarding.jellyfinDisableError':
+      'Impossibile rimuovere l’accesso di rete di Jellyfin. Riprova.',
+    'onboarding.stage.waiting': 'In attesa',
+    'onboarding.stage.installing': 'Installazione',
+    'onboarding.stage.provisioning': 'Configurazione',
+    'onboarding.stage.ready': 'Pronta',
+    'onboarding.stage.failed': 'Richiede attenzione',
   },
 } as const;
