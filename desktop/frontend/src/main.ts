@@ -204,6 +204,137 @@ root.innerHTML = [
   '</div>',
 ].join('');
 
+function localizeOnboardingShell(): void {
+  const setText = (selector: string, key: TranslationKey): void => {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element) element.textContent = t(key);
+  };
+  const onboarding = document.querySelector<HTMLElement>('#onboarding');
+  onboarding?.setAttribute('aria-label', t('onboarding.aria'));
+  setText('#onboarding-notification-dismiss', 'onboarding.close');
+  document
+    .querySelector('#onboarding-notification-dismiss')
+    ?.setAttribute('aria-label', t('onboarding.close'));
+  setText('.onboarding-brand small', 'onboarding.brand');
+  setText('#onboarding-progress-label', 'onboarding.progress');
+
+  setText('#onboarding-splash .eyebrow', 'onboarding.welcomeEyebrow');
+  const welcomeTitle = document.querySelector('#onboarding-splash h1');
+  welcomeTitle?.replaceChildren(
+    t('onboarding.welcomeTitle'),
+    document.createElement('br'),
+    Object.assign(document.createElement('em'), { textContent: t('onboarding.welcomeEmphasis') }),
+  );
+  setText(
+    '#onboarding-splash .onboarding-splash-copy > p:nth-of-type(2)',
+    'onboarding.welcomeDescription',
+  );
+  setText('#onboarding-start', 'onboarding.start');
+
+  setText('#onboarding-permissions .eyebrow', 'onboarding.permissionsEyebrow');
+  setText('#onboarding-permissions h1', 'onboarding.permissionsTitle');
+  setText('#onboarding-permissions .onboarding-step-copy > p', 'onboarding.permissionsDescription');
+  setText('#onboarding-permissions .onboarding-explanation strong', 'onboarding.authorizedTitle');
+  const permissionItems = document.querySelectorAll('#onboarding-permissions li');
+  const permissionKeys: TranslationKey[] = [
+    'onboarding.authorizedDocker',
+    'onboarding.authorizedImages',
+    'onboarding.authorizedFolders',
+  ];
+  permissionItems.forEach((item, index) => {
+    item.textContent = t(permissionKeys[index]);
+  });
+  setText('#onboarding-terms + span', 'onboarding.termsConsent');
+  setText('#onboarding-open-docker-terms', 'onboarding.openDockerTerms');
+  setText('#onboarding-start-login + span', 'onboarding.startLogin');
+  setText('#onboarding-permissions-next', 'onboarding.authorize');
+
+  setText('#onboarding-environment .eyebrow', 'onboarding.environmentEyebrow');
+  setText('#onboarding-environment h1', 'onboarding.environmentTitle');
+  setText(
+    '#onboarding-environment .onboarding-step-copy > p:first-of-type',
+    'onboarding.environmentDescription',
+  );
+  setText('#onboarding-environment .onboarding-diagnostic small', 'onboarding.diagnostic');
+  setText('#onboarding-environment-title', 'onboarding.checking');
+  setText('#onboarding-environment-description', 'onboarding.checkingMac');
+  setText('#onboarding-environment-badge', 'dashboard.checking');
+  setText('#onboarding-prepare-runtime', 'dashboard.prepareComputer');
+  setText('#onboarding-environment-next', 'onboarding.next');
+
+  setText('#onboarding-storage .eyebrow', 'onboarding.storageEyebrow');
+  setText('#onboarding-storage h1', 'onboarding.storageTitle');
+  setText(
+    '#onboarding-storage .onboarding-step-copy > p:first-of-type',
+    'onboarding.storageDescription',
+  );
+  setText('#onboarding-storage-title', 'onboarding.noFolder');
+  setText('#onboarding-storage-description', 'onboarding.storageMinimum');
+  setText('#onboarding-storage-badge', 'onboarding.pending');
+  document
+    .querySelector('.folder-tree')
+    ?.setAttribute('aria-label', t('onboarding.folderTreeAria'));
+  const folderLabels = document.querySelectorAll('.folder-tree span');
+  const folderKeys: TranslationKey[] = [
+    'onboarding.configFolder',
+    'onboarding.downloadsFolder',
+    'onboarding.libraryFolder',
+  ];
+  folderLabels.forEach((item, index) => {
+    item.textContent = t(folderKeys[index]);
+  });
+  setText('#onboarding-choose-storage', 'dashboard.chooseFolder');
+  setText('#onboarding-storage-next', 'onboarding.next');
+
+  setText('#onboarding-applications .eyebrow', 'onboarding.appsEyebrow');
+  setText('#onboarding-applications h1', 'onboarding.appsTitle');
+  setText('#onboarding-integration-title', 'onboarding.integrationTitle');
+  setText('#onboarding-integration-copy', 'onboarding.integrationDescription');
+  setText('#onboarding-catalog-count', 'common.loading');
+  setText('#onboarding-recommended', 'onboarding.recommended');
+  setText('#onboarding-jellyfin-lan + span', 'onboarding.jellyfinLAN');
+  setText('#onboarding-install', 'onboarding.installApps');
+
+  setText('#onboarding-quality .eyebrow', 'onboarding.qualityEyebrow');
+  setText('#onboarding-quality h1', 'onboarding.qualityTitle');
+  setText(
+    '#onboarding-quality .onboarding-step-copy > p:first-of-type',
+    'onboarding.qualityDescription',
+  );
+  document
+    .querySelector('#onboarding-quality-list')
+    ?.setAttribute('aria-label', t('onboarding.qualityAria'));
+  setText('#onboarding-quality .onboarding-explanation strong', 'onboarding.beforeFinish');
+  setText('#onboarding-quality-summary', 'onboarding.chooseProfile');
+  setText('#onboarding-quality-install', 'onboarding.installProfile');
+
+  setText('#onboarding-installation .eyebrow', 'onboarding.installEyebrow');
+  setText('#onboarding-installation-title', 'onboarding.installTitle');
+  setText(
+    '#onboarding-installation .onboarding-installation-copy > p:nth-of-type(2)',
+    'onboarding.installDescription',
+  );
+  setText('#onboarding-installation-result', 'onboarding.installPreparing');
+  document
+    .querySelector('#onboarding-installation-progress')
+    ?.setAttribute('aria-label', t('onboarding.installProgressAria'));
+  setText('#onboarding-installation-progress > header span', 'onboarding.overallProgress');
+  setText('#onboarding-installation-progress-summary', 'onboarding.preparing');
+  document
+    .querySelector('#onboarding-installation-progress-track')
+    ?.setAttribute('aria-label', t('onboarding.appsInstallAria'));
+  setText('#onboarding-installation-completion-title', 'onboarding.finishing');
+  setText('#onboarding-installation-completion-status', 'onboarding.waitingApps');
+  setText('.onboarding-installation-warning', 'onboarding.doNotClose');
+  setText('#onboarding-copy-support-report', 'onboarding.copyErrors');
+  setText('#onboarding-installation-retry', 'onboarding.retry');
+  for (const button of document.querySelectorAll<HTMLElement>('.onboarding-back')) {
+    button.textContent = t('onboarding.back');
+  }
+}
+
+localizeOnboardingShell();
+
 const applicationsElement = document.querySelector<HTMLElement>('#applications');
 const heroTitleElement = document.querySelector<HTMLElement>('#hero-title');
 const onboardingElement = document.querySelector<HTMLElement>('#onboarding');
@@ -509,8 +640,8 @@ function updateOnboardingCatalogAuthority(): void {
     onboardingInstallButton.disabled =
       applicationCatalogState !== 'ready' || !setupStatus?.canInstall;
     onboardingInstallButton.textContent = setupStatus?.qualityProfileRequired
-      ? 'Continuar para qualidade'
-      : 'Instalar aplicativos';
+      ? t('onboarding.continueQuality')
+      : t('onboarding.installApps');
   }
   if (onboardingQualityInstallButton) {
     onboardingQualityInstallButton.disabled =
@@ -518,8 +649,8 @@ function updateOnboardingCatalogAuthority(): void {
     onboardingQualityInstallButton.textContent = shouldManageQualityProfile(
       setupStatus?.qualityProfilePreset ?? '',
     )
-      ? 'Instalar e aplicar perfil'
-      : 'Instalar sem gerenciar perfis';
+      ? t('onboarding.installProfile')
+      : t('onboarding.installWithoutProfiles');
   }
 }
 
@@ -534,7 +665,10 @@ function showOnboardingStep(step: OnboardingStep): void {
   const totalSteps = onboardingStepTotal(setupStatus?.qualityProfileRequired ?? false);
   if (onboardingProgress) onboardingProgress.hidden = stepNumber === undefined;
   if (onboardingProgressLabel && stepNumber !== undefined) {
-    onboardingProgressLabel.textContent = `Etapa ${stepNumber} de ${totalSteps}`;
+    onboardingProgressLabel.textContent = t('onboarding.progress', {
+      step: stepNumber,
+      total: totalSteps,
+    });
   }
   if (onboardingProgress && stepNumber !== undefined) {
     const indicators = onboardingProgress.querySelectorAll<HTMLSpanElement>('span');
@@ -587,9 +721,9 @@ function renderQualityProfileSelection(): void {
       button.setAttribute('aria-checked', String(selected));
       button.disabled = selectionSaving;
       const name = document.createElement('strong');
-      name.textContent = preset.name;
+      name.textContent = qualityPresetText(preset, 'name');
       const description = document.createElement('span');
-      description.textContent = preset.description;
+      description.textContent = qualityPresetText(preset, 'description');
       button.append(name, description);
       button.addEventListener('click', async () => {
         if (selectionSaving) return;
@@ -598,12 +732,14 @@ function renderQualityProfileSelection(): void {
         try {
           applySetupStatus(await SaveQualityProfilePreset(preset.id));
           if (onboardingQualityResult) {
-            onboardingQualityResult.textContent = `${preset.name} selecionado.`;
+            onboardingQualityResult.textContent = t('onboarding.profileSelected', {
+              name: qualityPresetText(preset, 'name'),
+            });
             onboardingQualityResult.classList.remove('error');
           }
         } catch {
           if (onboardingQualityResult) {
-            onboardingQualityResult.textContent = 'Não foi possível salvar o perfil escolhido.';
+            onboardingQualityResult.textContent = t('onboarding.profileSaveError');
             onboardingQualityResult.classList.add('error');
           }
         } finally {
@@ -618,8 +754,15 @@ function renderQualityProfileSelection(): void {
   const selected = qualityPresets.find(({ id }) => id === setupStatus?.qualityProfilePreset);
   if (onboardingQualitySummary && selected) {
     onboardingQualitySummary.textContent = shouldManageQualityProfile(selected.id)
-      ? selected.summary
-      : `${selected.description} ${selected.summary}`;
+      ? qualityPresetText(selected, 'summary')
+      : `${qualityPresetText(selected, 'description')} ${qualityPresetText(selected, 'summary')}`;
+  }
+
+  function qualityPresetText(
+    preset: QualityPreset,
+    field: 'name' | 'description' | 'summary',
+  ): string {
+    return t(`quality.${preset.id}.${field}` as TranslationKey);
   }
 }
 
@@ -639,7 +782,7 @@ function renderOnboardingIssue(issue?: application.OperationIssue): void {
   onboardingOperationDetails.open = false;
   if (onboardingCopySupportReport) onboardingCopySupportReport.hidden = !issue;
   if (onboardingCopySupportReport && issue) {
-    onboardingCopySupportReport.textContent = 'Copiar log de erros';
+    onboardingCopySupportReport.textContent = t('onboarding.copyErrors');
   }
   const translated = issue ? localizedIssue(issue) : undefined;
   onboardingOperationTechnical.textContent = translated
@@ -652,13 +795,11 @@ onboardingCopySupportReport?.addEventListener('click', async () => {
   onboardingCopySupportReport.disabled = true;
   try {
     await CopyLastInstallationSupportReport();
-    onboardingCopySupportReport.textContent = 'Log copiado';
-    showOnboardingNotification('Log de erros copiado', 'success');
+    onboardingCopySupportReport.textContent = t('onboarding.logCopied');
+    showOnboardingNotification(t('onboarding.logCopied'), 'success');
   } catch {
-    onboardingCopySupportReport.textContent = 'Não foi possível copiar';
-    showOnboardingNotification(
-      'Não foi possível copiar o log de erros. Tente novamente antes de fechar o Corsarr.',
-    );
+    onboardingCopySupportReport.textContent = t('onboarding.logCopyError');
+    showOnboardingNotification(t('onboarding.logCopyErrorDetail'));
   } finally {
     onboardingCopySupportReport.disabled = false;
   }
@@ -1341,14 +1482,14 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
     const licenseButton = document.createElement('button');
     licenseButton.type = 'button';
     licenseButton.className = 'onboarding-license-button';
-    licenseButton.textContent = 'Licença';
+    licenseButton.textContent = t('onboarding.license');
     licenseButton.addEventListener('click', () => void OpenLegalLink(target.id, 'license'));
     actions.append(licenseButton);
   }
   const selectButton = document.createElement('button');
   selectButton.type = 'button';
   selectButton.className = 'select-button';
-  selectButton.textContent = selected ? 'Selecionado' : 'Selecionar';
+  selectButton.textContent = selected ? t('onboarding.selected') : t('onboarding.select');
   selectButton.setAttribute('aria-pressed', String(selected));
   selectButton.disabled = selectionSaving || (!target.automatedSetup && !selected);
   selectButton.addEventListener('click', async () => {
@@ -1364,7 +1505,7 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
     } catch {
       selectedApplicationIDs = previousSelection;
       if (onboardingApplicationMessage) {
-        onboardingApplicationMessage.textContent = 'Não foi possível salvar a seleção.';
+        onboardingApplicationMessage.textContent = t('onboarding.selectionError');
         onboardingApplicationMessage.classList.add('error');
       }
     } finally {
@@ -1381,11 +1522,11 @@ function renderApplicationCatalogError(): void {
   const error = document.createElement('div');
   error.className = 'onboarding-catalog-error';
   const copy = document.createElement('p');
-  copy.textContent = 'Não foi possível carregar os aplicativos disponíveis.';
+  copy.textContent = t('onboarding.catalogError');
   const retry = document.createElement('button');
   retry.type = 'button';
   retry.className = 'secondary-button';
-  retry.textContent = 'Tentar novamente';
+  retry.textContent = t('onboarding.retry');
   retry.addEventListener('click', () => void loadApplications());
   error.append(copy, retry);
   onboardingApplicationList?.replaceChildren(error);
@@ -1426,8 +1567,7 @@ function renderIntegrationAdvice(): void {
   onboardingIntegrationGuidance.classList.toggle('warning', missing.length > 0);
   onboardingIntegrationTitle.hidden = missing.length > 0;
   if (missing.length === 0) {
-    onboardingIntegrationCopy.textContent =
-      'Quando o Corsarr instala todos os aplicativos recomendados, ele pode conectar buscas e downloads para você. Ao escolher um aplicativo, também marcaremos as integrações recomendadas. Você pode desmarcar qualquer item se já usa seu próprio serviço.';
+    onboardingIntegrationCopy.textContent = t('onboarding.integrationDescription');
     return;
   }
 
@@ -1449,7 +1589,7 @@ async function loadApplications(): Promise<void> {
   if (!applicationsElement && !onboardingApplicationList) return;
 
   applicationCatalogState = 'loading';
-  if (onboardingCatalogCount) onboardingCatalogCount.textContent = 'Carregando…';
+  if (onboardingCatalogCount) onboardingCatalogCount.textContent = t('common.loading');
   updateOnboardingCatalogAuthority();
 
   try {
@@ -1465,7 +1605,9 @@ async function loadApplications(): Promise<void> {
     availableApplications = [];
     applicationsElement?.replaceChildren();
     if (countElement) countElement.textContent = t('common.unavailable');
-    if (onboardingCatalogCount) onboardingCatalogCount.textContent = 'Catálogo indisponível';
+    if (onboardingCatalogCount) {
+      onboardingCatalogCount.textContent = t('onboarding.catalogUnavailable');
+    }
     renderApplicationCatalogError();
     if (messageElement) {
       messageElement.textContent = t('catalog.loadError');
@@ -1637,17 +1779,18 @@ function applySetupStatus(status: application.SetupStatus): void {
       storageBadgeElement.className = 'runtime-badge ready';
     }
     if (chooseStorageButton) chooseStorageButton.textContent = t('storage.changeFolder');
-    if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Pasta selecionada';
+    if (onboardingStorageTitle) {
+      onboardingStorageTitle.textContent = t('onboarding.folderSelected');
+    }
     if (onboardingStorageDescription) {
-      onboardingStorageDescription.textContent =
-        'O Corsarr verificará novamente esta pasta antes de continuar.';
+      onboardingStorageDescription.textContent = t('onboarding.folderSelectedDescription');
     }
     if (onboardingStoragePath) onboardingStoragePath.textContent = status.storagePath;
     if (onboardingStorageBadge) {
-      onboardingStorageBadge.textContent = 'Selecionada';
+      onboardingStorageBadge.textContent = t('onboarding.folderSelectedBadge');
       onboardingStorageBadge.className = 'runtime-badge ready';
     }
-    if (onboardingChooseStorage) onboardingChooseStorage.textContent = 'Trocar pasta';
+    if (onboardingChooseStorage) onboardingChooseStorage.textContent = t('storage.changeFolder');
   }
 
   if (installationSummaryElement) {
@@ -2439,14 +2582,17 @@ function renderOnboardingInstallationProgress(): void {
 
   onboardingInstallationProgressSummary.textContent =
     failed || onboardingInstallationCompletionStage === 'failed'
-      ? 'Precisa de atenção'
+      ? t('onboarding.attention')
       : onboardingInstallationCompletionStage === 'ready'
-        ? 'Concluído'
+        ? t('onboarding.completed')
         : onboardingInstallationCompletionStage === 'active'
-          ? 'Finalizando'
+          ? t('onboarding.finalizing')
           : active
-            ? `${active.position} de ${onboardingInstallationProgress.length} aplicativos`
-            : 'Preparando';
+            ? t('onboarding.position', {
+                position: active.position,
+                total: onboardingInstallationProgress.length,
+              })
+            : t('onboarding.preparing');
   if (onboardingInstallationProgressBar) {
     onboardingInstallationProgressBar.style.width = `${Math.max(4, progress)}%`;
   }
@@ -2478,8 +2624,8 @@ function renderOnboardingInstallationProgress(): void {
     shouldManageQualityProfile(setupStatus.qualityProfilePreset ?? '');
   if (onboardingInstallationCompletionTitle) {
     onboardingInstallationCompletionTitle.textContent = managesQuality
-      ? 'Perfil de qualidade'
-      : 'Finalizando configuração';
+      ? t('onboarding.qualityProfile')
+      : t('onboarding.finishing');
   }
   if (onboardingInstallationCompletion) {
     onboardingInstallationCompletion.className = `installation-completion ${onboardingInstallationCompletionStage}`;
@@ -2487,16 +2633,16 @@ function renderOnboardingInstallationProgress(): void {
   if (onboardingInstallationCompletionStatus) {
     const completionLabels = managesQuality
       ? {
-          waiting: 'Aguardando os aplicativos',
-          active: 'Aplicando o perfil selecionado',
-          ready: 'Perfil aplicado',
-          failed: 'Não foi possível concluir',
+          waiting: t('onboarding.waitingApps'),
+          active: t('onboarding.applyingProfile'),
+          ready: t('onboarding.profileApplied'),
+          failed: t('onboarding.finishFailed'),
         }
       : {
-          waiting: 'Aguardando os aplicativos',
-          active: 'Concluindo a configuração inicial',
-          ready: 'Configuração concluída',
-          failed: 'Não foi possível concluir',
+          waiting: t('onboarding.waitingApps'),
+          active: t('onboarding.finishingInitial'),
+          ready: t('onboarding.setupComplete'),
+          failed: t('onboarding.finishFailed'),
         };
     onboardingInstallationCompletionStatus.textContent =
       completionLabels[onboardingInstallationCompletionStage];
@@ -2528,7 +2674,7 @@ function showOnboardingInstallationFailure(
   onboardingInstallationCompletionStage = 'failed';
   renderOnboardingInstallationProgress();
   if (onboardingInstallationTitle) {
-    onboardingInstallationTitle.textContent = 'A instalação precisa de atenção.';
+    onboardingInstallationTitle.textContent = t('onboarding.installAttention');
   }
   if (onboardingInstallationResult) {
     onboardingInstallationResult.textContent = message;
@@ -2550,15 +2696,15 @@ async function installSelectedFromOnboarding(): Promise<void> {
   }
   renderOnboardingIssue();
   if (onboardingInstallationTitle) {
-    onboardingInstallationTitle.textContent = 'Preparando seu servidor.';
+    onboardingInstallationTitle.textContent = t('onboarding.installTitle');
     onboardingInstallationTitle.focus();
   }
   startOnboardingInstallationProgress();
   if (onboardingInstallationResult) {
     onboardingInstallationResult.textContent =
       onboardingInstallationCompletionStage === 'active'
-        ? 'Aplicativos já estão prontos. Tentando novamente a configuração final…'
-        : 'Verificando o ambiente e preparando a instalação. Isso pode levar alguns minutos.';
+        ? t('onboarding.finalizeAgain')
+        : t('onboarding.installMinutes');
     onboardingInstallationResult.classList.remove('error');
   }
   try {
@@ -2566,22 +2712,23 @@ async function installSelectedFromOnboarding(): Promise<void> {
     if (!result.complete) {
       const failed = result.items.find((item) => item.failed);
       if (failed?.issue?.code === 'runtime_storage_access_denied') {
-        if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Escolha outra pasta';
+        const issue = localizedIssue(failed.issue);
+        if (onboardingStorageTitle) {
+          onboardingStorageTitle.textContent = t('onboarding.chooseAnotherFolder');
+        }
         if (onboardingStorageDescription) {
-          onboardingStorageDescription.textContent = failed.issue.summary;
+          onboardingStorageDescription.textContent = issue.summary;
         }
         if (onboardingStorageMessage) {
-          onboardingStorageMessage.textContent = failed.issue.nextAction;
+          onboardingStorageMessage.textContent = issue.nextAction;
           onboardingStorageMessage.classList.add('error');
         }
         if (onboardingStorageBadge) {
-          onboardingStorageBadge.textContent = 'Acesso necessário';
+          onboardingStorageBadge.textContent = t('onboarding.accessRequired');
           onboardingStorageBadge.className = 'runtime-badge error';
         }
         showOnboardingStep('storage');
-        showOnboardingNotification(
-          'A pasta continua preservada, mas o Docker precisa conseguir acessá-la.',
-        );
+        showOnboardingNotification(t('onboarding.storageAccessPreserved'));
         if (onboardingInstallationRetryButton) {
           onboardingInstallationRetryButton.hidden = true;
         }
@@ -2596,10 +2743,10 @@ async function installSelectedFromOnboarding(): Promise<void> {
     onboardingInstallationCompletionStage = 'ready';
     renderOnboardingInstallationProgress();
     if (onboardingInstallationTitle) {
-      onboardingInstallationTitle.textContent = 'Seu servidor está pronto.';
+      onboardingInstallationTitle.textContent = t('onboarding.serverReady');
     }
     if (onboardingInstallationResult) {
-      onboardingInstallationResult.textContent = 'Instalação e configuração concluídas.';
+      onboardingInstallationResult.textContent = t('onboarding.installComplete');
     }
     applySetupStatus(await GetSetupStatus());
     await Promise.all([
@@ -2612,13 +2759,11 @@ async function installSelectedFromOnboarding(): Promise<void> {
       loadARRAccesses(),
     ]);
     if (messageElement) {
-      messageElement.textContent = `${result.items.length} aplicativos instalados. A configuração inicial foi concluída.`;
+      messageElement.textContent = t('onboarding.installedCount', { count: result.items.length });
       messageElement.classList.remove('error');
     }
   } catch {
-    showOnboardingInstallationFailure(
-      'Não foi possível concluir a instalação. Suas escolhas foram preservadas.',
-    );
+    showOnboardingInstallationFailure(t('onboarding.installPreserved'));
   } finally {
     if (onboardingInstallationRetryButton) {
       onboardingInstallationRetryButton.disabled = false;
@@ -2685,23 +2830,27 @@ EventsOn('corsarr:background-recovery-complete', () => {
 EventsOn('corsarr:installation-progress', (progress: InstallationProgressEvent) => {
   const applicationName =
     availableApplications.find((application) => application.id === progress.applicationId)?.name ??
-    'aplicativo';
+    t('onboarding.unknownApp');
   const stageMessages: Record<InstallationProgressEvent['stage'], string> = {
-    installing: `Baixando e iniciando ${applicationName}`,
-    provisioning: `Configurando ${applicationName}`,
-    ready: `${applicationName} está pronto`,
-    failed: `${applicationName} precisa de atenção`,
+    installing: t('onboarding.stageInstalling', { name: applicationName }),
+    provisioning: t('onboarding.stageProvisioning', { name: applicationName }),
+    ready: t('onboarding.stageReady', { name: applicationName }),
+    failed: t('onboarding.stageFailed', { name: applicationName }),
   };
+  const position = t('onboarding.position', {
+    position: progress.position,
+    total: progress.total,
+  });
   if (installationResultElement) {
-    installationResultElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    installationResultElement.textContent = `${stageMessages[progress.stage]} (${position}).`;
     installationResultElement.classList.toggle('error', progress.stage === 'failed');
   }
   if (dashboardInstallingApplicationID && messageElement) {
-    messageElement.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    messageElement.textContent = `${stageMessages[progress.stage]} (${position}).`;
     messageElement.classList.toggle('error', progress.stage === 'failed');
   }
   if (onboardingInstallationResult && !onboardingInstallationElement?.hidden) {
-    onboardingInstallationResult.textContent = `${stageMessages[progress.stage]} (${progress.position} de ${progress.total}).`;
+    onboardingInstallationResult.textContent = `${stageMessages[progress.stage]} (${position}).`;
     onboardingInstallationResult.classList.toggle('error', progress.stage === 'failed');
     onboardingInstallationProgress = applyInstallationProgress(
       onboardingInstallationProgress,
@@ -2712,19 +2861,19 @@ EventsOn('corsarr:installation-progress', (progress: InstallationProgressEvent) 
       onboardingInstallationResult.textContent =
         setupStatus?.qualityProfileRequired &&
         shouldManageQualityProfile(setupStatus.qualityProfilePreset ?? '')
-          ? 'Aplicativos prontos. Aplicando o perfil de qualidade selecionado…'
-          : 'Aplicativos prontos. Finalizando a configuração inicial…';
+          ? t('onboarding.appsReadyQuality')
+          : t('onboarding.appsReadyFinal');
     }
     renderOnboardingInstallationProgress();
   }
   if (installApplicationsButton && progress.stage !== 'failed') {
-    installApplicationsButton.textContent = `${progress.position} de ${progress.total}`;
+    installApplicationsButton.textContent = position;
   }
   if (onboardingInstallButton && progress.stage !== 'failed') {
     onboardingInstallButton.textContent =
       progress.stage === 'ready' && progress.position === progress.total
-        ? 'Finalizando…'
-        : `${progress.position} de ${progress.total}`;
+        ? t('onboarding.finalizing')
+        : position;
   }
 });
 

@@ -68,8 +68,8 @@ test('dashboard installs unavailable applications instead of presenting onboardi
     source.indexOf('function updateApplicationButton'),
   );
 
-  assert.match(cardSource, /'Instalar'/);
-  assert.doesNotMatch(cardSource, /'Selecionar'/);
+  assert.match(cardSource, /t\('app\.install'\)/);
+  assert.doesNotMatch(cardSource, /t\('onboarding\.select'\)/);
   assert.match(cardSource, /await InstallSelectedApplications\(\)/);
 });
 
@@ -95,14 +95,14 @@ test('Seerr card exposes the managed Jellyfin login through the native clipboard
 
   assert.equal(source.includes("application.id === 'jellyseerr'"), true);
   assert.equal(source.includes('actions.append(seerrCredentialButton())'), true);
-  assert.equal(source.includes("'Seerr · conta do Jellyfin'"), true);
+  assert.equal(source.includes("t('seerr.account')"), true);
   assert.equal(source.includes('CopyJellyfinPassword'), true);
 });
 
 test('applications without automated setup cannot be newly selected', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 
-  assert.equal(source.includes("'Configuração manual'"), true);
+  assert.equal(source.includes("t('app.manualSetup')"), true);
   assert.equal(source.includes('selectionSaving || (!target.automatedSetup && !selected)'), true);
 });
 
@@ -110,18 +110,18 @@ test('managed credentials keep the username visible and confirm password copy lo
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 
   assert.match(source, /className = 'credential-access'/);
-  assert.match(source, /usernameLabel\.textContent = 'Usuário'/);
-  assert.match(source, /button\.textContent = '✓ Senha copiada'/);
+  assert.match(source, /usernameLabel\.textContent = t\('app\.username'\)/);
+  assert.match(source, /button\.textContent = t\('app\.passwordCopied'\)/);
   assert.doesNotMatch(source, /Use o usuário .* para entrar/);
 });
 
 test('installed and removal actions have explicit status semantics', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /'✓ Instalado'/);
+  assert.match(source, /t\('app\.installed'\)/);
   assert.match(source, /classList\.add\('installed-status'\)/);
   assert.match(source, /classList\.add\('danger-button'\)/);
-  assert.match(source, /Para remover \$\{target\.name\}, remova primeiro/);
+  assert.match(source, /t\('app\.removeBlocked'/);
 });
 
 test('application cards keep operational metadata out of the description area', () => {
