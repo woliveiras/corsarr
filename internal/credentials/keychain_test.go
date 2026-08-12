@@ -89,6 +89,29 @@ func TestDarwinKeychainUsesDedicatedJellyfinAccount(t *testing.T) {
 	}
 }
 
+func TestDarwinKeychainUsesSeparateLazyLibrarianAccounts(t *testing.T) {
+	runner := &recordingKeychainRunner{}
+	store := newDarwinKeychain(runner)
+
+	for _, key := range []Key{KeyLazyLibrarianPassword, KeyLazyLibrarianAPIKey} {
+		if err := store.Save(context.Background(), key, NewSecret("generated-secret")); err != nil {
+			t.Fatalf("save LazyLibrarian credential %s: %v", key, err)
+		}
+	}
+	wantAccounts := []string{"lazylibrarian", "lazylibrarian-api"}
+	if len(runner.calls) != len(wantAccounts) {
+		t.Fatalf("unexpected LazyLibrarian keychain calls %#v", runner.calls)
+	}
+	for index, account := range wantAccounts {
+		if !reflect.DeepEqual(runner.calls[index].args, []string{
+			"add-generic-password", "-a", account, "-s", keychainService,
+			"-w", "generated-secret", "-U",
+		}) {
+			t.Fatalf("unexpected LazyLibrarian keychain call %#v", runner.calls[index])
+		}
+	}
+}
+
 func TestDarwinKeychainRejectsUnknownKeyWithoutCommand(t *testing.T) {
 	runner := &recordingKeychainRunner{}
 	store := newDarwinKeychain(runner)

@@ -34,6 +34,19 @@ func TestServiceAccessReportsStoredJellyfinCredentialWithoutRevealingIt(t *testi
 	}
 }
 
+func TestServiceAccessReportsStoredLazyLibrarianCredentialWithoutRevealingIt(t *testing.T) {
+	store := &serviceAccessStore{secret: credentials.NewSecret("private-password")}
+	service := NewServiceAccess(store)
+
+	status, err := service.LazyLibrarianStatus(context.Background())
+	if err != nil {
+		t.Fatalf("get LazyLibrarian access status: %v", err)
+	}
+	if !status.Available || status.Username != "corsarr" || status.ApplicationID != "lazylibrarian" {
+		t.Fatalf("unexpected access status %#v", status)
+	}
+}
+
 func TestServiceAccessReportsArrCredentialsWithoutRevealingThem(t *testing.T) {
 	store := &arrServiceAccessStore{secrets: map[credentials.Key]credentials.Secret{
 		credentials.KeyRadarrPassword:   credentials.NewSecret("radarr-private"),

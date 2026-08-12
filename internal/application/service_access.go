@@ -66,6 +66,31 @@ func (s *ServiceAccess) JellyfinPassword(ctx context.Context) (credentials.Secre
 	return secret, nil
 }
 
+func (s *ServiceAccess) LazyLibrarianStatus(
+	ctx context.Context,
+) (ServiceAccessStatus, error) {
+	status := ServiceAccessStatus{ApplicationID: "lazylibrarian", Username: "corsarr"}
+	_, err := s.store.Load(ctx, credentials.KeyLazyLibrarianPassword)
+	if errors.Is(err, credentials.ErrCredentialNotFound) {
+		return status, nil
+	}
+	if err != nil {
+		return status, fmt.Errorf("load LazyLibrarian access status: %w", err)
+	}
+	status.Available = true
+	return status, nil
+}
+
+func (s *ServiceAccess) LazyLibrarianPassword(
+	ctx context.Context,
+) (credentials.Secret, error) {
+	secret, err := s.store.Load(ctx, credentials.KeyLazyLibrarianPassword)
+	if err != nil {
+		return credentials.Secret{}, fmt.Errorf("load LazyLibrarian credential: %w", err)
+	}
+	return secret, nil
+}
+
 func (s *ServiceAccess) ARRStatuses(
 	ctx context.Context,
 ) ([]ServiceAccessStatus, error) {

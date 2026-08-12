@@ -23,16 +23,26 @@ var recommendedApplicationIDs = []string{
 	"sonarr",
 }
 
+// Desktop exposes every application with a safe local Web UI for lifecycle
+// management. Only this allowlist can also be newly selected for one-click
+// installation because each entry has a bounded, idempotent provisioning
+// adapter.
+var desktopApplicationIDs = map[string]struct{}{
+	"bazarr": {}, "jellyfin": {}, "jellyseerr": {}, "lazylibrarian": {},
+	"lidarr": {}, "prowlarr": {}, "qbittorrent": {}, "radarr": {}, "sonarr": {},
+}
+
 // ApplicationSummary is the runtime-independent application data exposed to
 // presentation layers such as Corsarr Desktop.
 type ApplicationSummary struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Category     string   `json:"category"`
-	URL          string   `json:"url"`
-	Optional     bool     `json:"optional"`
-	Dependencies []string `json:"dependencies"`
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	Category       string   `json:"category"`
+	URL            string   `json:"url"`
+	Optional       bool     `json:"optional"`
+	AutomatedSetup bool     `json:"automatedSetup"`
+	Dependencies   []string `json:"dependencies"`
 }
 
 func (c *Catalog) InstallationOrder(applicationIDs []string) ([]string, error) {
@@ -125,14 +135,16 @@ func newCatalog(registry *services.Registry, translator *i18n.I18n) *Catalog {
 			}
 		}
 
+		_, automatedSetup := desktopApplicationIDs[service.ID]
 		summary := ApplicationSummary{
-			ID:           service.ID,
-			Name:         name,
-			Description:  description,
-			Category:     string(service.Category),
-			URL:          applicationURL,
-			Optional:     service.Optional,
-			Dependencies: append([]string{}, service.Dependencies...),
+			ID:             service.ID,
+			Name:           name,
+			Description:    description,
+			Category:       string(service.Category),
+			URL:            applicationURL,
+			Optional:       service.Optional,
+			AutomatedSetup: automatedSetup,
+			Dependencies:   append([]string{}, service.Dependencies...),
 		}
 
 		applications = append(applications, summary)

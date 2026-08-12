@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/credentials"
@@ -112,6 +113,73 @@ func TestDataManagementServiceRemovesArrCredentialAfterArchivingConfiguration(t 
 	}
 	if len(secrets.deleted) != 1 || secrets.deleted[0] != credentials.KeyRadarrPassword {
 		t.Fatalf("expected only Radarr credential removal, got %v", secrets.deleted)
+	}
+}
+
+func TestDataManagementServiceRemovesLazyLibrarianCredentialsAfterArchivingConfiguration(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{result: storage.ArchivedApplicationData{
+		ApplicationID: "lazylibrarian", Archived: true,
+	}}
+	secrets := &dataCredentialStore{archiver: archiver}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	if _, err := service.Archive(context.Background(), "lazylibrarian"); err != nil {
+		t.Fatalf("archive LazyLibrarian data: %v", err)
+	}
+	want := []credentials.Key{
+		credentials.KeyLazyLibrarianPassword,
+		credentials.KeyLazyLibrarianAPIKey,
+	}
+	if !reflect.DeepEqual(secrets.deleted, want) {
+		t.Fatalf("expected LazyLibrarian credential removal, got %v", secrets.deleted)
+	}
+}
+
+func TestDataManagementServiceRestoresDeletedLazyLibrarianCredentialOnPartialFailure(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	archiver := &dataArchiver{result: storage.ArchivedApplicationData{
+		ApplicationID: "lazylibrarian", Archived: true, ArchivePath: "/media/archive",
+	}}
+	secrets := &dataCredentialStore{
+		archiver: archiver,
+		secrets: map[credentials.Key]credentials.Secret{
+			credentials.KeyLazyLibrarianPassword: credentials.NewSecret("password"),
+			credentials.KeyLazyLibrarianAPIKey:   credentials.NewSecret("api-key"),
+		},
+		deleteErrors: map[credentials.Key]error{
+			credentials.KeyLazyLibrarianAPIKey: errors.New("keychain locked"),
+		},
+	}
+	service := NewDataManagementService(
+		NewCatalog(registry),
+		&dataSetup{status: SetupStatus{StoragePath: "/media"}},
+		&managementRuntime{},
+		archiver,
+		secrets,
+	)
+
+	result, err := service.Archive(context.Background(), "lazylibrarian")
+	if err == nil {
+		t.Fatal("expected partial credential removal failure")
+	}
+	if result.Archived || archiver.restoreCalls != 1 {
+		t.Fatalf("expected configuration archive rollback, result=%#v restores=%d", result, archiver.restoreCalls)
+	}
+	if restored := secrets.saved[credentials.KeyLazyLibrarianPassword]; restored.Reveal() != "password" {
+		t.Fatal("expected previously deleted LazyLibrarian password to be restored")
 	}
 }
 
@@ -226,13 +294,23 @@ type dataCredentialStore struct {
 	deleted              []credentials.Key
 	deletedBeforeArchive bool
 	deleteErr            error
+	deleteErrors         map[credentials.Key]error
+	secrets              map[credentials.Key]credentials.Secret
+	saved                map[credentials.Key]credentials.Secret
 }
 
-func (s *dataCredentialStore) Save(context.Context, credentials.Key, credentials.Secret) error {
+func (s *dataCredentialStore) Save(_ context.Context, key credentials.Key, secret credentials.Secret) error {
+	if s.saved == nil {
+		s.saved = make(map[credentials.Key]credentials.Secret)
+	}
+	s.saved[key] = secret
 	return nil
 }
 
-func (s *dataCredentialStore) Load(context.Context, credentials.Key) (credentials.Secret, error) {
+func (s *dataCredentialStore) Load(_ context.Context, key credentials.Key) (credentials.Secret, error) {
+	if secret, exists := s.secrets[key]; exists {
+		return secret, nil
+	}
 	return credentials.Secret{}, credentials.ErrCredentialNotFound
 }
 
@@ -241,6 +319,9 @@ func (s *dataCredentialStore) Delete(_ context.Context, key credentials.Key) err
 		s.deletedBeforeArchive = true
 	}
 	s.deleted = append(s.deleted, key)
+	if err := s.deleteErrors[key]; err != nil {
+		return err
+	}
 	return s.deleteErr
 }
 

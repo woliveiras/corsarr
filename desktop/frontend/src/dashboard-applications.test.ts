@@ -81,6 +81,22 @@ test('dashboard exposes managed Arr credentials only through the native clipboar
   assert.equal(source.includes('arrAccesses.get(application.id)?.available'), true);
 });
 
+test('dashboard exposes managed LazyLibrarian credentials after either installation flow', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('GetLazyLibrarianAccessStatus'), true);
+  assert.equal(source.includes('CopyLazyLibrarianPassword'), true);
+  assert.equal(source.includes("application.id === 'lazylibrarian'"), true);
+  assert.equal(source.includes('loadLazyLibrarianAccess()'), true);
+});
+
+test('applications without automated setup cannot be newly selected', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes("'Configuração manual'"), true);
+  assert.equal(source.includes('selectionSaving || (!target.automatedSetup && !selected)'), true);
+});
+
 test('managed credentials keep the username visible and confirm password copy locally', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 

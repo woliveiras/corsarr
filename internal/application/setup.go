@@ -198,6 +198,9 @@ func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, e
 	if err != nil {
 		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
 	}
+	if err := s.rejectNewManualApplications(applications, desktopState.Applications); err != nil {
+		return SetupStatus{}, err
+	}
 	desktopState.Applications = applications
 	if containsARRApplication(applications) {
 		if desktopState.OnboardingCompleted {
@@ -225,6 +228,30 @@ func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, e
 		return SetupStatus{}, fmt.Errorf("save desktop applications: %w", err)
 	}
 	return s.status(desktopState)
+}
+
+func (s *SetupService) rejectNewManualApplications(
+	requested []string,
+	existing []string,
+) error {
+	alreadySelected := make(map[string]struct{}, len(existing))
+	for _, id := range existing {
+		alreadySelected[id] = struct{}{}
+	}
+	for _, id := range requested {
+		application := s.catalog.byID[id]
+		if application.AutomatedSetup {
+			continue
+		}
+		if _, legacySelection := alreadySelected[id]; legacySelection {
+			continue
+		}
+		return fmt.Errorf(
+			"application does not have automated desktop setup: %s",
+			id,
+		)
+	}
+	return nil
 }
 
 func (s *SetupService) SaveQualityProfilePreset(preset string) (SetupStatus, error) {

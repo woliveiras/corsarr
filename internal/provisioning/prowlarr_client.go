@@ -8,14 +8,21 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/woliveiras/corsarr/internal/credentials"
 )
 
 type prowlarrTarget struct {
-	Name    string
-	BaseURL string
+	Name           string
+	BaseURL        string
+	SyncCategories []int
 }
 
 var prowlarrTargets = map[string]prowlarrTarget{
+	"lazylibrarian": {
+		Name: "LazyLibrarian", BaseURL: "http://lazylibrarian:5299",
+		SyncCategories: []int{3030, 7000, 7010, 7020, 7030, 7040, 7050, 7060},
+	},
 	"lidarr": {Name: "Lidarr", BaseURL: "http://lidarr:8686"},
 	"radarr": {Name: "Radarr", BaseURL: "http://radarr:7878"},
 	"sonarr": {Name: "Sonarr", BaseURL: "http://sonarr:8989"},
@@ -34,6 +41,28 @@ func (c *ProwlarrClient) EnsureApplication(
 	applicationID string,
 	prowlarrKey APIKey,
 	targetKey APIKey,
+) error {
+	return c.ensureApplication(ctx, applicationID, prowlarrKey, targetKey, "", credentials.Secret{})
+}
+
+func (c *ProwlarrClient) EnsureApplicationWithAuthentication(
+	ctx context.Context,
+	applicationID string,
+	prowlarrKey APIKey,
+	targetKey APIKey,
+	username string,
+	password credentials.Secret,
+) error {
+	return c.ensureApplication(ctx, applicationID, prowlarrKey, targetKey, username, password)
+}
+
+func (c *ProwlarrClient) ensureApplication(
+	ctx context.Context,
+	applicationID string,
+	prowlarrKey APIKey,
+	targetKey APIKey,
+	username string,
+	password credentials.Secret,
 ) error {
 	target, supported := prowlarrTargets[applicationID]
 	if !supported {
@@ -83,8 +112,11 @@ func (c *ProwlarrClient) EnsureApplication(
 		"prowlarrUrl":  "http://prowlarr:9696",
 		"baseUrl":      target.BaseURL,
 		"apiKey":       targetKey.Reveal(),
-		"authUsername": "",
-		"authPassword": "",
+		"authUsername": username,
+		"authPassword": password.Reveal(),
+	}
+	if len(target.SyncCategories) > 0 {
+		values["syncCategories"] = target.SyncCategories
 	}
 	for name, value := range values {
 		if !setProviderField(fields, name, value) {
@@ -139,18 +171,36 @@ type ProwlarrConfigurator interface {
 		prowlarrKey APIKey,
 		targetKey APIKey,
 	) error
+	EnsureApplicationWithAuthentication(
+		ctx context.Context,
+		applicationID string,
+		prowlarrKey APIKey,
+		targetKey APIKey,
+		username string,
+		password credentials.Secret,
+	) error
 }
 
 type ProwlarrProvisioner struct {
-	credentials CredentialReader
-	client      ProwlarrConfigurator
+	credentialReader CredentialReader
+	secrets          credentials.Store
+	client           ProwlarrConfigurator
 }
 
 func NewProwlarrProvisioner(
-	credentials CredentialReader,
+	credentialReader CredentialReader,
 	client ProwlarrConfigurator,
+	stores ...credentials.Store,
 ) *ProwlarrProvisioner {
-	return &ProwlarrProvisioner{credentials: credentials, client: client}
+	var secrets credentials.Store
+	if len(stores) > 0 {
+		secrets = stores[0]
+	}
+	return &ProwlarrProvisioner{
+		credentialReader: credentialReader,
+		secrets:          secrets,
+		client:           client,
+	}
 }
 
 func (p *ProwlarrProvisioner) Provision(
@@ -165,11 +215,39 @@ func (p *ProwlarrProvisioner) Provision(
 	if !selectedApplication(selected, "prowlarr") {
 		return nil
 	}
-	prowlarrKey, err := p.credentials.Read(rootPath, "prowlarr")
+	prowlarrKey, err := p.credentialReader.Read(rootPath, "prowlarr")
 	if err != nil {
 		return fmt.Errorf("read Prowlarr API credential: %w", err)
 	}
-	targetKey, err := p.credentials.Read(rootPath, applicationID)
+	if applicationID == lazyLibrarianApplicationID {
+		if p.secrets == nil {
+			return fmt.Errorf("LazyLibrarian credential store is unavailable")
+		}
+		apiKeySecret, err := p.secrets.Load(ctx, credentials.KeyLazyLibrarianAPIKey)
+		if err != nil {
+			return fmt.Errorf("load LazyLibrarian API credential: %w", err)
+		}
+		targetKey, err := newAPIKey(apiKeySecret.Reveal())
+		if err != nil {
+			return fmt.Errorf("validate LazyLibrarian API credential: %w", err)
+		}
+		password, err := p.secrets.Load(ctx, credentials.KeyLazyLibrarianPassword)
+		if err != nil {
+			return fmt.Errorf("load LazyLibrarian authentication credential: %w", err)
+		}
+		if err := p.client.EnsureApplicationWithAuthentication(
+			ctx,
+			applicationID,
+			prowlarrKey,
+			targetKey,
+			lazyLibrarianUsername,
+			password,
+		); err != nil {
+			return fmt.Errorf("ensure Prowlarr application: %w", err)
+		}
+		return nil
+	}
+	targetKey, err := p.credentialReader.Read(rootPath, applicationID)
 	if err != nil {
 		return fmt.Errorf("read target Arr API credential: %w", err)
 	}

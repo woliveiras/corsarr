@@ -147,6 +147,7 @@ func TestQBittorrentClientReconcilesApprovedCategories(t *testing.T) {
 		t.Fatalf("reconcile categories: %v", err)
 	}
 	want := []string{
+		"/api/v2/torrents/createCategory:lazylibrarian:/data/downloads/complete/lazylibrarian",
 		"/api/v2/torrents/createCategory:lidarr:/data/downloads/complete/lidarr",
 		"/api/v2/torrents/editCategory:radarr:/data/downloads/complete/radarr",
 	}

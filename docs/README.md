@@ -56,11 +56,15 @@ reported as a non-blocking efficiency warning.
 
 Provisioning currently covers Arr root folders and API keys, qBittorrent's
 generated Keychain credential, paths and categories, Arr download clients,
-Prowlarr connections, Bazarr's Radarr/Sonarr connections, Jellyfin's local
-administrator and libraries, and Seerr's Jellyfin/Radarr/Sonarr setup. Updates
-create a private configuration backup, replace the image, verify readiness, and
-restore the previous container image on failure without claiming to reverse a
-database migration.
+Prowlarr connections, LazyLibrarian's generated administrator/API credentials,
+book library, qBittorrent connection, and Prowlarr indexer synchronization,
+Bazarr's Radarr/Sonarr connections, Jellyfin's local administrator and
+libraries, and Seerr's Jellyfin/Radarr/Sonarr setup. FileFlows remains visible
+for lifecycle management of an existing installation but cannot be selected
+for one-click Desktop installation until it has an automated provisioning
+adapter. Updates create a private configuration backup, replace the image,
+verify readiness, and restore the previous container image on failure without
+claiming to reverse a database migration.
 
 When Radarr or Sonarr is selected, Desktop also presents a conditional quality
 step. Four versioned Corsarr presets are synchronized by an ephemeral,

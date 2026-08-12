@@ -100,6 +100,8 @@ type serviceAccessManager interface {
 	ARRPassword(ctx context.Context, applicationID string) (credentials.Secret, error)
 	JellyfinStatus(ctx context.Context) (application.ServiceAccessStatus, error)
 	JellyfinPassword(ctx context.Context) (credentials.Secret, error)
+	LazyLibrarianStatus(ctx context.Context) (application.ServiceAccessStatus, error)
+	LazyLibrarianPassword(ctx context.Context) (credentials.Secret, error)
 	QBittorrentStatus(ctx context.Context) (application.ServiceAccessStatus, error)
 	QBittorrentPassword(ctx context.Context) (credentials.Secret, error)
 }
@@ -288,10 +290,6 @@ func NewApp() (*App, error) {
 		credentialStore,
 		arrClient,
 	)
-	prowlarrProvisioner := provisioning.NewProwlarrProvisioner(
-		arrCredentials,
-		provisioning.NewProwlarrClient(catalog),
-	)
 	bazarrProvisioner := provisioning.NewBazarrProvisioner(
 		provisioning.NewBazarrCredentialReader(),
 		arrCredentials,
@@ -306,6 +304,15 @@ func NewApp() (*App, error) {
 		arrCredentials,
 		provisioning.NewSeerrClient(catalog),
 	)
+	lazyLibrarianProvisioner := provisioning.NewLazyLibrarianProvisioner(
+		credentialStore,
+		provisioning.NewLazyLibrarianClient(catalog),
+	)
+	prowlarrProvisioner := provisioning.NewProwlarrProvisioner(
+		arrCredentials,
+		provisioning.NewProwlarrClient(catalog),
+		credentialStore,
+	)
 	qualityProfiles := quality.NewSyncer(
 		quality.NewPlatformDockerRunner(10*time.Minute),
 		quality.NewARRCredentialSource(arrCredentials),
@@ -315,6 +322,7 @@ func NewApp() (*App, error) {
 		arrProvisioner,
 		qbittorrentProvisioner,
 		arrDownloadProvisioner,
+		lazyLibrarianProvisioner,
 		prowlarrProvisioner,
 		bazarrProvisioner,
 		jellyfinProvisioner,
@@ -1034,6 +1042,20 @@ func (a *App) CopyARRPassword(applicationID string) error {
 
 func (a *App) GetJellyfinAccessStatus() (application.ServiceAccessStatus, error) {
 	return a.serviceAccess.JellyfinStatus(a.appContext())
+}
+
+func (a *App) GetLazyLibrarianAccessStatus() (application.ServiceAccessStatus, error) {
+	return a.serviceAccess.LazyLibrarianStatus(a.appContext())
+}
+
+// CopyLazyLibrarianPassword reveals the secret only to the native clipboard
+// after an explicit user action. The value is never returned through Wails.
+func (a *App) CopyLazyLibrarianPassword() error {
+	secret, err := a.serviceAccess.LazyLibrarianPassword(a.appContext())
+	if err != nil {
+		return err
+	}
+	return a.clipboard.SetText(a.appContext(), secret.Reveal())
 }
 
 // GetJellyfinNetworkStatus exposes only private local IPv4 URLs and only after

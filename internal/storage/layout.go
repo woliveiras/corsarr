@@ -55,6 +55,7 @@ func (p *LayoutPreparer) Prepare(basePath string, applicationIDs []string) (Layo
 		filepath.Join("media", "downloads", "incomplete"),
 		filepath.Join("media", "downloads", "complete"),
 		filepath.Join("media", "downloads", "complete", "lidarr"),
+		filepath.Join("media", "downloads", "complete", "lazylibrarian"),
 		filepath.Join("media", "downloads", "complete", "radarr"),
 		filepath.Join("media", "downloads", "complete", "sonarr"),
 		filepath.Join("media", "library", "movies"),

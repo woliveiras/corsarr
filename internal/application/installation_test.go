@@ -90,6 +90,39 @@ func TestInstallationServiceReportsBoundedProgress(t *testing.T) {
 	}
 }
 
+func TestInstallationServiceSkipsLegacyApplicationWithoutAutomatedSetup(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	setup := &installationSetup{status: SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"fileflows", "jellyfin"},
+		CanPrepare: true, CanInstall: true, TermsAccepted: true,
+	}}
+	installer := &recordingInstaller{}
+	provisioner := &recordingProvisioner{}
+	service := NewInstallationService(
+		setup,
+		&installationLayout{status: storage.LayoutStatus{RootPath: "/Users/test/Media/Corsarr"}},
+		NewCatalog(registry),
+		installer,
+		provisioner,
+	)
+
+	result, err := service.InstallSelected(context.Background(), runtimecatalog.RuntimeOptions{})
+	if err != nil || !result.Complete {
+		t.Fatalf("install automated subset: result=%#v err=%v", result, err)
+	}
+	if !reflect.DeepEqual(installer.applicationIDs, []string{"jellyfin"}) ||
+		!reflect.DeepEqual(provisioner.applicationIDs, []string{"jellyfin"}) {
+		t.Fatalf(
+			"application without automated setup entered installation: installer=%v provisioner=%v",
+			installer.applicationIDs,
+			provisioner.applicationIDs,
+		)
+	}
+}
+
 func TestInstallationServiceReturnsOnlyBoundedFailureStateToDesktop(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

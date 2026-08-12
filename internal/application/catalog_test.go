@@ -33,6 +33,14 @@ func TestCatalogListsOnlyApplicationsWithWebInterfaces(t *testing.T) {
 			t.Fatalf("did not expect infrastructure service %q in desktop catalog", infrastructureID)
 		}
 	}
+	fileflows, ok := findApplication(applications, "fileflows")
+	if !ok || fileflows.AutomatedSetup {
+		t.Fatal("expected FileFlows lifecycle access without one-click automated setup")
+	}
+	lazyLibrarian, ok := findApplication(applications, "lazylibrarian")
+	if !ok || !lazyLibrarian.AutomatedSetup {
+		t.Fatal("expected LazyLibrarian automated setup in the desktop catalog")
+	}
 }
 
 func TestCatalogAlwaysExposesDependenciesAsAnArray(t *testing.T) {

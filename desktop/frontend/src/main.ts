@@ -8,6 +8,7 @@ import {
   CopyJellyfinNetworkURL,
   CopyJellyfinPassword,
   CopyLastInstallationSupportReport,
+  CopyLazyLibrarianPassword,
   CopyQBittorrentPassword,
   ExportDiagnostics,
   GetApplicationDataStatuses,
@@ -16,6 +17,7 @@ import {
   GetEnvironmentStatus,
   GetJellyfinAccessStatus,
   GetJellyfinNetworkStatus,
+  GetLazyLibrarianAccessStatus,
   GetProductInfo,
   GetQBittorrentAccessStatus,
   GetSetupStatus,
@@ -380,6 +382,7 @@ let dataStatuses = new Map<string, DataStatus>();
 let arrAccesses = new Map<string, application.ServiceAccessStatus>();
 let qbittorrentAccess: application.ServiceAccessStatus | undefined;
 let jellyfinAccess: application.ServiceAccessStatus | undefined;
+let lazyLibrarianAccess: application.ServiceAccessStatus | undefined;
 let jellyfinNetwork: main.JellyfinNetworkStatus | undefined;
 let legalNotices: LegalNotice[] = [];
 let qualityPresets: QualityPreset[] = [];
@@ -801,11 +804,14 @@ function createApplicationCard(application: Application): HTMLElement {
   selectButton.type = 'button';
   selectButton.textContent = installed
     ? '✓ Instalado'
-    : dashboardInstallingApplicationID === application.id
-      ? 'Instalando…'
-      : 'Instalar';
+    : !application.automatedSetup
+      ? 'Configuração manual'
+      : dashboardInstallingApplicationID === application.id
+        ? 'Instalando…'
+        : 'Instalar';
   selectButton.setAttribute('aria-label', `Instalar ${application.name}`);
-  selectButton.disabled = selectionSaving || installed || uncertainSelection;
+  selectButton.disabled =
+    selectionSaving || installed || uncertainSelection || !application.automatedSetup;
   if (installed) {
     selectButton.classList.add('installed-status');
     selectButton.title = 'Este aplicativo já está instalado.';
@@ -815,6 +821,13 @@ function createApplicationCard(application: Application): HTMLElement {
     selectButton.setAttribute(
       'aria-label',
       `${application.name} não pode ser instalado enquanto o ambiente não for verificado.`,
+    );
+  } else if (!application.automatedSetup) {
+    selectButton.title =
+      'Este aplicativo ainda não possui configuração automática segura no Corsarr.';
+    selectButton.setAttribute(
+      'aria-label',
+      `${application.name} ainda não possui instalação automática no Corsarr.`,
     );
   }
   selectButton.addEventListener('click', async () => {
@@ -845,6 +858,7 @@ function createApplicationCard(application: Application): HTMLElement {
         loadApplicationStatuses(),
         loadApplicationDataStatuses(),
         loadJellyfinAccess(),
+        loadLazyLibrarianAccess(),
         loadJellyfinNetwork(),
         loadQBittorrentAccess(),
         loadARRAccesses(),
@@ -942,6 +956,13 @@ function createApplicationCard(application: Application): HTMLElement {
     (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
   ) {
     actions.append(jellyfinCredentialButton());
+  }
+  if (
+    application.id === 'lazylibrarian' &&
+    lazyLibrarianAccess?.available &&
+    (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
+  ) {
+    actions.append(lazyLibrarianCredentialButton());
   }
   if (
     application.id === 'jellyfin' &&
@@ -1169,6 +1190,14 @@ function jellyfinCredentialButton(): HTMLElement {
   );
 }
 
+function lazyLibrarianCredentialButton(): HTMLElement {
+  return credentialAccessControl(
+    lazyLibrarianAccess?.username ?? 'corsarr',
+    'LazyLibrarian',
+    CopyLazyLibrarianPassword,
+  );
+}
+
 function jellyfinNetworkButton(url: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'network-button';
@@ -1214,6 +1243,9 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   metadata.className = 'metadata';
   const notice = legalNotices.find((candidate) => candidate.id === target.id);
   metadata.textContent = `Container próprio${notice?.license ? ` · ${notice.license}` : ''}`;
+  if (!target.automatedSetup) {
+    metadata.textContent += ' · Configuração automática ainda indisponível';
+  }
   const dependencies = target.dependencies ?? [];
   if (dependencies.length > 0) {
     const dependencyNames = dependencies.map(
@@ -1238,7 +1270,7 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   selectButton.className = 'select-button';
   selectButton.textContent = selected ? 'Selecionado' : 'Selecionar';
   selectButton.setAttribute('aria-pressed', String(selected));
-  selectButton.disabled = selectionSaving;
+  selectButton.disabled = selectionSaving || (!target.automatedSetup && !selected);
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
     const previousSelection = new Set(selectedApplicationIDs);
@@ -1484,6 +1516,15 @@ async function loadJellyfinAccess(): Promise<void> {
     renderApplications();
   } catch {
     jellyfinAccess = undefined;
+  }
+}
+
+async function loadLazyLibrarianAccess(): Promise<void> {
+  try {
+    lazyLibrarianAccess = await GetLazyLibrarianAccessStatus();
+    renderApplications();
+  } catch {
+    lazyLibrarianAccess = undefined;
   }
 }
 
@@ -2038,6 +2079,7 @@ async function installApplications(): Promise<void> {
         loadApplicationStatuses(),
         loadApplicationDataStatuses(),
         loadJellyfinAccess(),
+        loadLazyLibrarianAccess(),
         loadJellyfinNetwork(),
         loadQBittorrentAccess(),
         loadARRAccesses(),
@@ -2466,6 +2508,7 @@ async function installSelectedFromOnboarding(): Promise<void> {
       loadApplicationStatuses(),
       loadApplicationDataStatuses(),
       loadJellyfinAccess(),
+      loadLazyLibrarianAccess(),
       loadJellyfinNetwork(),
       loadQBittorrentAccess(),
       loadARRAccesses(),
@@ -2522,6 +2565,7 @@ async function loadInitialState(): Promise<void> {
     loadApplicationStatuses(),
     loadApplicationDataStatuses(),
     loadJellyfinAccess(),
+    loadLazyLibrarianAccess(),
     loadJellyfinNetwork(),
     loadQBittorrentAccess(),
     loadARRAccesses(),
@@ -2533,6 +2577,7 @@ EventsOn('corsarr:background-recovery-complete', () => {
     loadEnvironment(),
     loadApplicationStatuses(),
     loadJellyfinAccess(),
+    loadLazyLibrarianAccess(),
     loadJellyfinNetwork(),
     loadQBittorrentAccess(),
     loadARRAccesses(),

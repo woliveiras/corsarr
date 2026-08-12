@@ -17,9 +17,10 @@ import (
 )
 
 var qbittorrentCategories = map[string]string{
-	"lidarr": "/data/downloads/complete/lidarr",
-	"radarr": "/data/downloads/complete/radarr",
-	"sonarr": "/data/downloads/complete/sonarr",
+	"lazylibrarian": "/data/downloads/complete/lazylibrarian",
+	"lidarr":        "/data/downloads/complete/lidarr",
+	"radarr":        "/data/downloads/complete/radarr",
+	"sonarr":        "/data/downloads/complete/sonarr",
 }
 
 type QBittorrentClient struct {

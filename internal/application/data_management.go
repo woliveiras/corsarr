@@ -123,6 +123,11 @@ func (s *DataManagementService) deleteApplicationCredentials(
 	switch applicationID {
 	case "jellyfin":
 		keys = []credentials.Key{credentials.KeyJellyfinPassword}
+	case "lazylibrarian":
+		keys = []credentials.Key{
+			credentials.KeyLazyLibrarianPassword,
+			credentials.KeyLazyLibrarianAPIKey,
+		}
 	case "qbittorrent":
 		keys = []credentials.Key{credentials.KeyQBitTorrentPassword}
 	default:
@@ -130,10 +135,39 @@ func (s *DataManagementService) deleteApplicationCredentials(
 			keys = []credentials.Key{key}
 		}
 	}
+	stored := make(map[credentials.Key]credentials.Secret, len(keys))
+	for _, key := range keys {
+		secret, err := s.secrets.Load(ctx, key)
+		if errors.Is(err, credentials.ErrCredentialNotFound) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("load archived %s credential before removal: %w", applicationID, err)
+		}
+		stored[key] = secret
+	}
+	deleted := make([]credentials.Key, 0, len(keys))
 	for _, key := range keys {
 		if err := s.secrets.Delete(ctx, key); err != nil {
-			return fmt.Errorf("remove archived %s credential: %w", applicationID, err)
+			rollbackErrors := make([]error, 0, len(deleted))
+			for _, deletedKey := range deleted {
+				secret, existed := stored[deletedKey]
+				if !existed {
+					continue
+				}
+				if saveErr := s.secrets.Save(ctx, deletedKey, secret); saveErr != nil {
+					rollbackErrors = append(
+						rollbackErrors,
+						fmt.Errorf("restore %s credential: %w", applicationID, saveErr),
+					)
+				}
+			}
+			return errors.Join(
+				fmt.Errorf("remove archived %s credential: %w", applicationID, err),
+				errors.Join(rollbackErrors...),
+			)
 		}
+		deleted = append(deleted, key)
 	}
 	return nil
 }

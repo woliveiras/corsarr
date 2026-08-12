@@ -284,7 +284,7 @@ password without logging it, authenticates as `admin`, generates and stores a
 permanent password before activating the `corsarr` user, then verifies a fresh
 login. A failed activation removes the prepared Keychain entry. On every
 reconcile it enforces the shared complete/incomplete paths and the approved
-Radarr, Sonarr, and Lidarr categories. The HTTP client is loopback-only,
+LazyLibrarian, Radarr, Sonarr, and Lidarr categories. The HTTP client is loopback-only,
 redirect-free, cookie-scoped, and response-bounded.
 
 The Wails surface can report only whether qBittorrent access is available and
@@ -297,6 +297,9 @@ only application ID, username, and availability. An explicit allowlisted
 `CopyARRPassword` intent loads one app-specific secret in Go and writes it
 directly to the native clipboard; the password and Arr API key never cross the
 Wails return boundary.
+
+The same native-clipboard boundary exposes the generated LazyLibrarian
+administrator password. Its API key remains backend-only.
 
 `internal/diagnostics.Reporter` builds the support snapshot only after the user
 chooses Export diagnostics. It includes bounded platform, runtime, catalog,
@@ -316,12 +319,23 @@ app-specific category, then creates or updates only the exact reserved provider
 name. Other user providers are never selected. Radarr and Sonarr use API v3;
 Lidarr uses API v1.
 
-`internal/provisioning.ProwlarrProvisioner` runs when each supported target Arr
-app becomes ready and Prowlarr is also selected. It reads the Prowlarr and target
-keys from their fixed config files and reconciles only `<App> (Corsarr)` through
-Prowlarr API v1. The client
-starts from the live application schema, retains its default category lists,
-sets full sync plus the internal `prowlarr` and target network URLs, and relies
+`internal/provisioning.LazyLibrarianProvisioner` creates separate administrator
+and API credentials in the native store, then submits only the reviewed
+configuration fields supported by the pinned service to its allowlisted
+loopback endpoint. It enables Basic
+authentication, fixes the book library and download paths, connects the
+managed qBittorrent user/category when selected, restarts the service so the
+web authentication boundary takes effect, and verifies both the API and
+qBittorrent connection. Retries reuse the stored credentials.
+
+`internal/provisioning.ProwlarrProvisioner` runs when each supported target app
+becomes ready and Prowlarr is also selected. For Arr targets it reads both keys
+from their fixed config files. For LazyLibrarian it loads the generated API key
+and administrator password from the native store. It reconciles only
+`<App> (Corsarr)` through Prowlarr API v1. The client
+starts from the live application schema, retains the default category lists for
+Arr targets, sets reviewed book categories for LazyLibrarian, enables full sync
+plus the internal `prowlarr` and target network URLs, and relies
 on Prowlarr's provider create/update path to validate connectivity. User-created
 Prowlarr applications remain untouched.
 

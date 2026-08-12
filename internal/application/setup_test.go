@@ -165,6 +165,49 @@ func TestSetupServiceRejectsUnknownApplicationWithoutChangingState(t *testing.T)
 	}
 }
 
+func TestSetupServiceRejectsNewApplicationWithoutAutomatedSetup(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{"prowlarr"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	_, err = service.SaveApplications([]string{"prowlarr", "fileflows"})
+	if err == nil {
+		t.Fatal("expected application without automated setup to be rejected")
+	}
+	if store.saveCalls != 0 {
+		t.Fatalf("expected rejected selection not to be saved, got %d saves", store.saveCalls)
+	}
+	if !reflect.DeepEqual(store.desktopState.Applications, []string{"prowlarr"}) {
+		t.Fatalf("expected original selection to remain unchanged, got %v", store.desktopState.Applications)
+	}
+}
+
+func TestSetupServicePreservesLegacyApplicationWithoutAutomatedSetup(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{"fileflows"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.SaveApplications([]string{"fileflows", "prowlarr"})
+	if err != nil {
+		t.Fatalf("preserve legacy manual application: %v", err)
+	}
+	if !reflect.DeepEqual(status.Applications, []string{"fileflows", "prowlarr"}) {
+		t.Fatalf("expected legacy selection to remain manageable, got %v", status.Applications)
+	}
+}
+
 func TestSetupServiceSerializesConcurrentStorageAndApplicationUpdates(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

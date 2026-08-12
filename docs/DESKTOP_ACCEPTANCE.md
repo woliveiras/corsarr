@@ -90,12 +90,17 @@ release candidate from a clean installation.
   Bazarr, Jellyfin, and Seerr finish their applicable automated provisioning.
   Confirm that each Arr download client reaches qBittorrent through the managed
   network on WebUI port 8081.
+- [ ] Install LazyLibrarian from both onboarding and the installed Desktop
+  dashboard build. Confirm the managed administrator login, book/download paths,
+  qBittorrent category, and Prowlarr application synchronization in each flow.
 - [x] Open each installed application through its Corsarr shortcut and verify
   that its local web interface is ready. For Radarr, Sonarr, Lidarr, and
   Prowlarr, confirm that first-run authentication no longer blocks local access,
   “Copiar senha” uses the `corsarr` username, and the copied password signs in.
   Configure one Arr app manually before reconciliation and confirm Corsarr does
   not replace that account.
+- [ ] For LazyLibrarian, confirm that “Copiar senha” uses the `corsarr` username
+  and that the copied password signs in after each installation flow.
 - [x] Verify stop, start, and restart for an application without using Docker
   Desktop or a terminal.
 - [x] Update an application and confirm that health verification completes; a

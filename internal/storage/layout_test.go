@@ -33,6 +33,7 @@ func TestLayoutPreparerCreatesIdempotentCorsarrTree(t *testing.T) {
 		"media/downloads/incomplete",
 		"media/downloads/complete",
 		"media/downloads/complete/lidarr",
+		"media/downloads/complete/lazylibrarian",
 		"media/downloads/complete/radarr",
 		"media/downloads/complete/sonarr",
 		"media/library/movies",

@@ -111,7 +111,20 @@ func (s *InstallationService) InstallSelectedWithProgress(
 	if err != nil {
 		return InstallationResult{}, fmt.Errorf("prepare reviewed storage: %w", err)
 	}
-	ordered, err := s.catalog.InstallationOrder(setup.Applications)
+	automatedApplications := make([]string, 0, len(setup.Applications))
+	for _, applicationID := range setup.Applications {
+		application, known := s.catalog.byID[applicationID]
+		if !known {
+			return InstallationResult{}, fmt.Errorf(
+				"selected application is not available in the desktop catalog: %s",
+				applicationID,
+			)
+		}
+		if application.AutomatedSetup {
+			automatedApplications = append(automatedApplications, applicationID)
+		}
+	}
+	ordered, err := s.catalog.InstallationOrder(automatedApplications)
 	if err != nil {
 		return InstallationResult{}, fmt.Errorf("order selected applications: %w", err)
 	}

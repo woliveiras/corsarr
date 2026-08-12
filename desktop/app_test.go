@@ -789,6 +789,19 @@ func TestCopyJellyfinPasswordWritesOnlyToNativeClipboard(t *testing.T) {
 	}
 }
 
+func TestCopyLazyLibrarianPasswordWritesOnlyToNativeClipboard(t *testing.T) {
+	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
+	clipboard := &desktopClipboard{}
+	app := &App{serviceAccess: access, clipboard: clipboard}
+
+	if err := app.CopyLazyLibrarianPassword(); err != nil {
+		t.Fatalf("copy LazyLibrarian password: %v", err)
+	}
+	if clipboard.value != "private-password" || clipboard.calls != 1 {
+		t.Fatalf("expected one native clipboard write, got %#v", clipboard)
+	}
+}
+
 func TestCopyARRPasswordWritesOnlyAllowlistedSecretToNativeClipboard(t *testing.T) {
 	access := &desktopServiceAccess{password: credentials.NewSecret("private-password")}
 	clipboard := &desktopClipboard{}
@@ -1398,6 +1411,18 @@ func (a *desktopServiceAccess) JellyfinStatus(context.Context) (application.Serv
 }
 
 func (a *desktopServiceAccess) JellyfinPassword(context.Context) (credentials.Secret, error) {
+	return a.password, nil
+}
+
+func (a *desktopServiceAccess) LazyLibrarianStatus(context.Context) (application.ServiceAccessStatus, error) {
+	return application.ServiceAccessStatus{
+		ApplicationID: "lazylibrarian",
+		Username:      "corsarr",
+		Available:     true,
+	}, nil
+}
+
+func (a *desktopServiceAccess) LazyLibrarianPassword(context.Context) (credentials.Secret, error) {
 	return a.password, nil
 }
 

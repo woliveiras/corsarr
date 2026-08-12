@@ -23,6 +23,8 @@ export function CopyJellyfinPassword():Promise<void>;
 
 export function CopyLastInstallationSupportReport():Promise<void>;
 
+export function CopyLazyLibrarianPassword():Promise<void>;
+
 export function CopyQBittorrentPassword():Promise<void>;
 
 export function ExportDiagnostics():Promise<main.DiagnosticExportResult>;
@@ -38,6 +40,8 @@ export function GetEnvironmentStatus():Promise<application.EnvironmentStatus>;
 export function GetJellyfinAccessStatus():Promise<application.ServiceAccessStatus>;
 
 export function GetJellyfinNetworkStatus():Promise<main.JellyfinNetworkStatus>;
+
+export function GetLazyLibrarianAccessStatus():Promise<application.ServiceAccessStatus>;
 
 export function GetProductInfo():Promise<main.ProductInfo>;
 

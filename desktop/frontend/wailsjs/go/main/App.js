@@ -34,6 +34,10 @@ export function CopyLastInstallationSupportReport() {
   return window['go']['main']['App']['CopyLastInstallationSupportReport']();
 }
 
+export function CopyLazyLibrarianPassword() {
+  return window['go']['main']['App']['CopyLazyLibrarianPassword']();
+}
+
 export function CopyQBittorrentPassword() {
   return window['go']['main']['App']['CopyQBittorrentPassword']();
 }
@@ -64,6 +68,10 @@ export function GetJellyfinAccessStatus() {
 
 export function GetJellyfinNetworkStatus() {
   return window['go']['main']['App']['GetJellyfinNetworkStatus']();
+}
+
+export function GetLazyLibrarianAccessStatus() {
+  return window['go']['main']['App']['GetLazyLibrarianAccessStatus']();
 }
 
 export function GetProductInfo() {

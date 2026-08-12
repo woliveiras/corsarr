@@ -23,21 +23,25 @@ var (
 type Key string
 
 const (
-	KeyJellyfinPassword    Key = "jellyfin-password"
-	KeyQBitTorrentPassword Key = "qbittorrent-password"
-	KeyLidarrPassword      Key = "lidarr-password"
-	KeyProwlarrPassword    Key = "prowlarr-password"
-	KeyRadarrPassword      Key = "radarr-password"
-	KeySonarrPassword      Key = "sonarr-password"
+	KeyJellyfinPassword      Key = "jellyfin-password"
+	KeyLazyLibrarianAPIKey   Key = "lazylibrarian-api-key"
+	KeyLazyLibrarianPassword Key = "lazylibrarian-password"
+	KeyQBitTorrentPassword   Key = "qbittorrent-password"
+	KeyLidarrPassword        Key = "lidarr-password"
+	KeyProwlarrPassword      Key = "prowlarr-password"
+	KeyRadarrPassword        Key = "radarr-password"
+	KeySonarrPassword        Key = "sonarr-password"
 )
 
 var keychainAccounts = map[Key]string{
-	KeyJellyfinPassword:    "jellyfin",
-	KeyQBitTorrentPassword: "qbittorrent",
-	KeyLidarrPassword:      "lidarr",
-	KeyProwlarrPassword:    "prowlarr",
-	KeyRadarrPassword:      "radarr",
-	KeySonarrPassword:      "sonarr",
+	KeyJellyfinPassword:      "jellyfin",
+	KeyLazyLibrarianAPIKey:   "lazylibrarian-api",
+	KeyLazyLibrarianPassword: "lazylibrarian",
+	KeyQBitTorrentPassword:   "qbittorrent",
+	KeyLidarrPassword:        "lidarr",
+	KeyProwlarrPassword:      "prowlarr",
+	KeyRadarrPassword:        "radarr",
+	KeySonarrPassword:        "sonarr",
 }
 
 var arrPasswordKeys = map[string]Key{

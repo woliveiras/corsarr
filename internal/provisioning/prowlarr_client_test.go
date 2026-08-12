@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+
+	"github.com/woliveiras/corsarr/internal/credentials"
 )
 
 func TestProwlarrClientCreatesCorsarrApplicationFromSchema(t *testing.T) {
@@ -57,6 +60,62 @@ func TestProwlarrClientCreatesCorsarrApplicationFromSchema(t *testing.T) {
 	assertProviderField(t, fields, "prowlarrUrl", "http://prowlarr:9696")
 	assertProviderField(t, fields, "baseUrl", "http://radarr:7878")
 	assertProviderField(t, fields, "apiKey", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+}
+
+func TestProwlarrClientCreatesLazyLibrarianApplicationWithManagedAuthentication(t *testing.T) {
+	var created map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.Method + " " + request.URL.Path {
+		case "GET /api/v1/applications":
+			_, _ = response.Write([]byte("[]"))
+		case "GET /api/v1/applications/schema":
+			_ = json.NewEncoder(response).Encode([]map[string]any{{
+				"name": "LazyLibrarian", "implementation": "LazyLibrarian",
+				"configContract": "LazyLibrarianSettings",
+				"fields": []map[string]any{
+					{"name": "prowlarrUrl", "value": "http://localhost:9696"},
+					{"name": "baseUrl", "value": "http://localhost:5299"},
+					{"name": "apiKey", "value": ""},
+					{"name": "authUsername", "value": ""},
+					{"name": "authPassword", "value": ""},
+					{"name": "syncCategories", "value": []any{}},
+				},
+			}})
+		case "POST /api/v1/applications":
+			if err := json.NewDecoder(request.Body).Decode(&created); err != nil {
+				t.Errorf("decode LazyLibrarian application: %v", err)
+			}
+			response.WriteHeader(http.StatusCreated)
+		default:
+			t.Errorf("unexpected request %s %s", request.Method, request.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := NewProwlarrClient(readinessResolver{url: server.URL})
+	err := client.EnsureApplicationWithAuthentication(
+		context.Background(),
+		"lazylibrarian",
+		APIKey{value: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		APIKey{value: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+		"corsarr",
+		credentials.NewSecret("lazy-private-password"),
+	)
+	if err != nil {
+		t.Fatalf("create LazyLibrarian Prowlarr application: %v", err)
+	}
+	fields := providerFieldsByName(t, created)
+	assertProviderField(t, fields, "prowlarrUrl", "http://prowlarr:9696")
+	assertProviderField(t, fields, "baseUrl", "http://lazylibrarian:5299")
+	assertProviderField(t, fields, "apiKey", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+	assertProviderField(t, fields, "authUsername", "corsarr")
+	assertProviderField(t, fields, "authPassword", "lazy-private-password")
+	if !reflect.DeepEqual(
+		fields["syncCategories"],
+		[]any{3030.0, 7000.0, 7010.0, 7020.0, 7030.0, 7040.0, 7050.0, 7060.0},
+	) {
+		t.Fatalf("unexpected LazyLibrarian sync categories %#v", fields["syncCategories"])
+	}
 }
 
 func TestProwlarrProvisionerReadsBothFixedCredentials(t *testing.T) {
@@ -115,6 +174,8 @@ type recordingProwlarrConfigurator struct {
 	applicationID string
 	prowlarrKey   APIKey
 	targetKey     APIKey
+	username      string
+	password      credentials.Secret
 }
 
 func (c *recordingProwlarrConfigurator) EnsureApplication(
@@ -126,5 +187,21 @@ func (c *recordingProwlarrConfigurator) EnsureApplication(
 	c.applicationID = applicationID
 	c.prowlarrKey = prowlarrKey
 	c.targetKey = targetKey
+	return nil
+}
+
+func (c *recordingProwlarrConfigurator) EnsureApplicationWithAuthentication(
+	ctx context.Context,
+	applicationID string,
+	prowlarrKey APIKey,
+	targetKey APIKey,
+	username string,
+	password credentials.Secret,
+) error {
+	if err := c.EnsureApplication(ctx, applicationID, prowlarrKey, targetKey); err != nil {
+		return err
+	}
+	c.username = username
+	c.password = password
 	return nil
 }

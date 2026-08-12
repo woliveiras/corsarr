@@ -7,6 +7,7 @@ export namespace application {
 	    category: string;
 	    url: string;
 	    optional: boolean;
+	    automatedSetup: boolean;
 	    dependencies: string[];
 
 	    static createFrom(source: any = {}) {
@@ -21,6 +22,7 @@ export namespace application {
 	        this.category = source["category"];
 	        this.url = source["url"];
 	        this.optional = source["optional"];
+	        this.automatedSetup = source["automatedSetup"];
 	        this.dependencies = source["dependencies"];
 	    }
 	}
