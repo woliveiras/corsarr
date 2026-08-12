@@ -56,6 +56,7 @@ import {
   initializeLocalization,
   languageStorageKey,
   normalizeLocale,
+  type TranslationKey,
   translate as t,
 } from './i18n';
 import {
@@ -478,6 +479,28 @@ function showOnboardingNotification(message: string, tone: 'error' | 'success' =
   onboardingNotification.hidden = false;
 }
 
+const localizedIssueCodes = new Set([
+  'application_configuration_failed',
+  'application_install_failed',
+  'application_status_unavailable',
+  'application_update_failed',
+  'application_update_rolled_back',
+  'installation_failed',
+  'onboarding_completion_failed',
+  'post_quality_configuration_failed',
+  'quality_profile_sync_failed',
+  'runtime_storage_access_denied',
+]);
+
+function localizedIssue(issue: application.OperationIssue): application.OperationIssue {
+  if (!localizedIssueCodes.has(issue.code)) return issue;
+  return {
+    code: issue.code,
+    summary: t(`issue.${issue.code}.summary` as TranslationKey),
+    nextAction: t(`issue.${issue.code}.next` as TranslationKey),
+  };
+}
+
 function updateOnboardingCatalogAuthority(): void {
   if (onboardingRecommended) {
     onboardingRecommended.disabled = applicationCatalogState !== 'ready' || selectionSaving;
@@ -618,8 +641,9 @@ function renderOnboardingIssue(issue?: application.OperationIssue): void {
   if (onboardingCopySupportReport && issue) {
     onboardingCopySupportReport.textContent = 'Copiar log de erros';
   }
-  onboardingOperationTechnical.textContent = issue
-    ? `${issue.summary}\n${issue.nextAction}\nCódigo: ${issue.code}`
+  const translated = issue ? localizedIssue(issue) : undefined;
+  onboardingOperationTechnical.textContent = translated
+    ? `${translated.summary}\n${translated.nextAction}\n${t('app.issueCode', { code: translated.code })}`
     : '';
 }
 
@@ -644,8 +668,9 @@ function renderOperationIssue(issue?: application.OperationIssue): void {
   if (!operationDetailsElement || !operationTechnicalElement) return;
   operationDetailsElement.hidden = !issue;
   operationDetailsElement.open = false;
-  operationTechnicalElement.textContent = issue
-    ? `${issue.summary}\n${issue.nextAction}\nCódigo: ${issue.code}`
+  const translated = issue ? localizedIssue(issue) : undefined;
+  operationTechnicalElement.textContent = translated
+    ? `${translated.summary}\n${translated.nextAction}\n${t('app.issueCode', { code: translated.code })}`
     : '';
 }
 
@@ -676,7 +701,7 @@ async function openInfoComponentWebsite(
     await OpenLegalLink(componentID, 'official');
   } catch {
     if (infoMessage) {
-      infoMessage.textContent = 'Não foi possível abrir o site oficial.';
+      infoMessage.textContent = t('site.openError');
       infoMessage.classList.add('error');
     }
   } finally {
@@ -811,12 +836,13 @@ function createApplicationCard(application: Application): HTMLElement {
   information.append(title, description);
 
   if (managedStatus?.issue) {
+    const issue = localizedIssue(managedStatus.issue);
     const details = document.createElement('details');
     details.className = 'application-status-details';
     const summary = document.createElement('summary');
     summary.textContent = t('app.details');
     const diagnostic = document.createElement('code');
-    diagnostic.textContent = `${managedStatus.issue.summary}\n${managedStatus.issue.nextAction}\n${t('app.issueCode', { code: managedStatus.issue.code })}`;
+    diagnostic.textContent = `${issue.summary}\n${issue.nextAction}\n${t('app.issueCode', { code: issue.code })}`;
     details.append(summary, diagnostic);
     information.append(details);
   }
@@ -847,26 +873,22 @@ function createApplicationCard(application: Application): HTMLElement {
       : dashboardInstallingApplicationID === application.id
         ? t('app.installing')
         : t('app.install');
-  selectButton.setAttribute('aria-label', `Instalar ${application.name}`);
+  selectButton.setAttribute('aria-label', t('app.installAria', { name: application.name }));
   selectButton.disabled =
     selectionSaving || installed || uncertainSelection || !application.automatedSetup;
   if (installed) {
     selectButton.classList.add('installed-status');
-    selectButton.title = 'Este aplicativo já está instalado.';
-    selectButton.setAttribute('aria-label', `${application.name} está instalado.`);
+    selectButton.title = t('app.installedTitle');
+    selectButton.setAttribute('aria-label', t('app.installedAria', { name: application.name }));
   } else if (uncertainSelection) {
-    selectButton.title = 'Verifique o ambiente antes de tentar instalar novamente.';
+    selectButton.title = t('app.environmentBlocked');
     selectButton.setAttribute(
       'aria-label',
-      `${application.name} não pode ser instalado enquanto o ambiente não for verificado.`,
+      t('app.environmentBlockedAria', { name: application.name }),
     );
   } else if (!application.automatedSetup) {
-    selectButton.title =
-      'Este aplicativo ainda não possui configuração automática segura no Corsarr.';
-    selectButton.setAttribute(
-      'aria-label',
-      `${application.name} ainda não possui instalação automática no Corsarr.`,
-    );
+    selectButton.title = t('app.manualTitle');
+    selectButton.setAttribute('aria-label', t('app.manualAria', { name: application.name }));
   }
   selectButton.addEventListener('click', async () => {
     if (selectionSaving) return;
@@ -882,7 +904,7 @@ function createApplicationCard(application: Application): HTMLElement {
     dashboardInstallingApplicationID = application.id;
     let selectionSaved = false;
     if (messageElement) {
-      messageElement.textContent = `Preparando a instalação de ${application.name}…`;
+      messageElement.textContent = t('app.preparingInstall', { name: application.name });
       messageElement.classList.remove('error');
     }
     renderApplications();
@@ -903,20 +925,21 @@ function createApplicationCard(application: Application): HTMLElement {
       ]);
       if (!result.complete) {
         const failed = result.items.find((item) => item.failed);
+        const issue = failed?.issue ? localizedIssue(failed.issue) : undefined;
         if (messageElement) {
-          messageElement.textContent = `${failed?.issue?.summary ?? `A instalação de ${application.name} não terminou.`} ${failed?.issue?.nextAction ?? 'Tente novamente.'}`;
+          messageElement.textContent = `${issue?.summary ?? t('app.installIncomplete', { name: application.name })} ${issue?.nextAction ?? t('app.tryAgain')}`;
           messageElement.classList.add('error');
         }
         return;
       }
       if (messageElement) {
-        messageElement.textContent = `${application.name} foi instalado e está pronto para uso.`;
+        messageElement.textContent = t('app.installReady', { name: application.name });
         messageElement.classList.remove('error');
       }
     } catch {
       if (!selectionSaved) selectedApplicationIDs = previousSelection;
       if (messageElement) {
-        messageElement.textContent = `Não foi possível instalar ${application.name}. Tente novamente.`;
+        messageElement.textContent = t('app.installError', { name: application.name });
         messageElement.classList.add('error');
       }
     } finally {
@@ -931,19 +954,18 @@ function createApplicationCard(application: Application): HTMLElement {
   openButton.type = 'button';
   openButton.textContent = t('app.open');
   openButton.disabled = managedStatus?.state !== 'running';
-  openButton.setAttribute('aria-label', `Abrir ${application.name} no navegador`);
+  openButton.setAttribute('aria-label', t('app.openAria', { name: application.name }));
   openButton.addEventListener('click', async () => {
     openButton.disabled = true;
     messageElement?.classList.remove('error');
-    if (messageElement) messageElement.textContent = `Abrindo ${application.name}…`;
+    if (messageElement) messageElement.textContent = t('app.opening', { name: application.name });
 
     try {
       await OpenApplication(application.id);
-      if (messageElement)
-        messageElement.textContent = `${application.name} foi aberto no navegador.`;
+      if (messageElement) messageElement.textContent = t('app.opened', { name: application.name });
     } catch {
       if (messageElement) {
-        messageElement.textContent = `Não foi possível abrir ${application.name}. O serviço ainda pode não estar instalado.`;
+        messageElement.textContent = t('app.openError', { name: application.name });
         messageElement.classList.add('error');
       }
     } finally {
@@ -1027,15 +1049,13 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
   button.type = 'button';
   button.textContent = t('app.update');
   button.addEventListener('click', async () => {
-    const confirmed = window.confirm(
-      `Atualizar ${target.name}? O Corsarr criará um backup privado das configurações e verificará a nova versão antes de concluir. O aplicativo ficará indisponível por alguns instantes. Se a versão migrar o banco de dados, restaurar a imagem anterior pode não desfazer essa migração.`,
-    );
+    const confirmed = window.confirm(t('app.updateConfirm', { name: target.name }));
     if (!confirmed) return;
 
     button.disabled = true;
-    button.textContent = t('app.installing');
+    button.textContent = t('app.updating');
     if (messageElement) {
-      messageElement.textContent = `Criando backup e verificando a atualização de ${target.name}…`;
+      messageElement.textContent = t('app.updatePreparing', { name: target.name });
       messageElement.classList.remove('error');
     }
     try {
@@ -1043,16 +1063,16 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
       renderOperationIssue(result.issue);
       if (messageElement) {
         if (result.updated && !result.requiresAttention) {
-          messageElement.textContent = `${target.name} foi atualizado e verificado. O backup das configurações foi preservado.`;
+          messageElement.textContent = t('app.updateReady', { name: target.name });
           messageElement.classList.remove('error');
         } else if (result.rolledBack) {
-          messageElement.textContent = `A nova versão de ${target.name} não passou na verificação. A imagem anterior foi restaurada e o backup foi preservado.`;
+          messageElement.textContent = t('app.updateRolledBack', { name: target.name });
           messageElement.classList.add('error');
         } else if (result.requiresAttention) {
-          messageElement.textContent = `${target.name} requer atenção após a tentativa de atualização. Consulte os detalhes técnicos.`;
+          messageElement.textContent = t('app.updateAttention', { name: target.name });
           messageElement.classList.add('error');
         } else {
-          messageElement.textContent = `${target.name} já usa a versão aprovada pelo Corsarr.`;
+          messageElement.textContent = t('app.updateCurrent', { name: target.name });
           messageElement.classList.remove('error');
         }
       }
@@ -1060,7 +1080,7 @@ function updateApplicationButton(target: Application): HTMLButtonElement {
     } catch {
       renderOperationIssue();
       if (messageElement) {
-        messageElement.textContent = `Não foi possível iniciar a atualização de ${target.name}. Nenhuma alteração foi autorizada fora dos recursos do Corsarr.`;
+        messageElement.textContent = t('app.updateError', { name: target.name });
         messageElement.classList.add('error');
       }
     } finally {
@@ -1083,7 +1103,9 @@ function lifecycleButton(label: string, operation: () => Promise<void>): HTMLBut
       await loadApplicationStatuses();
     } catch {
       if (messageElement) {
-        messageElement.textContent = `Não foi possível ${label.toLocaleLowerCase('pt-BR')} o aplicativo.`;
+        messageElement.textContent = t('app.lifecycleError', {
+          action: label.toLocaleLowerCase(currentLocale()),
+        });
         messageElement.classList.add('error');
       }
     } finally {
@@ -1094,9 +1116,7 @@ function lifecycleButton(label: string, operation: () => Promise<void>): HTMLBut
 }
 
 async function removeApplication(target: Application): Promise<void> {
-  const confirmed = window.confirm(
-    `Remover ${target.name}? As configurações e sua mídia serão preservadas.`,
-  );
+  const confirmed = window.confirm(t('app.removeConfirm', { name: target.name }));
   if (!confirmed) return;
   await RemoveApplication(target.id);
 }
@@ -1116,10 +1136,13 @@ function applicationRemovalButton(target: Application, status: ManagedStatus): H
   button.className = 'lifecycle-button danger-button';
   button.type = 'button';
   button.textContent = t('app.remove');
-  button.title = `Remova primeiro: ${blockerNames.join(', ')}.`;
-  button.setAttribute('aria-label', `Não é possível remover ${target.name}. ${button.title}`);
+  button.title = t('app.removeFirst', { names: blockerNames.join(', ') });
+  button.setAttribute(
+    'aria-label',
+    t('app.removeBlockedAria', { name: target.name, reason: button.title }),
+  );
   button.addEventListener('click', () => {
-    window.alert(`Para remover ${target.name}, remova primeiro: ${blockerNames.join(', ')}.`);
+    window.alert(t('app.removeBlocked', { name: target.name, names: blockerNames.join(', ') }));
   });
   return button;
 }
@@ -1133,7 +1156,7 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
     const dataStatus = dataStatuses.get(target.id);
     const approximateSize = formatApproximateBytes(dataStatus?.sizeBytes ?? 0);
     const confirmed = window.confirm(
-      `Remover aproximadamente ${approximateSize} de configurações de ${target.name}? A biblioteca e os downloads não serão alterados. A configuração será movida para a lixeira do Corsarr e poderá ser recuperada manualmente.`,
+      t('app.removeDataConfirm', { size: approximateSize, name: target.name }),
     );
     if (!confirmed) return;
 
@@ -1142,14 +1165,14 @@ function dataRemovalButton(target: Application): HTMLButtonElement {
       const archived = await ArchiveApplicationData(target.id);
       if (messageElement) {
         messageElement.textContent = archived.archived
-          ? `As configurações de ${target.name} foram movidas para a lixeira do Corsarr.`
-          : `${target.name} não possui configurações para remover.`;
+          ? t('app.dataArchived', { name: target.name })
+          : t('app.noData', { name: target.name });
         messageElement.classList.remove('error');
       }
       await loadApplicationDataStatuses();
     } catch {
       if (messageElement) {
-        messageElement.textContent = `Não foi possível remover as configurações de ${target.name}. Confirme que o aplicativo já foi removido.`;
+        messageElement.textContent = t('app.removeDataError', { name: target.name });
         messageElement.classList.add('error');
       }
     } finally {
@@ -1205,7 +1228,7 @@ function credentialAccessControl(
       }, 2500);
     } catch {
       if (messageElement) {
-        messageElement.textContent = `Não foi possível copiar a senha do ${applicationName}.`;
+        messageElement.textContent = t('app.copyPasswordError', { name: applicationName });
         messageElement.classList.add('error');
       }
     } finally {
@@ -1267,14 +1290,12 @@ function jellyfinNetworkButton(url: string): HTMLButtonElement {
     try {
       await CopyJellyfinNetworkURL(url);
       if (messageElement) {
-        messageElement.textContent =
-          'Endereço copiado. Abra-o em um aparelho conectado à mesma rede local.';
+        messageElement.textContent = t('app.addressCopied');
         messageElement.classList.remove('error');
       }
     } catch {
       if (messageElement) {
-        messageElement.textContent =
-          'Não foi possível copiar o endereço. Verifique se o acesso pela rede continua ativado.';
+        messageElement.textContent = t('app.addressCopyError');
         messageElement.classList.add('error');
       }
     } finally {
@@ -1605,18 +1626,17 @@ function applySetupStatus(status: application.SetupStatus): void {
   selectedApplicationIDs = new Set(status.applications);
 
   if (status.storagePath) {
-    if (storageTitleElement) storageTitleElement.textContent = 'Pasta salva';
+    if (storageTitleElement) storageTitleElement.textContent = t('storage.saved');
     if (storageDescriptionElement) {
-      storageDescriptionElement.textContent =
-        'O Corsarr verificará novamente esta pasta antes de preparar os aplicativos.';
+      storageDescriptionElement.textContent = t('storage.savedDescription');
     }
     if (storagePathElement) storagePathElement.textContent = status.storagePath;
     if (storageFactsElement) storageFactsElement.textContent = '';
     if (storageBadgeElement) {
-      storageBadgeElement.textContent = 'Salva';
+      storageBadgeElement.textContent = t('storage.savedBadge');
       storageBadgeElement.className = 'runtime-badge ready';
     }
-    if (chooseStorageButton) chooseStorageButton.textContent = 'Trocar pasta';
+    if (chooseStorageButton) chooseStorageButton.textContent = t('storage.changeFolder');
     if (onboardingStorageTitle) onboardingStorageTitle.textContent = 'Pasta selecionada';
     if (onboardingStorageDescription) {
       onboardingStorageDescription.textContent =
@@ -1695,8 +1715,7 @@ async function loadSetup(): Promise<void> {
     applySetupStatus(status);
   } catch {
     if (installationSummaryElement) {
-      installationSummaryElement.textContent =
-        'Não foi possível recuperar a preparação salva neste computador.';
+      installationSummaryElement.textContent = t('setup.loadError');
     }
     if (prepareStorageButton) prepareStorageButton.disabled = true;
   }
@@ -1715,25 +1734,24 @@ const architectureNames: Record<string, string> = {
 
 const runtimeMessages: Record<string, { title: string; description: string; badge: string }> = {
   ready: {
-    title: 'Ambiente pronto',
-    description: 'Este computador está pronto para receber os aplicativos do Corsarr.',
-    badge: 'Pronto',
+    title: t('environment.readyTitle'),
+    description: t('environment.readyDescription'),
+    badge: t('environment.readyBadge'),
   },
   unavailable: {
-    title: 'Preparação necessária',
-    description:
-      'O Corsarr pode preparar os componentes necessários após sua autorização explícita.',
-    badge: 'Não preparado',
+    title: t('environment.requiredTitle'),
+    description: t('environment.requiredDescription'),
+    badge: t('environment.requiredBadge'),
   },
   stopped: {
-    title: 'Ambiente pausado',
-    description: 'O componente necessário está instalado, mas precisa ser iniciado.',
-    badge: 'Parado',
+    title: t('environment.stoppedTitle'),
+    description: t('environment.stoppedDescription'),
+    badge: t('environment.stoppedBadge'),
   },
   error: {
-    title: 'Não foi possível verificar',
-    description: 'Tente novamente. Os detalhes técnicos podem ajudar no diagnóstico.',
-    badge: 'Atenção',
+    title: t('environment.attentionTitle'),
+    description: t('environment.attentionDescription'),
+    badge: t('environment.attentionBadge'),
   },
 };
 
@@ -1756,7 +1774,7 @@ async function loadEnvironment(): Promise<void> {
     if (environmentTitleElement) {
       environmentTitleElement.textContent = currentHostReady
         ? runtimeMessage.title
-        : 'Este computador precisa de atenção';
+        : t('environment.hostAttention');
     }
     if (environmentDescriptionElement) {
       environmentDescriptionElement.textContent = currentHostReady
@@ -1764,25 +1782,35 @@ async function loadEnvironment(): Promise<void> {
         : environment.host.issues.join(' ');
     }
     if (environmentBadgeElement) {
-      environmentBadgeElement.textContent = currentHostReady ? runtimeMessage.badge : 'Requisitos';
+      environmentBadgeElement.textContent = currentHostReady
+        ? runtimeMessage.badge
+        : t('environment.requirements');
       environmentBadgeElement.className = `runtime-badge ${currentHostReady ? environment.runtime.state : 'error'}`;
     }
     if (environmentTechnicalElement) {
       const details = [
-        `Provedor: ${environment.runtime.provider}`,
-        `Estado: ${environment.runtime.state}`,
+        t('environment.provider', { provider: environment.runtime.provider }),
+        t('environment.state', { state: environment.runtime.state }),
       ];
-      if (environment.runtime.version) details.push(`Versão: ${environment.runtime.version}`);
+      if (environment.runtime.version) {
+        details.push(t('environment.version', { version: environment.runtime.version }));
+      }
       if (environment.runtime.technicalDetail) {
-        details.push(`Diagnóstico: ${environment.runtime.technicalDetail}`);
+        details.push(t('environment.diagnostic', { detail: environment.runtime.technicalDetail }));
       }
       if (environment.host.osVersion) details.push(`macOS: ${environment.host.osVersion}`);
       if (environment.host.memoryBytes) {
-        details.push(`Memória: ${(environment.host.memoryBytes / 1024 ** 3).toFixed(1)} GiB`);
+        details.push(
+          t('environment.memory', {
+            amount: (environment.host.memoryBytes / 1024 ** 3).toFixed(1),
+          }),
+        );
       }
       if (environment.host.freeDiskBytes) {
         details.push(
-          `Espaço livre: ${(environment.host.freeDiskBytes / 1024 ** 3).toFixed(1)} GiB`,
+          t('environment.disk', {
+            amount: (environment.host.freeDiskBytes / 1024 ** 3).toFixed(1),
+          }),
         );
       }
       environmentTechnicalElement.textContent = details.join('\n');
@@ -1794,12 +1822,14 @@ async function loadEnvironment(): Promise<void> {
       prepareRuntimeButton.hidden = environment.runtime.state === 'ready';
       prepareRuntimeButton.disabled = !currentHostReady;
       prepareRuntimeButton.textContent =
-        environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+        environment.runtime.state === 'stopped'
+          ? t('environment.start')
+          : t('dashboard.prepareComputer');
     }
     if (onboardingEnvironmentTitle) {
       onboardingEnvironmentTitle.textContent = currentHostReady
         ? runtimeMessage.title
-        : 'Este computador precisa de atenção';
+        : t('environment.hostAttention');
     }
     if (onboardingEnvironmentDescription) {
       onboardingEnvironmentDescription.textContent = currentHostReady
@@ -1809,14 +1839,16 @@ async function loadEnvironment(): Promise<void> {
     if (onboardingEnvironmentBadge) {
       onboardingEnvironmentBadge.textContent = currentHostReady
         ? runtimeMessage.badge
-        : 'Requisitos';
+        : t('environment.requirements');
       onboardingEnvironmentBadge.className = `runtime-badge ${currentHostReady ? environment.runtime.state : 'error'}`;
     }
     if (onboardingPrepareRuntime) {
       onboardingPrepareRuntime.hidden = environment.runtime.state === 'ready';
       onboardingPrepareRuntime.disabled = !currentHostReady;
       onboardingPrepareRuntime.textContent =
-        environment.runtime.state === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+        environment.runtime.state === 'stopped'
+          ? t('environment.start')
+          : t('dashboard.prepareComputer');
     }
     if (onboardingEnvironmentNext) {
       onboardingEnvironmentNext.disabled =
@@ -1826,22 +1858,23 @@ async function loadEnvironment(): Promise<void> {
   } catch {
     currentRuntimeState = 'error';
     currentHostReady = false;
-    if (environmentTitleElement) environmentTitleElement.textContent = 'Não foi possível verificar';
+    if (environmentTitleElement)
+      environmentTitleElement.textContent = t('environment.attentionTitle');
     if (environmentDescriptionElement) {
-      environmentDescriptionElement.textContent = 'Tente novamente em alguns instantes.';
+      environmentDescriptionElement.textContent = t('environment.retry');
     }
     if (environmentBadgeElement) {
-      environmentBadgeElement.textContent = 'Atenção';
+      environmentBadgeElement.textContent = t('environment.attentionBadge');
       environmentBadgeElement.className = 'runtime-badge error';
     }
     if (onboardingEnvironmentTitle) {
-      onboardingEnvironmentTitle.textContent = 'Não foi possível verificar';
+      onboardingEnvironmentTitle.textContent = t('environment.attentionTitle');
     }
     if (onboardingEnvironmentDescription) {
-      onboardingEnvironmentDescription.textContent = 'Tente novamente em alguns instantes.';
+      onboardingEnvironmentDescription.textContent = t('environment.retry');
     }
     if (onboardingEnvironmentBadge) {
-      onboardingEnvironmentBadge.textContent = 'Atenção';
+      onboardingEnvironmentBadge.textContent = t('environment.attentionBadge');
       onboardingEnvironmentBadge.className = 'runtime-badge error';
     }
     if (onboardingEnvironmentNext) onboardingEnvironmentNext.disabled = true;
@@ -1856,37 +1889,30 @@ async function prepareRuntime(): Promise<void> {
   if (!prepareRuntimeButton) return;
   if (!currentHostReady) {
     if (installationResultElement) {
-      installationResultElement.textContent =
-        'Resolva os requisitos indicados neste computador antes de preparar o ambiente.';
+      installationResultElement.textContent = t('runtime.resolveRequirements');
       installationResultElement.classList.add('error');
     }
     return;
   }
   if (!setupStatus?.termsAccepted) {
     if (messageElement) {
-      messageElement.textContent =
-        'A autorização inicial não está disponível. Reinicie a configuração para preparar este computador.';
+      messageElement.textContent = t('runtime.authorizationUnavailable');
       messageElement.classList.add('error');
     }
     return;
   }
-  if (
-    currentRuntimeState === 'unavailable' &&
-    !window.confirm(
-      'O Corsarr baixará o Docker Desktop 4.86.0 diretamente da Docker, verificará o checksum e a assinatura oficial e solicitará a autorização do macOS para instalar. Continuar?',
-    )
-  ) {
+  if (currentRuntimeState === 'unavailable' && !window.confirm(t('runtime.installConfirm'))) {
     return;
   }
 
   prepareRuntimeButton.disabled = true;
   prepareRuntimeButton.textContent =
-    currentRuntimeState === 'unavailable' ? 'Instalando…' : 'Iniciando…';
+    currentRuntimeState === 'unavailable' ? t('runtime.installing') : t('runtime.starting');
   if (environmentDescriptionElement) {
     environmentDescriptionElement.textContent =
       currentRuntimeState === 'unavailable'
-        ? 'Baixando e verificando os componentes oficiais. O macOS poderá solicitar sua senha.'
-        : 'Iniciando os componentes necessários. Isso pode levar alguns instantes.';
+        ? t('runtime.downloading')
+        : t('runtime.startingDescription');
   }
   try {
     applySetupStatus(await AcceptCurrentTerms());
@@ -1895,24 +1921,23 @@ async function prepareRuntime(): Promise<void> {
     await loadEnvironment();
     if (messageElement) {
       messageElement.textContent = result.installed
-        ? 'Este computador foi preparado e está pronto para instalar os aplicativos.'
-        : 'O ambiente foi iniciado e está pronto.';
+        ? t('runtime.installedReady')
+        : t('runtime.startedReady');
       messageElement.classList.remove('error');
     }
   } catch {
     if (environmentDescriptionElement) {
-      environmentDescriptionElement.textContent =
-        'A preparação não terminou. Nada foi instalado sem assinatura válida; tente novamente ou consulte os detalhes técnicos.';
+      environmentDescriptionElement.textContent = t('runtime.incomplete');
     }
     if (messageElement) {
-      messageElement.textContent = 'Não foi possível concluir a preparação deste computador.';
+      messageElement.textContent = t('runtime.error');
       messageElement.classList.add('error');
     }
   } finally {
     prepareRuntimeButton.disabled = false;
     if (currentRuntimeState !== 'ready') {
       prepareRuntimeButton.textContent =
-        currentRuntimeState === 'stopped' ? 'Iniciar ambiente' : 'Preparar computador';
+        currentRuntimeState === 'stopped' ? t('environment.start') : t('dashboard.prepareComputer');
     }
   }
 }

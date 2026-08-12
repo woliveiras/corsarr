@@ -1,4 +1,9 @@
+import { issueMessages } from './issues.ts';
+import { operationMessages } from './operations.ts';
+
 export const en = {
+  ...operationMessages.en,
+  ...issueMessages.en,
   'language.label': 'Language',
   'language.en': 'English',
   'language.es': 'Español',
@@ -94,6 +99,8 @@ export type TranslationKey = keyof typeof en;
 type TranslationCatalog = Record<TranslationKey, string>;
 
 export const es: TranslationCatalog = {
+  ...operationMessages.es,
+  ...issueMessages.es,
   'language.label': 'Idioma',
   'language.en': 'English',
   'language.es': 'Español',
@@ -190,6 +197,8 @@ export const es: TranslationCatalog = {
 };
 
 export const ptBR: TranslationCatalog = {
+  ...operationMessages['pt-BR'],
+  ...issueMessages['pt-BR'],
   'language.label': 'Idioma',
   'language.en': 'English',
   'language.es': 'Español',
@@ -284,6 +293,8 @@ export const ptBR: TranslationCatalog = {
 };
 
 export const it: TranslationCatalog = {
+  ...operationMessages.it,
+  ...issueMessages.it,
   'language.label': 'Lingua',
   'language.en': 'English',
   'language.es': 'Español',

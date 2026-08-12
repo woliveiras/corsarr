@@ -1,6 +1,8 @@
 import i18next, { type TOptions } from 'i18next';
 import { resources, type TranslationKey } from './resources.ts';
 
+export type { TranslationKey } from './resources.ts';
+
 export const supportedLocales = ['en', 'es', 'pt-BR', 'it'] as const;
 export type SupportedLocale = (typeof supportedLocales)[number];
 export const languageStorageKey = 'corsarr.desktop.language';
