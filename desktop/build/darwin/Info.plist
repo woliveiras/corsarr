@@ -8,6 +8,8 @@
     <string>Corsarr</string>
     <key>CFBundleExecutable</key>
     <string>Corsarr</string>
+    <key>CFBundleIconFile</key>
+    <string>iconfile</string>
     <key>CFBundleIdentifier</key>
     <string>io.github.woliveiras.corsarr</string>
     <key>CFBundleInfoDictionaryVersion</key>
