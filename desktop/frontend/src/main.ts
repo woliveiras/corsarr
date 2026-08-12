@@ -730,23 +730,7 @@ function createApplicationCard(application: Application): HTMLElement {
   const description = document.createElement('p');
   description.textContent = application.description;
 
-  const metadata = document.createElement('div');
-  metadata.className = 'metadata';
-  const stateLabels: Record<string, string> = {
-    not_installed: 'Não instalado',
-    running: 'Em execução',
-    stopped: 'Parado',
-    attention: 'Atenção',
-  };
-  metadata.textContent = `${application.optional ? 'Opcional' : 'Aplicativo principal'} · ${stateLabels[managedStatus?.state ?? 'not_installed']}${managedStatus?.updateAvailable ? ' · Atualização disponível' : ''}`;
-  if ((managedStatus?.removalBlockedBy?.length ?? 0) > 0) {
-    const blockerNames = managedStatus?.removalBlockedBy?.map(
-      (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
-    );
-    metadata.textContent += ` · Remova primeiro: ${blockerNames?.join(', ')}`;
-  }
-
-  information.append(title, description, metadata);
+  information.append(title, description);
 
   if (managedStatus?.issue) {
     const details = document.createElement('details');

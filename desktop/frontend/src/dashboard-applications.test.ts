@@ -98,3 +98,14 @@ test('installed and removal actions have explicit status semantics', () => {
   assert.match(source, /classList\.add\('danger-button'\)/);
   assert.match(source, /Para remover \$\{target\.name\}, remova primeiro/);
 });
+
+test('application cards keep operational metadata out of the description area', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+  const cardSource = source.slice(
+    source.indexOf('function createApplicationCard'),
+    source.indexOf('function updateApplicationButton'),
+  );
+
+  assert.doesNotMatch(cardSource, /metadata\.className = 'metadata'/);
+  assert.doesNotMatch(cardSource, /Remova primeiro/);
+});
