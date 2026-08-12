@@ -109,3 +109,33 @@ test('application cards keep operational metadata out of the description area', 
   assert.doesNotMatch(cardSource, /metadata\.className = 'metadata'/);
   assert.doesNotMatch(cardSource, /Remova primeiro/);
 });
+
+test('application cards render bundled logos with an initials fallback', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /const applicationIconURLs: Record<string, string>/);
+  assert.match(source, /image\.className = 'application-logo'/);
+  assert.match(source, /image\.addEventListener\('error'/);
+  assert.match(source, /createApplicationIcon\(application\)/);
+  assert.match(source, /createApplicationIcon\(target\)/);
+});
+
+test('dashboard cards center a larger logo above complete application copy', () => {
+  const styles = readFileSync(new URL('./style.css', import.meta.url), 'utf8');
+
+  assert.match(
+    styles,
+    /grid-template-areas:\s*"\. actions"\s*"identity actions"\s*"information actions"\s*"\. actions"/,
+  );
+  assert.match(styles, /grid-template-rows: 1fr auto auto 1fr;/);
+  assert.match(
+    styles,
+    /\.application-card > \.application-icon[^}]*width: 76px;[^}]*height: 76px;/,
+  );
+  assert.match(styles, /\.application-card \.application-logo[^}]*width: 58px;[^}]*height: 58px;/);
+  assert.match(styles, /\.application-card \.application-info p[^}]*white-space: normal;/);
+  assert.doesNotMatch(
+    styles,
+    /\.application-card \.application-info p[^}]*text-overflow: ellipsis;/,
+  );
+});

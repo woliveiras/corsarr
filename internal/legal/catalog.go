@@ -15,6 +15,7 @@ type ComponentType string
 
 const (
 	ComponentApplication ComponentType = "application"
+	ComponentAsset       ComponentType = "asset"
 	ComponentRuntime     ComponentType = "runtime"
 )
 
@@ -231,6 +232,18 @@ func newCatalog(
 		LinkOfficial: "https://trash-guides.info/",
 		LinkLicense:  "https://github.com/TRaSH-Guides/Guides/blob/master/LICENSE",
 		LinkSource:   "https://github.com/TRaSH-Guides/Guides",
+	}); err != nil {
+		return nil, err
+	}
+	if err := catalog.addNotice(Notice{
+		ID: "asset-selfhst-icons", Name: "selfh.st/icons", Purpose: "Logos exibidos nos cards de aplicativos",
+		ComponentType: ComponentAsset, License: "Creative Commons Attribution 4.0 International",
+		CopyrightNotice:      "Logos obtidos da coleção selfh.st/icons; marcas pertencem aos respectivos titulares.",
+		AffiliationStatement: "O uso dos logos serve apenas para identificação e não implica afiliação, patrocínio ou endosso.",
+	}, map[string]string{
+		LinkOfficial: "https://selfh.st/icons/",
+		LinkLicense:  "https://github.com/selfhst/icons/blob/main/LICENSE",
+		LinkSource:   "https://github.com/selfhst/icons/tree/147b972e62e7fb5cc8b990f73d47cbd56dd4dd43",
 	}); err != nil {
 		return nil, err
 	}

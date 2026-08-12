@@ -1498,11 +1498,18 @@ nav {
 
 .application-card {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  min-height: 101px;
-  padding: 16px;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  grid-template-areas:
+    ". actions"
+    "identity actions"
+    "information actions"
+    ". actions";
+  grid-template-rows: 1fr auto auto 1fr;
+  align-items: start;
+  column-gap: 22px;
+  row-gap: 13px;
+  min-height: 230px;
+  padding: 22px;
   background: rgba(12, 33, 39, 0.72);
   border: 1px solid rgba(145, 193, 187, 0.09);
   border-radius: 14px;
@@ -1523,10 +1530,12 @@ nav {
   box-shadow: inset 0 0 0 1px rgba(91, 202, 189, 0.06);
 }
 .application-icon {
+  position: relative;
   display: grid;
   place-items: center;
   width: 48px;
   height: 48px;
+  overflow: hidden;
   color: #b6e6df;
   background: linear-gradient(145deg, rgba(60, 148, 143, 0.2), rgba(26, 90, 91, 0.18));
   border: 1px solid rgba(103, 205, 193, 0.16);
@@ -1534,6 +1543,30 @@ nav {
   font:
     700 14px "Avenir Next",
     sans-serif;
+}
+
+.application-card > .application-icon {
+  grid-area: identity;
+  justify-self: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+}
+
+.application-logo {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.application-card .application-logo {
+  width: 58px;
+  height: 58px;
+}
+
+.application-icon-fallback[hidden] {
+  display: none;
 }
 .application-icon.radarr {
   color: #f0c96c;
@@ -1555,9 +1588,21 @@ nav {
   width: 42px;
   height: 42px;
 }
+
+.onboarding-application-card .application-logo {
+  width: 30px;
+  height: 30px;
+}
 .application-info {
   min-width: 0;
 }
+
+.application-card .application-info {
+  grid-area: information;
+  align-self: start;
+  text-align: center;
+}
+
 .application-info h3 {
   margin: 0 0 4px;
   color: #dbecea;
@@ -1565,14 +1610,24 @@ nav {
     600 14px "Avenir Next",
     sans-serif;
 }
+
+.application-card .application-info h3 {
+  margin-bottom: 7px;
+  font-size: 16px;
+}
+
 .application-info p {
   margin: 0;
-  overflow: hidden;
   color: #6f8a8b;
   font-size: 10px;
   line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.application-card .application-info p {
+  overflow: visible;
+  line-height: 1.55;
+  text-overflow: clip;
+  white-space: normal;
 }
 .metadata {
   margin-top: 7px;
@@ -1615,6 +1670,8 @@ nav {
 }
 
 .application-actions {
+  grid-area: actions;
+  align-self: stretch;
   display: grid;
   gap: 6px;
   min-width: 112px;

@@ -706,6 +706,46 @@ const symbols: Record<string, string> = {
   sonarr: 'So',
 };
 
+const applicationIconURLs: Record<string, string> = {
+  bazarr: new URL('./assets/application-icons/bazarr.svg', import.meta.url).href,
+  fileflows: new URL('./assets/application-icons/fileflows.svg', import.meta.url).href,
+  jellyfin: new URL('./assets/application-icons/jellyfin.svg', import.meta.url).href,
+  jellyseerr: new URL('./assets/application-icons/seerr.svg', import.meta.url).href,
+  lazylibrarian: new URL('./assets/application-icons/lazylibrarian.svg', import.meta.url).href,
+  lidarr: new URL('./assets/application-icons/lidarr.svg', import.meta.url).href,
+  prowlarr: new URL('./assets/application-icons/prowlarr.svg', import.meta.url).href,
+  qbittorrent: new URL('./assets/application-icons/qbittorrent.svg', import.meta.url).href,
+  radarr: new URL('./assets/application-icons/radarr.svg', import.meta.url).href,
+  sonarr: new URL('./assets/application-icons/sonarr.svg', import.meta.url).href,
+};
+
+function createApplicationIcon(application: Application): HTMLElement {
+  const icon = document.createElement('div');
+  icon.className = `application-icon ${application.id}`;
+  icon.setAttribute('aria-hidden', 'true');
+
+  const fallback = document.createElement('span');
+  fallback.className = 'application-icon-fallback';
+  fallback.textContent = symbols[application.id] ?? application.name.slice(0, 2);
+  icon.append(fallback);
+
+  const iconURL = applicationIconURLs[application.id];
+  if (!iconURL) return icon;
+
+  const image = document.createElement('img');
+  image.className = 'application-logo';
+  image.alt = '';
+  image.addEventListener('load', () => {
+    fallback.hidden = true;
+  });
+  image.addEventListener('error', () => {
+    image.remove();
+  });
+  image.src = iconURL;
+  icon.append(image);
+  return icon;
+}
+
 function createApplicationCard(application: Application): HTMLElement {
   const card = document.createElement('article');
   card.className = 'application-card';
@@ -716,10 +756,7 @@ function createApplicationCard(application: Application): HTMLElement {
   const selected = selectedApplicationIDs.has(application.id) || installed;
   if (selected) card.classList.add('selected');
 
-  const icon = document.createElement('div');
-  icon.className = `application-icon ${application.id}`;
-  icon.textContent = symbols[application.id] ?? application.name.slice(0, 2);
-  icon.setAttribute('aria-hidden', 'true');
+  const icon = createApplicationIcon(application);
 
   const information = document.createElement('div');
   information.className = 'application-info';
@@ -1165,10 +1202,7 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   const selected = selectedApplicationIDs.has(target.id);
   card.classList.toggle('selected', selected);
 
-  const icon = document.createElement('div');
-  icon.className = `application-icon ${target.id}`;
-  icon.textContent = symbols[target.id] ?? target.name.slice(0, 2);
-  icon.setAttribute('aria-hidden', 'true');
+  const icon = createApplicationIcon(target);
 
   const information = document.createElement('div');
   information.className = 'application-info';
@@ -1338,7 +1372,12 @@ function renderLegalNotices(): void {
       const title = document.createElement('h2');
       title.textContent = notice.name;
       const kind = document.createElement('span');
-      kind.textContent = notice.componentType === 'runtime' ? 'Infraestrutura' : 'Aplicativo';
+      kind.textContent =
+        notice.componentType === 'runtime'
+          ? 'Infraestrutura'
+          : notice.componentType === 'asset'
+            ? 'Recurso visual'
+            : 'Aplicativo';
       heading.append(title, kind);
 
       const purpose = document.createElement('p');

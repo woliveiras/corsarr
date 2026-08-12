@@ -7,7 +7,7 @@
     "root": "../.."
   },
   "files": {
-    "includes": ["**", "!dist", "!wailsjs"]
+    "includes": ["**", "!dist", "!wailsjs", "!src/assets/application-icons/*.svg"]
   },
   "formatter": {
     "enabled": true,

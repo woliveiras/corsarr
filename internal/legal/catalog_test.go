@@ -96,7 +96,7 @@ func TestCatalogResolvesOnlyKnownHTTPSLinks(t *testing.T) {
 	if _, err := catalog.ResolveLink("unknown", LinkOfficial); err == nil {
 		t.Fatal("expected unknown component to be rejected")
 	}
-	for _, componentID := range []string{"runtime-recyclarr", "guide-trash"} {
+	for _, componentID := range []string{"runtime-recyclarr", "guide-trash", "asset-selfhst-icons"} {
 		if _, err := catalog.ResolveLink(componentID, LinkLicense); err != nil {
 			t.Fatalf("expected legal notice for %s: %v", componentID, err)
 		}
