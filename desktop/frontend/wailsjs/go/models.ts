@@ -244,6 +244,7 @@ export namespace application {
 	    }
 	}
 	export class SetupStatus {
+	    language?: string;
 	    storagePath?: string;
 	    applications: string[];
 	    canPrepare: boolean;
@@ -266,6 +267,7 @@ export namespace application {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.language = source["language"];
 	        this.storagePath = source["storagePath"];
 	        this.applications = source["applications"];
 	        this.canPrepare = source["canPrepare"];
@@ -610,4 +612,3 @@ export namespace storage {
 	}
 
 }
-

@@ -79,6 +79,8 @@ export function SelectRecommendedApplications():Promise<application.SetupStatus>
 
 export function SetJellyfinLAN(arg1:boolean):Promise<application.SetupStatus>;
 
+export function SetLanguagePreference(arg1:string):Promise<application.SetupStatus>;
+
 export function SetStartAtLogin(arg1:boolean):Promise<application.SetupStatus>;
 
 export function StartApplication(arg1:string):Promise<void>;

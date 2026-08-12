@@ -146,6 +146,10 @@ export function SetJellyfinLAN(arg1) {
   return window['go']['main']['App']['SetJellyfinLAN'](arg1);
 }
 
+export function SetLanguagePreference(arg1) {
+  return window['go']['main']['App']['SetLanguagePreference'](arg1);
+}
+
 export function SetStartAtLogin(arg1) {
   return window['go']['main']['App']['SetStartAtLogin'](arg1);
 }

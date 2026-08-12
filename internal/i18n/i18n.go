@@ -25,7 +25,7 @@ func New(lang string) (*I18n, error) {
 	bundle.RegisterUnmarshalFunc("yaml", yaml.Unmarshal)
 
 	// Load all supported languages
-	supportedLanguages := []string{"en", "pt-br", "es"}
+	supportedLanguages := []string{"en", "pt-br", "es", "it"}
 	for _, locale := range supportedLanguages {
 		data, err := LocaleFS.ReadFile(fmt.Sprintf("locales/%s.yaml", locale))
 		if err != nil {

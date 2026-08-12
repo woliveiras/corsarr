@@ -141,6 +141,22 @@ func TestChooseStorageLocationInspectsOnlyUserSelectedDirectory(t *testing.T) {
 	}
 }
 
+func TestSetLanguagePreferenceUsesSetupBoundary(t *testing.T) {
+	setup := &desktopSetupManager{}
+	app := &App{setup: setup}
+
+	status, err := app.SetLanguagePreference("it-IT")
+	if err != nil {
+		t.Fatalf("set language preference: %v", err)
+	}
+	if setup.savedLanguage != "it-IT" {
+		t.Fatalf("expected language to reach setup boundary, got %q", setup.savedLanguage)
+	}
+	if status.Language != "it-IT" {
+		t.Fatalf("expected returned language status, got %q", status.Language)
+	}
+}
+
 func TestChooseStorageLocationDoesNotInspectAfterCancel(t *testing.T) {
 	inspector := &desktopStorageInspector{}
 	app := &App{
@@ -1203,6 +1219,7 @@ func (f *desktopStorageInspector) Inspect(path string) storage.Status {
 
 type desktopSetupManager struct {
 	status                  application.SetupStatus
+	savedLanguage           string
 	savedStorage            string
 	saveApplicationsCalls   int
 	startAtLoginCalls       int
@@ -1212,6 +1229,12 @@ type desktopSetupManager struct {
 }
 
 func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) SaveLanguagePreference(languageCode string) (application.SetupStatus, error) {
+	f.savedLanguage = languageCode
+	f.status.Language = languageCode
 	return f.status, nil
 }
 

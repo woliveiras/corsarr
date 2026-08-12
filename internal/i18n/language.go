@@ -3,6 +3,7 @@ package i18n
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 )
@@ -17,8 +18,27 @@ type Language struct {
 // SupportedLanguages lists all available languages
 var SupportedLanguages = []Language{
 	{Name: "English", Code: "en", Flag: "🇺🇸"},
-	{Name: "Português Brasileiro", Code: "pt-br", Flag: "🇧🇷"},
 	{Name: "Español", Code: "es", Flag: "🇪🇸"},
+	{Name: "Português Brasileiro", Code: "pt-BR", Flag: "🇧🇷"},
+	{Name: "Italiano", Code: "it", Flag: "🇮🇹"},
+}
+
+// NormalizeLanguage maps supported regional variants to the canonical locale
+// identifiers persisted by Corsarr Desktop.
+func NormalizeLanguage(code string) (string, error) {
+	normalized := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(code), "_", "-"))
+	switch {
+	case normalized == "en" || strings.HasPrefix(normalized, "en-"):
+		return "en", nil
+	case normalized == "es" || strings.HasPrefix(normalized, "es-"):
+		return "es", nil
+	case normalized == "pt" || strings.HasPrefix(normalized, "pt-"):
+		return "pt-BR", nil
+	case normalized == "it" || strings.HasPrefix(normalized, "it-"):
+		return "it", nil
+	default:
+		return "", fmt.Errorf("unsupported language code: %s", code)
+	}
 }
 
 // SelectLanguage prompts the user to select a language
@@ -34,7 +54,7 @@ func SelectLanguage() (string, error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title("Select your language / Selecione seu idioma / Seleccione su idioma:").
+				Title("Select your language / Selecione seu idioma / Seleccione su idioma / Seleziona la lingua:").
 				Options(options...).
 				Value(&selected),
 		),
@@ -55,17 +75,8 @@ func DetectSystemLanguage() string {
 		lang = os.Getenv("LANGUAGE")
 	}
 
-	// Map common system locales to our supported languages
-	if len(lang) >= 2 {
-		langCode := lang[:2]
-		switch langCode {
-		case "pt":
-			return "pt-br"
-		case "es":
-			return "es"
-		case "en":
-			return "en"
-		}
+	if normalized, err := NormalizeLanguage(lang); err == nil {
+		return normalized
 	}
 
 	return "en" // Default to English
@@ -73,8 +84,12 @@ func DetectSystemLanguage() string {
 
 // GetLanguageByCode returns the Language struct for a given code
 func GetLanguageByCode(code string) (Language, error) {
+	normalized, err := NormalizeLanguage(code)
+	if err != nil {
+		return Language{}, err
+	}
 	for _, lang := range SupportedLanguages {
-		if lang.Code == code {
+		if lang.Code == normalized {
 			return lang, nil
 		}
 	}

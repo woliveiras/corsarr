@@ -29,6 +29,7 @@ func TestFileStorePersistsDesktopStateWithPrivatePermissions(t *testing.T) {
 		SchemaVersion:       CurrentSchemaVersion,
 		StoragePath:         "/Users/test/Media",
 		Applications:        []string{"prowlarr", "radarr"},
+		Language:            "it",
 		OnboardingCompleted: true,
 	}
 
@@ -65,6 +66,22 @@ func TestFileStorePersistsDesktopStateWithPrivatePermissions(t *testing.T) {
 	}
 	if !reflect.DeepEqual(reloaded, updated) {
 		t.Fatalf("replaced state mismatch\nwant: %#v\n got: %#v", updated, reloaded)
+	}
+}
+
+func TestFileStoreMigratesSchemaSixWithoutInventingLanguage(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":6,"applications":["jellyfin"],"onboardingCompleted":true}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write schema six state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load schema six state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.Language != "" {
+		t.Fatalf("legacy setup was incorrectly assigned a language: %#v", loaded)
 	}
 }
 

@@ -37,6 +37,32 @@ func TestSetupServicePersistsValidatedApplicationSelection(t *testing.T) {
 	}
 }
 
+func TestSetupServicePersistsOnlySupportedDesktopLanguage(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.SaveLanguagePreference("it-IT")
+	if err != nil {
+		t.Fatalf("save Italian language: %v", err)
+	}
+	if status.Language != "it" || store.desktopState.Language != "it" {
+		t.Fatalf("expected normalized persisted Italian, status=%#v state=%#v", status, store.desktopState)
+	}
+	if _, err := service.SaveLanguagePreference("fr-FR"); err == nil {
+		t.Fatal("expected unsupported desktop language to be rejected")
+	}
+	if store.desktopState.Language != "it" {
+		t.Fatalf("rejected language changed persisted preference: %#v", store.desktopState)
+	}
+}
+
 func TestSetupServiceRequiresQualityStepForARRSelectionAndDefaultsToBalanced1080p(t *testing.T) {
 	registry, err := services.NewRegistry()
 	if err != nil {

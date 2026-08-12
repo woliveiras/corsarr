@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/woliveiras/corsarr/internal/autostart"
+	"github.com/woliveiras/corsarr/internal/i18n"
 	"github.com/woliveiras/corsarr/internal/quality"
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
 
 type SetupStatus struct {
+	Language                     string   `json:"language,omitempty"`
 	StoragePath                  string   `json:"storagePath,omitempty"`
 	Applications                 []string `json:"applications"`
 	CanPrepare                   bool     `json:"canPrepare"`
@@ -29,6 +31,25 @@ type SetupStatus struct {
 	QualityProfileRequired       bool     `json:"qualityProfileRequired"`
 	QualityProfilePreset         string   `json:"qualityProfilePreset,omitempty"`
 	QualityProfileVersion        string   `json:"qualityProfileVersion,omitempty"`
+}
+
+func (s *SetupService) SaveLanguagePreference(languageCode string) (SetupStatus, error) {
+	languageCode, err := i18n.NormalizeLanguage(languageCode)
+	if err != nil {
+		return SetupStatus{}, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Language = languageCode
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save desktop language: %w", err)
+	}
+	return s.status(desktopState)
 }
 
 const CurrentTermsVersion = "2026-08-10.2"
@@ -378,6 +399,7 @@ func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Stat
 	qualityReady := desktopState.OnboardingCompleted || !qualityRequired || (quality.ValidPreset(qualityPreset) &&
 		desktopState.QualityProfileVersion == quality.PresetCatalogVersion)
 	return SetupStatus{
+		Language:                     desktopState.Language,
 		StoragePath:                  desktopState.StoragePath,
 		Applications:                 desktopState.Applications,
 		CanPrepare:                   canPrepare,

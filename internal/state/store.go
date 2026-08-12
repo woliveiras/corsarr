@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 )
 
-const CurrentSchemaVersion = 6
+const CurrentSchemaVersion = 7
 
 type DesktopState struct {
 	SchemaVersion            int      `json:"schemaVersion"`
+	Language                 string   `json:"language,omitempty"`
 	StoragePath              string   `json:"storagePath,omitempty"`
 	Applications             []string `json:"applications"`
 	RuntimeConsentVersion    string   `json:"runtimeConsentVersion,omitempty"`

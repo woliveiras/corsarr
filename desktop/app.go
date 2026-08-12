@@ -44,6 +44,7 @@ type storageInspector interface {
 
 type setupManager interface {
 	Load() (application.SetupStatus, error)
+	SaveLanguagePreference(languageCode string) (application.SetupStatus, error)
 	SaveStorage(path string) (application.SetupStatus, error)
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
 	SaveQualityProfilePreset(preset string) (application.SetupStatus, error)
@@ -585,6 +586,16 @@ func (a *App) ChooseStorageLocation() (storage.Status, error) {
 
 func (a *App) GetSetupStatus() (application.SetupStatus, error) {
 	return a.setup.Load()
+}
+
+// SetLanguagePreference persists a canonical desktop UI language.
+func (a *App) SetLanguagePreference(languageCode string) (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
+	return a.setup.SaveLanguagePreference(languageCode)
 }
 
 func (a *App) SaveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {

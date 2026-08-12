@@ -61,7 +61,7 @@ func Execute() {
 
 func init() {
 	// Global flags
-	rootCmd.PersistentFlags().StringVarP(&language, "language", "l", "", "Language (en, pt-br, es)")
+	rootCmd.PersistentFlags().StringVarP(&language, "language", "l", "", "Language (en, es, pt-BR, it)")
 }
 
 // GetTranslator returns the current translator instance
