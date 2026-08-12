@@ -369,6 +369,9 @@ prefers a `Corsarr - ` quality profile, then `Any` (or the lowest returned ID), 
 only the reserved `<App> (Corsarr)` entries with safe defaults. It initializes
 Seerr only after every connection succeeds. The client is loopback-only,
 proxy-free, redirect-free, and response-bounded.
+Because Seerr authenticates through Jellyfin, its Desktop card reuses the
+Jellyfin username and explicit native-clipboard password action instead of
+creating or exposing a separate credential.
 
 `internal/quality.Syncer` owns the optional Desktop quality-profile boundary
 described by [ADR 0003](decisions/0003-manage-desktop-quality-profiles-with-recyclarr.md).

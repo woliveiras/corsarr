@@ -958,6 +958,13 @@ function createApplicationCard(application: Application): HTMLElement {
     actions.append(jellyfinCredentialButton());
   }
   if (
+    application.id === 'jellyseerr' &&
+    jellyfinAccess?.available &&
+    (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
+  ) {
+    actions.append(seerrCredentialButton());
+  }
+  if (
     application.id === 'lazylibrarian' &&
     lazyLibrarianAccess?.available &&
     (managedStatus?.state === 'running' || managedStatus?.state === 'stopped')
@@ -1130,17 +1137,22 @@ function credentialAccessControl(
   username: string,
   applicationName: string,
   copyPassword: () => Promise<void>,
+  options: { usernameLabel?: string; buttonLabel?: string } = {},
 ): HTMLElement {
   const access = document.createElement('div');
   access.className = 'credential-access';
   const usernameLabel = document.createElement('span');
   usernameLabel.textContent = 'Usuário';
+  if (options.usernameLabel) {
+    usernameLabel.textContent = options.usernameLabel;
+  }
   const usernameValue = document.createElement('strong');
   usernameValue.textContent = username;
   const button = document.createElement('button');
   button.className = 'credential-button';
   button.type = 'button';
-  button.textContent = 'Copiar senha';
+  const buttonLabel = options.buttonLabel ?? 'Copiar senha';
+  button.textContent = buttonLabel;
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
@@ -1151,7 +1163,7 @@ function credentialAccessControl(
         messageElement.classList.remove('error');
       }
       window.setTimeout(() => {
-        button.textContent = 'Copiar senha';
+        button.textContent = buttonLabel;
       }, 2500);
     } catch {
       if (messageElement) {
@@ -1187,6 +1199,15 @@ function jellyfinCredentialButton(): HTMLElement {
     jellyfinAccess?.username ?? 'corsarr',
     'Jellyfin',
     CopyJellyfinPassword,
+  );
+}
+
+function seerrCredentialButton(): HTMLElement {
+  return credentialAccessControl(
+    jellyfinAccess?.username ?? 'corsarr',
+    'Seerr · conta do Jellyfin',
+    CopyJellyfinPassword,
+    { usernameLabel: 'Login do Jellyfin', buttonLabel: 'Copiar senha do Jellyfin' },
   );
 }
 

@@ -90,6 +90,15 @@ test('dashboard exposes managed LazyLibrarian credentials after either installat
   assert.equal(source.includes('loadLazyLibrarianAccess()'), true);
 });
 
+test('Seerr card exposes the managed Jellyfin login through the native clipboard bridge', () => {
+  const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes("application.id === 'jellyseerr'"), true);
+  assert.equal(source.includes('actions.append(seerrCredentialButton())'), true);
+  assert.equal(source.includes("'Seerr · conta do Jellyfin'"), true);
+  assert.equal(source.includes('CopyJellyfinPassword'), true);
+});
+
 test('applications without automated setup cannot be newly selected', () => {
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8');
 
