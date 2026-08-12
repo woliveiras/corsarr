@@ -39,6 +39,10 @@ func FormatInstallationSupportReport(
 	if applicationID == "" {
 		return "", fmt.Errorf("support report application ID is empty")
 	}
+	privatePaths := []string{report.Setup.StoragePath}
+	if report.Storage != nil {
+		privatePaths = append(privatePaths, report.Storage.Path)
+	}
 	if report.Setup.StoragePath != "" {
 		report.Setup.StoragePath = RedactedValue
 	}
@@ -60,9 +64,11 @@ func FormatInstallationSupportReport(
 	payload := installationSupportReport{
 		Diagnostics: report,
 		Failure: installationFailure{
-			ApplicationID:   applicationID,
-			Issue:           issue,
-			TechnicalDetail: redactSupportPaths(sanitizedDetail(technicalDetail)),
+			ApplicationID: applicationID,
+			Issue:         issue,
+			TechnicalDetail: redactSupportPaths(
+				redactSelectedPaths(sanitizedDetail(technicalDetail), privatePaths),
+			),
 		},
 	}
 
@@ -74,6 +80,15 @@ func FormatInstallationSupportReport(
 		return "", fmt.Errorf("encode installation support report: %w", err)
 	}
 	return strings.TrimSuffix(contents.String(), "\n"), nil
+}
+
+func redactSelectedPaths(detail string, paths []string) string {
+	for _, path := range paths {
+		if strings.TrimSpace(path) != "" {
+			detail = strings.ReplaceAll(detail, path, RedactedValue)
+		}
+	}
+	return detail
 }
 
 func redactSupportPaths(detail string) string {

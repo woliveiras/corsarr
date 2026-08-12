@@ -35,7 +35,7 @@ func TestConfigurationReconcilerProvisionsOnlyRunningSelectedApplications(t *tes
 	if !reflect.DeepEqual(provisioner.applications, want) {
 		t.Fatalf("unexpected reconciled applications\nwant: %v\n got: %v", want, provisioner.applications)
 	}
-	if provisioner.rootPath != "/media" ||
+	if provisioner.rootPath != "/media/Corsarr" ||
 		!reflect.DeepEqual(provisioner.selected, setup.status.Applications) {
 		t.Fatalf("unexpected reviewed setup %#v", provisioner)
 	}

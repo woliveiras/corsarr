@@ -7,6 +7,7 @@ import (
 
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/i18n"
+	"github.com/woliveiras/corsarr/internal/quality"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -203,6 +204,33 @@ func newCatalog(
 		LinkOfficial: "https://podman.io/",
 		LinkLicense:  "https://github.com/containers/podman/blob/main/LICENSE",
 		LinkSource:   "https://github.com/containers/podman",
+	}); err != nil {
+		return nil, err
+	}
+	if err := catalog.addNotice(Notice{
+		ID: "runtime-recyclarr", Name: "Recyclarr", Purpose: "Sincronização efêmera de perfis de qualidade",
+		ComponentType: ComponentRuntime, License: "MIT",
+		CopyrightNotice:      "Direitos autorais pertencem aos autores e contribuidores do Recyclarr.",
+		ImageMaintainer:      "Recyclarr project",
+		ApprovedImage:        quality.RecyclarrImage,
+		AffiliationStatement: "O Corsarr não é afiliado, patrocinado nem endossado pelo Recyclarr.",
+	}, map[string]string{
+		LinkOfficial: "https://recyclarr.dev/",
+		LinkLicense:  "https://github.com/recyclarr/recyclarr/blob/master/LICENSE",
+		LinkSource:   "https://github.com/recyclarr/recyclarr",
+		LinkImage:    "https://github.com/recyclarr/recyclarr/pkgs/container/recyclarr",
+	}); err != nil {
+		return nil, err
+	}
+	if err := catalog.addNotice(Notice{
+		ID: "guide-trash", Name: "TRaSH Guides", Purpose: "Fonte versionada das recomendações de qualidade",
+		ComponentType: ComponentRuntime, License: "MIT",
+		CopyrightNotice:      "Copyright (c) 2021 TRaSH e contribuidores.",
+		AffiliationStatement: "O Corsarr não é afiliado, patrocinado nem endossado pelo TRaSH Guides.",
+	}, map[string]string{
+		LinkOfficial: "https://trash-guides.info/",
+		LinkLicense:  "https://github.com/TRaSH-Guides/Guides/blob/master/LICENSE",
+		LinkSource:   "https://github.com/TRaSH-Guides/Guides",
 	}); err != nil {
 		return nil, err
 	}

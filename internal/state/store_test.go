@@ -146,3 +146,20 @@ func TestFileStoreMigratesSchemaFourWithoutInventingOnboardingCompletion(t *test
 		t.Fatalf("legacy setup was incorrectly treated as completed onboarding: %#v", loaded)
 	}
 }
+
+func TestFileStoreMigratesSchemaFiveWithoutInventingQualityOwnership(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "desktop-state.json")
+	legacy := []byte(`{"schemaVersion":5,"storagePath":"/Users/test/Media","applications":["radarr"],"onboardingCompleted":true}`)
+	if err := os.WriteFile(statePath, legacy, 0o600); err != nil {
+		t.Fatalf("write schema five state: %v", err)
+	}
+
+	loaded, err := NewFileStore(statePath).Load()
+	if err != nil {
+		t.Fatalf("load schema five state: %v", err)
+	}
+	if loaded.SchemaVersion != CurrentSchemaVersion || loaded.QualityProfilePreset != "" ||
+		loaded.QualityProfileVersion != "" {
+		t.Fatalf("legacy setup was incorrectly assigned quality ownership: %#v", loaded)
+	}
+}

@@ -27,6 +27,7 @@ import (
 	"github.com/woliveiras/corsarr/internal/onboarding"
 	"github.com/woliveiras/corsarr/internal/orchestrator"
 	"github.com/woliveiras/corsarr/internal/provisioning"
+	"github.com/woliveiras/corsarr/internal/quality"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/services"
 	statefile "github.com/woliveiras/corsarr/internal/state"
@@ -45,6 +46,7 @@ type setupManager interface {
 	Load() (application.SetupStatus, error)
 	SaveStorage(path string) (application.SetupStatus, error)
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
+	SaveQualityProfilePreset(preset string) (application.SetupStatus, error)
 	AcceptCurrentTerms() (application.SetupStatus, error)
 	CompleteOnboarding() (application.SetupStatus, error)
 	AdvanceOnboarding() (application.SetupStatus, error)
@@ -128,6 +130,17 @@ type configurationReconciliationManager interface {
 	Reconcile(ctx context.Context) (application.ConfigurationReconciliationResult, error)
 }
 
+type setupConfigurationReconciler interface {
+	ReconcileSetup(
+		ctx context.Context,
+		setup application.SetupStatus,
+	) (application.ConfigurationReconciliationResult, error)
+}
+
+type qualityProfileManager interface {
+	Apply(ctx context.Context, request quality.Request) (quality.Result, error)
+}
+
 type eventPublisher interface {
 	Emit(ctx context.Context, name string, data ...interface{})
 }
@@ -147,6 +160,14 @@ type diagnosticWriter interface {
 type DiagnosticExportResult struct {
 	Exported bool   `json:"exported"`
 	Path     string `json:"path,omitempty"`
+}
+
+type ProductInfo struct {
+	CorsarrVersion       string `json:"corsarrVersion"`
+	QualityPolicyVersion string `json:"qualityPolicyVersion"`
+	RecyclarrVersion     string `json:"recyclarrVersion"`
+	TrashGuidesCommit    string `json:"trashGuidesCommit"`
+	AutomaticUpdates     bool   `json:"automaticUpdates"`
 }
 
 var errDesktopChangeInProgress = errors.New("another change is already in progress")
@@ -188,6 +209,7 @@ type App struct {
 	diagnosticWriter        diagnosticWriter
 	backgroundRecovery      backgroundRecoveryManager
 	configurationReconciler configurationReconciliationManager
+	qualityProfiles         qualityProfileManager
 	events                  eventPublisher
 	runtimeDefaults         runtimecatalog.RuntimeOptions
 	localNetwork            localNetworkURLProvider
@@ -284,6 +306,10 @@ func NewApp() (*App, error) {
 		arrCredentials,
 		provisioning.NewSeerrClient(catalog),
 	)
+	qualityProfiles := quality.NewSyncer(
+		quality.NewPlatformDockerRunner(10*time.Minute),
+		quality.NewARRCredentialSource(arrCredentials),
+	)
 	provisioner := provisioning.NewChainProvisioner(
 		arrAuthenticationProvisioner,
 		arrProvisioner,
@@ -348,6 +374,7 @@ func NewApp() (*App, error) {
 		diagnosticWriter:        diagnostics.NewFileWriter(),
 		backgroundRecovery:      backgroundRecovery,
 		configurationReconciler: configurationReconciler,
+		qualityProfiles:         qualityProfiles,
 		events:                  wailsEventPublisher{},
 		localNetwork:            localnetwork.NewDiscoverer(),
 		hostReadiness:           hostReadiness,
@@ -407,6 +434,20 @@ func (a *App) runBackgroundRecovery(ctx context.Context) {
 // ListApplications returns the user-facing applications known by Corsarr.
 func (a *App) ListApplications() []application.ApplicationSummary {
 	return a.catalog.ListApplications()
+}
+
+func (a *App) GetProductInfo() ProductInfo {
+	return ProductInfo{
+		CorsarrVersion:       buildinfo.Current(),
+		QualityPolicyVersion: quality.PresetCatalogVersion,
+		RecyclarrVersion:     quality.RecyclarrVersion,
+		TrashGuidesCommit:    quality.TrashGuidesCommit,
+		AutomaticUpdates:     false,
+	}
+}
+
+func (a *App) ListQualityProfilePresets() []quality.Preset {
+	return quality.Presets()
 }
 
 // SelectRecommendedApplications persists Corsarr's reviewed starter stack.
@@ -547,6 +588,15 @@ func (a *App) SaveApplicationSelection(applicationIDs []string) (application.Set
 	return a.saveApplicationSelection(applicationIDs)
 }
 
+func (a *App) SaveQualityProfilePreset(preset string) (application.SetupStatus, error) {
+	release, err := a.beginChange()
+	if err != nil {
+		return application.SetupStatus{}, err
+	}
+	defer release()
+	return a.setup.SaveQualityProfilePreset(preset)
+}
+
 func (a *App) saveApplicationSelection(applicationIDs []string) (application.SetupStatus, error) {
 	selected := append([]string(nil), applicationIDs...)
 	if a.management != nil {
@@ -639,13 +689,31 @@ func (a *App) OpenStartAtLoginSettings() error {
 	return a.setup.OpenStartAtLoginSettings()
 }
 
-func (a *App) InstallSelectedApplications() (application.InstallationResult, error) {
+func (a *App) InstallSelectedApplications() (
+	result application.InstallationResult,
+	resultErr error,
+) {
 	release, err := a.beginChange()
 	if err != nil {
 		return application.InstallationResult{}, err
 	}
 	defer release()
 	a.storeInstallationSupportReport("")
+	supportComponent := "installation"
+	supportIssue := &application.OperationIssue{
+		Code:       "installation_failed",
+		Summary:    "A instalação ou configuração não terminou.",
+		NextAction: "Copie o log de erros para entender o que aconteceu.",
+	}
+	defer func() {
+		if resultErr != nil {
+			a.captureInstallationErrorSupportReport(
+				supportComponent,
+				supportIssue,
+				resultErr,
+			)
+		}
+	}()
 
 	setup, err := a.setup.Load()
 	if err != nil {
@@ -668,7 +736,6 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 		return application.InstallationResult{}, fmt.Errorf("runtime preparation did not become ready")
 	}
 	options := runtimeOptions(a.runtimeDefaults, setup)
-	var result application.InstallationResult
 	if installation, ok := a.installation.(progressiveInstallationManager); ok {
 		result, err = installation.InstallSelectedWithProgress(
 			a.appContext(),
@@ -686,10 +753,98 @@ func (a *App) InstallSelectedApplications() (application.InstallationResult, err
 	if err != nil || !result.Complete {
 		return result, err
 	}
-	if _, err := a.setup.CompleteOnboarding(); err != nil {
-		return result, fmt.Errorf("complete first-run onboarding: %w", err)
+	qualityPolicyCurrent := setup.QualityProfileVersion == quality.PresetCatalogVersion
+	if a.qualityProfiles != nil && setup.QualityProfileRequired &&
+		(!setup.OnboardingCompleted || qualityPolicyCurrent) {
+		supportComponent = "quality-profile"
+		supportIssue = &application.OperationIssue{
+			Code:       "quality_profile_sync_failed",
+			Summary:    "Não foi possível aplicar o perfil de qualidade.",
+			NextAction: "Copie o log de erros para entender o que aconteceu.",
+		}
+		_, qualityErr := a.qualityProfiles.Apply(a.appContext(), quality.Request{
+			RootPath: storage.CorsarrRootPath(setup.StoragePath), Applications: setup.Applications,
+			Preset: quality.PresetID(setup.QualityProfilePreset),
+			PUID:   a.runtimeDefaults.PUID, PGID: a.runtimeDefaults.PGID,
+		})
+		if qualityErr != nil {
+			return a.boundedInstallationFailure(
+				result,
+				supportComponent,
+				supportIssue,
+				qualityErr,
+			), nil
+		}
+		if containsDesktopApplication(setup.Applications, "jellyseerr") {
+			supportComponent = "post-quality-configuration"
+			supportIssue = &application.OperationIssue{
+				Code:       "post_quality_configuration_failed",
+				Summary:    "O perfil foi aplicado, mas a configuração final não terminou.",
+				NextAction: "Copie o log de erros para entender o que aconteceu.",
+			}
+			reconciler, ok := a.configurationReconciler.(setupConfigurationReconciler)
+			if !ok {
+				return a.boundedInstallationFailure(
+					result,
+					supportComponent,
+					supportIssue,
+					fmt.Errorf("post-quality configuration reconciliation is unavailable"),
+				), nil
+			}
+			configuration, reconcileErr := reconciler.ReconcileSetup(a.appContext(), setup)
+			if reconcileErr != nil || !configuration.Complete {
+				if reconcileErr == nil {
+					reconcileErr = fmt.Errorf(
+						"post-quality configuration reconciliation did not complete",
+					)
+				}
+				return a.boundedInstallationFailure(
+					result,
+					supportComponent,
+					supportIssue,
+					reconcileErr,
+				), nil
+			}
+		}
+	}
+	if !setup.OnboardingCompleted {
+		supportComponent = "onboarding"
+		supportIssue = &application.OperationIssue{
+			Code:       "onboarding_completion_failed",
+			Summary:    "A configuração terminou, mas o onboarding não pôde ser concluído.",
+			NextAction: "Copie o log de erros para entender o que aconteceu.",
+		}
+		if _, err := a.setup.CompleteOnboarding(); err != nil {
+			return result, fmt.Errorf("complete first-run onboarding: %w", err)
+		}
 	}
 	return result, nil
+}
+
+func (a *App) boundedInstallationFailure(
+	result application.InstallationResult,
+	component string,
+	issue *application.OperationIssue,
+	failure error,
+) application.InstallationResult {
+	result.Complete = false
+	result.Items = append(result.Items, application.InstallationItem{
+		ApplicationID: component,
+		Failed:        true,
+		Issue:         issue,
+		Error:         failure.Error(),
+	})
+	a.captureInstallationSupportReport(result)
+	return result
+}
+
+func containsDesktopApplication(applications []string, expected string) bool {
+	for _, applicationID := range applications {
+		if applicationID == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *App) captureInstallationSupportReport(result application.InstallationResult) {
@@ -714,6 +869,35 @@ func (a *App) captureInstallationSupportReport(result application.InstallationRe
 			a.storeInstallationSupportReport(contents)
 		}
 		return
+	}
+}
+
+func (a *App) captureInstallationErrorSupportReport(
+	component string,
+	issue *application.OperationIssue,
+	failure error,
+) {
+	a.supportReportMu.RLock()
+	hasReport := strings.TrimSpace(a.lastInstallationReport) != ""
+	a.supportReportMu.RUnlock()
+	if hasReport || failure == nil {
+		return
+	}
+	report := diagnostics.Report{SchemaVersion: diagnostics.CurrentSchemaVersion}
+	if a.diagnosticReporter != nil {
+		built, err := a.diagnosticReporter.Build(a.appContext())
+		if err == nil {
+			report = built
+		}
+	}
+	contents, err := diagnostics.FormatInstallationSupportReport(
+		report,
+		component,
+		issue,
+		failure.Error(),
+	)
+	if err == nil {
+		a.storeInstallationSupportReport(contents)
 	}
 }
 

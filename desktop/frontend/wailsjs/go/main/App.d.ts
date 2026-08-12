@@ -4,6 +4,7 @@ import {application} from '../models';
 import {storage} from '../models';
 import {main} from '../models';
 import {legal} from '../models';
+import {quality} from '../models';
 import {onboarding} from '../models';
 
 export function AcceptCurrentTerms():Promise<application.SetupStatus>;
@@ -38,6 +39,8 @@ export function GetJellyfinAccessStatus():Promise<application.ServiceAccessStatu
 
 export function GetJellyfinNetworkStatus():Promise<main.JellyfinNetworkStatus>;
 
+export function GetProductInfo():Promise<main.ProductInfo>;
+
 export function GetQBittorrentAccessStatus():Promise<application.ServiceAccessStatus>;
 
 export function GetSetupStatus():Promise<application.SetupStatus>;
@@ -47,6 +50,8 @@ export function InstallSelectedApplications():Promise<application.InstallationRe
 export function ListApplications():Promise<Array<application.ApplicationSummary>>;
 
 export function ListLegalNotices():Promise<Array<legal.Notice>>;
+
+export function ListQualityProfilePresets():Promise<Array<quality.Preset>>;
 
 export function OpenApplication(arg1:string):Promise<void>;
 
@@ -63,6 +68,8 @@ export function RemoveApplication(arg1:string):Promise<void>;
 export function RestartApplication(arg1:string):Promise<void>;
 
 export function SaveApplicationSelection(arg1:Array<string>):Promise<application.SetupStatus>;
+
+export function SaveQualityProfilePreset(arg1:string):Promise<application.SetupStatus>;
 
 export function SelectRecommendedApplications():Promise<application.SetupStatus>;
 

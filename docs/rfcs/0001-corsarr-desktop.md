@@ -111,10 +111,12 @@ boundaries:
 5. Resume at the same step after restart.
 6. Choose one base storage folder.
 7. Choose applications from the approved catalog.
-8. Optionally choose one administrator username/password to apply to compatible
+8. When Radarr or Sonarr is selected, choose a versioned quality preset or
+   explicitly leave profiles unmanaged.
+9. Optionally choose one administrator username/password to apply to compatible
    applications.
-9. Review storage, network exposure, versions, and licenses.
-10. Install, provision, connect, and verify.
+10. Review storage, network exposure, versions, and licenses.
+11. Install, provision, synchronize quality, connect, and verify.
 
 The main UI does not teach Docker, WSL, Podman, Compose, or virtual-machine
 concepts. An error offers a plain-language action first and expandable technical
@@ -671,6 +673,13 @@ claims must be rechecked during implementation and release validation.
 
 ## Decision and implementation history
 
+- 2026-08-12: accepted ADR 0003 and added a conditional Desktop quality step
+  for Radarr/Sonarr. Four versioned Corsarr presets use a digest-pinned
+  ephemeral Recyclarr and a commit-pinned TRaSH Guides provider, with API keys
+  injected at runtime, preview before apply, Seerr profile reconciliation, and
+  no automatic schedule. The unmanaged choice preserves the advanced/manual
+  path; CLI behavior is unchanged and Profilarr remains a separate catalog
+  increment.
 - 2026-08-11: replaced the first-run dashboard with a persisted, one-screen-at-a-time
   onboarding for welcome, authorization/start-at-login, live Docker diagnosis,
   storage, and application selection. Successful full installation is the only

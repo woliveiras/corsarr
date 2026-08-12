@@ -8,5 +8,8 @@ test('runtime storage denial returns onboarding to folder selection', () => {
   assert.match(mainSource, /failed\?\.issue\?\.code === 'runtime_storage_access_denied'/);
   assert.match(mainSource, /showOnboardingStep\('storage'\)/);
   assert.match(mainSource, /onboardingStorageMessage\.textContent = failed\.issue\.nextAction/);
-  assert.match(mainSource, /onboardingInstallButton\.textContent = 'Instalar aplicativos'/);
+  assert.match(
+    mainSource,
+    /showOnboardingStep\('storage'\);[\s\S]*onboardingInstallationRetryButton\.hidden = true/,
+  );
 });

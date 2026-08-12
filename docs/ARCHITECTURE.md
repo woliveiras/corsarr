@@ -214,9 +214,16 @@ a structured per-application result while preserving already completed apps.
 Its optional observer emits only catalog ID, bounded stage, position, and total
 for desktop progress. Runtime output and provisioning errors are excluded from
 events so progress reporting cannot become a log or credential channel. The
-onboarding frontend keeps a local, expandable per-application view from those
-events, showing unstarted selections as waiting and retaining ready or failed
-states for the duration of the installation attempt.
+onboarding frontend switches to a dedicated installation view before invoking
+the backend. It keeps a local per-application view from those events, showing
+unstarted selections as waiting and retaining ready or failed states for the
+duration of the attempt. After the last application is ready, a separate final
+phase remains active while onboarding integrations and any managed quality
+profile are applied. An interrupted attempt keeps the technical issue available
+and exposes retry without discarding the user's selections. Application,
+quality-profile, and final reconciliation failures also produce a bounded,
+redacted support log that crosses the desktop bridge only when the user chooses
+to copy it; runtime environment secrets and user paths are removed first.
 `internal/provisioning.HTTPReadiness` then probes only the catalog-resolved
 loopback URL, without credentials or redirects, until the application accepts
 HTTP or a bounded timeout expires. A newly created container that never becomes
@@ -344,10 +351,19 @@ Jellyfin, Radarr, and Sonarr integrations are ready. It loads their credentials
 only in Go, authenticates Seerr through the official Jellyfin login route, and retains the resulting HTTP-only
 session in a private cookie jar. `SeerrClient` discovers/enables Jellyfin
 libraries, tests both Arr connections to obtain live profiles and root folders,
-prefers the `Any` quality profile (or the lowest returned ID), and reconciles
+prefers a `Corsarr - ` quality profile, then `Any` (or the lowest returned ID), and reconciles
 only the reserved `<App> (Corsarr)` entries with safe defaults. It initializes
 Seerr only after every connection succeeds. The client is loopback-only,
 proxy-free, redirect-free, and response-bounded.
+
+`internal/quality.Syncer` owns the optional Desktop quality-profile boundary
+described by [ADR 0003](decisions/0003-manage-desktop-quality-profiles-with-recyclarr.md).
+After selected Arr applications are ready, it generates private Recyclarr files
+from a versioned Corsarr preset, references API keys through environment
+variables, and executes a digest-pinned ephemeral Recyclarr container first in
+preview mode and then in apply mode. The TRaSH Guides resource provider is
+commit-pinned. Raw command output and secrets do not enter the Wails response.
+No scheduler is created, and the CLI remains outside this automation boundary.
 
 `internal/application.ManagementService` translates runtime inspection into
 `not_installed`, `running`, `stopped`, or `attention` for every catalog app. Its
@@ -376,6 +392,13 @@ labels. URLs remain private to Go: `OpenLegalLink` accepts only a component ID
 plus an allowlisted link kind and resolves an HTTPS URL internally. Docker
 Desktop and the Podman candidate are listed explicitly alongside the managed
 applications.
+
+The dashboard's read-only Info screen obtains its installed Corsarr version
+from `internal/buildinfo` and its quality-policy, Recyclarr, and pinned TRaSH
+Guides versions from `internal/quality`. The Wails DTO contains only these
+bounded identifiers plus whether automatic profile updates are enabled. This
+keeps implementation metadata out of onboarding and prevents the frontend from
+guessing the release version or duplicating synchronization constants.
 
 `internal/application.DataManagementService` is a distinct destructive-action
 boundary. It requires the catalog application container to be absent, reloads

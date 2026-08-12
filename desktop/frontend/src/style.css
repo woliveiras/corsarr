@@ -79,6 +79,16 @@ body {
   font-weight: 900;
 }
 
+.onboarding-notification.success {
+  background: rgba(14, 43, 40, 0.97);
+  border-color: rgba(98, 201, 159, 0.34);
+}
+
+.onboarding-notification.success .onboarding-notification-icon {
+  color: #10251e;
+  background: #62c99f;
+}
+
 .onboarding-notification p {
   margin: 0;
   font-size: 11px;
@@ -121,7 +131,7 @@ body {
 
 .onboarding-progress {
   display: grid;
-  grid-template-columns: repeat(4, 30px) auto;
+  grid-template-columns: repeat(5, 30px) auto;
   align-items: center;
   gap: 7px;
 }
@@ -315,58 +325,61 @@ body {
   margin-top: 24px;
 }
 
-.installation-progress-details {
-  margin-top: 8px;
-  color: #9bb2b0;
-  background: rgba(7, 28, 33, 0.72);
-  border: 1px solid rgba(101, 198, 185, 0.13);
-  border-radius: 10px;
+.onboarding-installation-copy {
+  width: min(780px, 100%);
 }
 
-.installation-progress-details summary {
+.installation-progress-panel {
+  margin-top: 18px;
+  padding: 18px;
+  color: #9bb2b0;
+  background: linear-gradient(145deg, rgba(11, 38, 43, 0.92), rgba(7, 27, 32, 0.82));
+  border: 1px solid rgba(101, 198, 185, 0.22);
+  border-radius: 14px;
+}
+
+.installation-progress-panel > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 12px;
-  cursor: pointer;
-  list-style: none;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.installation-progress-details summary::-webkit-details-marker {
-  display: none;
-}
-
-.installation-progress-details summary::before {
-  content: "›";
-  color: #5ccdbf;
-  transition: transform 160ms ease;
-}
-
-.installation-progress-details[open] summary::before {
-  transform: rotate(90deg);
-}
-
-.installation-progress-details summary span {
-  margin-right: auto;
-}
-
-.installation-progress-details summary small {
-  color: #718c8d;
+  color: #6d8989;
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: 0.12em;
 }
 
-.installation-progress-details ol {
+.installation-progress-panel > header strong {
+  color: #b9cecb;
+  font-size: 10px;
+  letter-spacing: normal;
+}
+
+.installation-progress-track {
+  height: 5px;
+  margin-top: 11px;
+  overflow: hidden;
+  background: rgba(72, 100, 103, 0.32);
+  border-radius: 999px;
+}
+
+.installation-progress-track > span {
+  display: block;
+  width: 4%;
+  height: 100%;
+  background: linear-gradient(90deg, #3fada2, #65d4c5);
+  border-radius: inherit;
+  box-shadow: 0 0 12px rgba(92, 205, 191, 0.42);
+  transition: width 240ms ease;
+}
+
+.installation-progress-panel ol {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
-  margin: 0;
-  padding: 4px 12px 10px;
+  margin: 14px 0 0;
+  padding: 0 0 10px;
   list-style: none;
-  border-top: 1px solid rgba(101, 198, 185, 0.08);
 }
 
 .installation-progress-item {
@@ -423,6 +436,78 @@ body {
 
 .installation-progress-item.failed small {
   color: #ee9b8f;
+}
+
+.installation-completion {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 4px 2px;
+  border-top: 1px solid rgba(101, 198, 185, 0.12);
+}
+
+.installation-completion strong,
+.installation-completion small {
+  display: block;
+}
+
+.installation-completion strong {
+  color: #b9cecb;
+}
+
+.installation-completion small {
+  margin-top: 2px;
+  color: #627e7f;
+}
+
+.installation-completion.active .installation-progress-indicator {
+  background: #5ccdbf;
+  box-shadow: 0 0 8px rgba(92, 205, 191, 0.58);
+  animation: installation-progress-pulse 1.3s ease-in-out infinite;
+}
+
+.installation-completion.active small {
+  color: #65c6b9;
+}
+
+.installation-completion.ready .installation-progress-indicator {
+  background: #62c99f;
+}
+
+.installation-completion.failed .installation-progress-indicator {
+  background: #ee9b8f;
+}
+
+.installation-completion.failed small {
+  color: #ee9b8f;
+}
+
+.onboarding-installation-actions {
+  color: #627e7f;
+  font-size: 9px;
+}
+
+.onboarding-installation-warning {
+  padding: 8px 11px;
+  color: #d8c889;
+  background: rgba(216, 200, 137, 0.08);
+  border: 1px solid rgba(216, 200, 137, 0.2);
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.onboarding-installation-actions .support-report-button {
+  padding: 11px 14px;
+  color: #f0b1a7;
+  background: rgba(238, 155, 143, 0.08);
+  border-color: rgba(238, 155, 143, 0.28);
+  font-weight: 700;
+}
+
+.onboarding-installation-actions .support-report-button:hover:not(:disabled) {
+  background: rgba(238, 155, 143, 0.14);
 }
 
 @keyframes installation-progress-pulse {
@@ -549,6 +634,51 @@ body {
   overflow: auto;
 }
 
+.quality-profile-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin: 18px 0;
+}
+
+.quality-profile-card {
+  display: grid;
+  gap: 6px;
+  min-height: 96px;
+  padding: 16px 17px;
+  color: #91aaa9;
+  text-align: left;
+  background: rgba(11, 34, 40, 0.68);
+  border: 1px solid rgba(128, 192, 185, 0.1);
+  border-radius: 13px;
+  cursor: pointer;
+}
+
+.quality-profile-card strong {
+  color: #d6e8e5;
+  font-size: var(--onboarding-font-body);
+}
+
+.quality-profile-card span {
+  font-size: var(--onboarding-font-small);
+  line-height: 1.55;
+}
+
+.quality-profile-card:hover:not(:disabled),
+.quality-profile-card.selected {
+  background: rgba(16, 58, 60, 0.82);
+  border-color: rgba(92, 205, 191, 0.38);
+}
+
+.quality-profile-card.selected {
+  box-shadow: inset 3px 0 #5ccdbf;
+}
+
+.quality-profile-card:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .onboarding-catalog-error {
   grid-column: 1 / -1;
   display: flex;
@@ -608,6 +738,11 @@ a {
   font-size: 9px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.onboarding-notification.success button {
+  color: #8bd8b8;
+  border-color: rgba(98, 201, 159, 0.24);
 }
 
 button:focus-visible,
@@ -714,8 +849,79 @@ nav {
 }
 
 .licenses-view[hidden],
+.info-view[hidden],
 #home-view[hidden] {
   display: none;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.info-card {
+  min-width: 0;
+  padding: 20px;
+  background: rgba(12, 33, 39, 0.72);
+  border: 1px solid rgba(145, 193, 187, 0.09);
+  border-radius: 14px;
+}
+
+.info-card-primary {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  background: rgba(16, 58, 60, 0.66);
+  border-color: rgba(92, 205, 191, 0.2);
+}
+
+.info-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: #082126;
+  background: #5ccdbf;
+  border-radius: 13px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.info-card small {
+  color: #64bdb3;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.info-card h2 {
+  margin: 5px 0 7px;
+  color: #dbecea;
+  font:
+    600 17px "Avenir Next",
+    sans-serif;
+}
+
+.info-card p {
+  margin: 0;
+  color: #789291;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.info-card code {
+  overflow-wrap: anywhere;
+  color: #8bd3ca;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 9px;
+}
+
+.info-card-primary > strong {
+  color: #d8c889;
+  font-size: 18px;
 }
 
 .credits-header {
@@ -1671,8 +1877,9 @@ nav {
 .onboarding .onboarding-diagnostic details,
 .onboarding .onboarding-diagnostic code,
 .onboarding .onboarding-path-preview code,
-.onboarding .installation-progress-details summary small,
 .onboarding .installation-progress-item small,
+.onboarding .installation-completion small,
+.onboarding .installation-progress-panel > header,
 .onboarding .metadata,
 .onboarding .onboarding-license-button,
 .onboarding .operation-details code {
@@ -1685,8 +1892,8 @@ nav {
 .onboarding .onboarding-explanation ul,
 .onboarding .onboarding-check,
 .onboarding .onboarding-message,
-.onboarding .installation-progress-details summary,
 .onboarding .installation-progress-item strong,
+.onboarding .installation-completion strong,
 .onboarding .onboarding-diagnostic p,
 .onboarding .onboarding-path-preview p,
 .onboarding .folder-tree code,
@@ -1734,6 +1941,12 @@ nav {
   .onboarding-application-list {
     grid-template-columns: 1fr;
   }
+  .quality-profile-list {
+    grid-template-columns: 1fr;
+  }
+  .installation-progress-panel ol {
+    grid-template-columns: 1fr;
+  }
   .shell {
     grid-template-columns: 188px minmax(0, 1fr);
   }
@@ -1759,6 +1972,9 @@ nav {
     gap: 14px;
   }
   .legal-notices {
+    grid-template-columns: 1fr;
+  }
+  .info-grid {
     grid-template-columns: 1fr;
   }
   .installation-review {

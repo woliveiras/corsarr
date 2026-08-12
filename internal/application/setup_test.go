@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/woliveiras/corsarr/internal/autostart"
+	"github.com/woliveiras/corsarr/internal/quality"
 	"github.com/woliveiras/corsarr/internal/services"
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
@@ -33,6 +34,111 @@ func TestSetupServicePersistsValidatedApplicationSelection(t *testing.T) {
 	}
 	if store.saveCalls != 1 {
 		t.Fatalf("expected one state save, got %d", store.saveCalls)
+	}
+}
+
+func TestSetupServiceRequiresQualityStepForARRSelectionAndDefaultsToBalanced1080p(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion:  statefile.CurrentSchemaVersion,
+		StoragePath:    "/Users/test/Media",
+		Applications:   []string{},
+		OnboardingStep: OnboardingStepApplications,
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.SaveApplications([]string{"radarr"})
+	if err != nil {
+		t.Fatalf("save Arr selection: %v", err)
+	}
+	if !status.QualityProfileRequired || status.QualityProfilePreset != "balanced-1080p" ||
+		status.QualityProfileVersion == "" || store.desktopState.QualityProfileVersion == "" {
+		t.Fatalf("expected balanced quality default, got %#v", status)
+	}
+	status, err = service.AdvanceOnboarding()
+	if err != nil || status.OnboardingStep != OnboardingStepQuality {
+		t.Fatalf("advance to conditional quality step: status=%#v err=%v", status, err)
+	}
+}
+
+func TestSetupServicePersistsOnlyKnownQualityPresetForARRSelection(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion,
+		Applications:  []string{"sonarr"},
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.SaveQualityProfilePreset("economy")
+	if err != nil {
+		t.Fatalf("save quality preset: %v", err)
+	}
+	if status.QualityProfilePreset != "economy" || store.desktopState.QualityProfilePreset != "economy" ||
+		status.QualityProfileVersion == "" || store.desktopState.QualityProfileVersion == "" {
+		t.Fatalf("expected persisted preset, status=%#v state=%#v", status, store.desktopState)
+	}
+	if _, err := service.SaveQualityProfilePreset("invented"); err == nil {
+		t.Fatal("expected unknown quality preset to be rejected")
+	}
+	if store.desktopState.QualityProfilePreset != "economy" {
+		t.Fatalf("rejected preset changed state: %#v", store.desktopState)
+	}
+}
+
+func TestSetupServiceDoesNotAddQualityStepWithoutARRSelection(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion:  statefile.CurrentSchemaVersion,
+		Applications:   []string{"jellyfin"},
+		OnboardingStep: OnboardingStepApplications,
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.AdvanceOnboarding()
+	if err != nil {
+		t.Fatalf("keep non-Arr onboarding installable: %v", err)
+	}
+	if status.OnboardingStep != OnboardingStepApplications || status.QualityProfileRequired {
+		t.Fatalf("unexpected quality step without Arr: %#v", status)
+	}
+}
+
+func TestSetupServiceKeepsCompletedLegacyARRSetupUnmanagedAndInstallable(t *testing.T) {
+	registry, err := services.NewRegistry()
+	if err != nil {
+		t.Fatalf("create registry: %v", err)
+	}
+	store := &memoryStateStore{desktopState: statefile.DesktopState{
+		SchemaVersion: statefile.CurrentSchemaVersion, StoragePath: "/Users/test/Media",
+		Applications: []string{"radarr"}, OnboardingCompleted: true,
+		RuntimeConsentVersion: CurrentTermsVersion, RuntimeConsentAcceptedAt: "2026-08-12T12:00:00Z",
+	}}
+	service := NewSetupService(NewCatalog(registry), store)
+
+	status, err := service.Load()
+	if err != nil {
+		t.Fatalf("load completed legacy setup: %v", err)
+	}
+	if !status.CanInstall || status.QualityProfilePreset != "unmanaged" ||
+		status.QualityProfileVersion != "" {
+		t.Fatalf("legacy quality ownership was invented or blocked installation: %#v", status)
+	}
+	status, err = service.SaveApplications([]string{"radarr", "jellyfin"})
+	if err != nil {
+		t.Fatalf("save completed legacy selection: %v", err)
+	}
+	if status.QualityProfilePreset != "unmanaged" ||
+		status.QualityProfileVersion != quality.PresetCatalogVersion {
+		t.Fatalf("completed legacy setup did not persist explicit unmanaged state: %#v", status)
 	}
 }
 

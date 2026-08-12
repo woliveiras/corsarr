@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
+	"github.com/woliveiras/corsarr/internal/storage"
 )
 
 var ErrConfigurationReconciliationDisabled = errors.New(
@@ -58,6 +59,26 @@ func (r *ConfigurationReconciler) Reconcile(
 	if !setup.OnboardingCompleted || setup.StoragePath == "" || len(setup.Applications) == 0 {
 		return ConfigurationReconciliationResult{}, ErrConfigurationReconciliationDisabled
 	}
+	return r.reconcileSetup(ctx, setup)
+}
+
+// ReconcileSetup is the bounded pre-completion path used after quality profiles
+// are created. It lets dependent applications observe the new profile before
+// onboarding is committed as complete.
+func (r *ConfigurationReconciler) ReconcileSetup(
+	ctx context.Context,
+	setup SetupStatus,
+) (ConfigurationReconciliationResult, error) {
+	if setup.StoragePath == "" || len(setup.Applications) == 0 {
+		return ConfigurationReconciliationResult{}, ErrConfigurationReconciliationDisabled
+	}
+	return r.reconcileSetup(ctx, setup)
+}
+
+func (r *ConfigurationReconciler) reconcileSetup(
+	ctx context.Context,
+	setup SetupStatus,
+) (ConfigurationReconciliationResult, error) {
 	ordered, err := r.catalog.InstallationOrder(setup.Applications)
 	if err != nil {
 		return ConfigurationReconciliationResult{}, fmt.Errorf(
@@ -93,7 +114,7 @@ func (r *ConfigurationReconciler) Reconcile(
 		}
 		if err := r.provisioner.Provision(
 			ctx,
-			setup.StoragePath,
+			storage.CorsarrRootPath(setup.StoragePath),
 			applicationID,
 			setup.Applications,
 		); err != nil {

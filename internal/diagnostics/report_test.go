@@ -106,10 +106,10 @@ func TestInstallationSupportReportIncludesFailureAndRedactsPrivateData(t *testin
 		GeneratedAt:    "2026-08-11T10:33:00Z",
 		CorsarrVersion: "development",
 		Setup: SetupReport{
-			StoragePath:  "/Users/william/Media",
+			StoragePath:  "/Volumes/Media Library",
 			Applications: []string{"jellyseerr"},
 		},
-		Storage: &storage.Status{Path: "/Users/william/Media", State: storage.StateReady},
+		Storage: &storage.Status{Path: "/Volumes/Media Library", State: storage.StateReady},
 	}
 	issue := &application.OperationIssue{Code: "application_configuration_failed"}
 
@@ -117,7 +117,7 @@ func TestInstallationSupportReportIncludesFailureAndRedactsPrivateData(t *testin
 		report,
 		"jellyseerr",
 		issue,
-		"ensure Seerr setup from /Users/william/Media: password=private-value unexpected HTTP status 500",
+		"ensure Seerr setup from /Volumes/Media Library: password=private-value unexpected HTTP status 500",
 	)
 	if err != nil {
 		t.Fatalf("format support report: %v", err)
@@ -126,7 +126,7 @@ func TestInstallationSupportReportIncludesFailureAndRedactsPrivateData(t *testin
 		!strings.Contains(contents, "unexpected HTTP status 500") {
 		t.Fatalf("support report omitted failure context: %s", contents)
 	}
-	for _, private := range []string{"private-value", "/Users/william/Media"} {
+	for _, private := range []string{"private-value", "/Volumes/Media Library"} {
 		if strings.Contains(contents, private) {
 			t.Fatalf("support report leaked %q: %s", private, contents)
 		}

@@ -9,11 +9,13 @@ import (
 	"testing"
 
 	"github.com/woliveiras/corsarr/internal/application"
+	"github.com/woliveiras/corsarr/internal/buildinfo"
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
 	"github.com/woliveiras/corsarr/internal/hostreadiness"
 	"github.com/woliveiras/corsarr/internal/onboarding"
+	"github.com/woliveiras/corsarr/internal/quality"
 	runtimeenv "github.com/woliveiras/corsarr/internal/runtime"
 	"github.com/woliveiras/corsarr/internal/services"
 	"github.com/woliveiras/corsarr/internal/storage"
@@ -301,6 +303,127 @@ func TestInstallSelectedApplicationsUsesBoundedApplicationService(t *testing.T) 
 		!installation.options.AllowJellyfinLAN || setup.completeOnboardingCalls != 1 ||
 		!setup.status.OnboardingCompleted {
 		t.Fatalf("expected one completed installation call, got result=%#v calls=%d", result, installation.calls)
+	}
+}
+
+func TestInstallSelectedApplicationsAppliesSelectedQualityPresetBeforeCompletingOnboarding(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"radarr", "sonarr", "jellyseerr"},
+		TermsAccepted: true, QualityProfileRequired: true,
+		QualityProfilePreset: string(quality.PresetBalanced1080p),
+	}}
+	profiles := &desktopQualityProfileManager{result: quality.Result{Previewed: true, Applied: true}}
+	reconciler := &desktopConfigurationReconciler{
+		result: application.ConfigurationReconciliationResult{Complete: true},
+	}
+	app := &App{
+		setup:             setup,
+		installation:      &desktopInstallationManager{result: application.InstallationResult{Complete: true}},
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+		qualityProfiles:   profiles, configurationReconciler: reconciler,
+		runtimeDefaults: runtimecatalog.RuntimeOptions{PUID: 501, PGID: 20},
+	}
+
+	result, err := app.InstallSelectedApplications()
+	if err != nil {
+		t.Fatalf("install with quality preset: %v", err)
+	}
+	if !result.Complete || profiles.calls != 1 || reconciler.setupCalls != 1 ||
+		setup.completeOnboardingCalls != 1 {
+		t.Fatalf("expected quality apply and reconciliation before completion: result=%#v profiles=%#v reconciler=%#v setup=%#v", result, profiles, reconciler, setup)
+	}
+	if profiles.request.Preset != quality.PresetBalanced1080p || profiles.request.PUID != 501 ||
+		profiles.request.PGID != 20 || profiles.request.RootPath != "/Users/test/Media/Corsarr" {
+		t.Fatalf("unexpected quality request %#v", profiles.request)
+	}
+}
+
+func TestGetProductInfoReportsInstalledAndQualityComponentVersions(t *testing.T) {
+	app := &App{}
+
+	info := app.GetProductInfo()
+	if info.CorsarrVersion != buildinfo.Current() ||
+		info.QualityPolicyVersion != quality.PresetCatalogVersion ||
+		info.RecyclarrVersion != quality.RecyclarrVersion ||
+		info.TrashGuidesCommit != quality.TrashGuidesCommit || info.AutomaticUpdates {
+		t.Fatalf("unexpected product information %#v", info)
+	}
+}
+
+func TestInstallSelectedApplicationsDoesNotCompleteOnboardingWhenQualitySyncFails(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"radarr"}, TermsAccepted: true,
+		QualityProfileRequired: true, QualityProfilePreset: string(quality.PresetBalanced1080p),
+	}}
+	profiles := &desktopQualityProfileManager{err: quality.ErrSyncFailed}
+	app := &App{
+		setup:             setup,
+		installation:      &desktopInstallationManager{result: application.InstallationResult{Complete: true}},
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+		qualityProfiles:   profiles,
+	}
+
+	result, err := app.InstallSelectedApplications()
+	if err != nil {
+		t.Fatalf("expected bounded quality failure result, got result=%#v err=%v", result, err)
+	}
+	if result.Complete || len(result.Items) != 1 || !result.Items[0].Failed ||
+		result.Items[0].ApplicationID != "quality-profile" ||
+		result.Items[0].Issue == nil ||
+		result.Items[0].Issue.Code != "quality_profile_sync_failed" ||
+		setup.completeOnboardingCalls != 0 {
+		t.Fatalf("quality failure completed onboarding: result=%#v setup=%#v", result, setup)
+	}
+}
+
+func TestQualitySyncFailureCreatesCopyableInstallationSupportReport(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"radarr"}, TermsAccepted: true,
+		QualityProfileRequired: true, QualityProfilePreset: string(quality.PresetBalanced1080p),
+	}}
+	clipboard := &desktopClipboard{}
+	app := &App{
+		setup:             setup,
+		installation:      &desktopInstallationManager{result: application.InstallationResult{Complete: true}},
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+		qualityProfiles:   &desktopQualityProfileManager{err: quality.ErrSyncFailed},
+		clipboard:         clipboard,
+	}
+
+	if result, err := app.InstallSelectedApplications(); err != nil || result.Complete {
+		t.Fatalf("expected bounded quality failure, got result=%#v err=%v", result, err)
+	}
+	if err := app.CopyLastInstallationSupportReport(); err != nil {
+		t.Fatalf("copy quality support report: %v", err)
+	}
+	if !strings.Contains(clipboard.value, `"applicationId": "quality-profile"`) ||
+		!strings.Contains(clipboard.value, "quality profile synchronization failed") {
+		t.Fatalf("quality failure missing from support report: %s", clipboard.value)
+	}
+}
+
+func TestInstallSelectedApplicationsDoesNotUpgradeLegacyQualityPolicyFromDashboard(t *testing.T) {
+	setup := &desktopSetupManager{status: application.SetupStatus{
+		StoragePath: "/Users/test/Media", Applications: []string{"radarr"}, TermsAccepted: true,
+		OnboardingCompleted: true, QualityProfileRequired: true,
+		QualityProfilePreset: string(quality.PresetUnmanaged),
+	}}
+	profiles := &desktopQualityProfileManager{}
+	app := &App{
+		setup: setup,
+		installation: &desktopInstallationManager{
+			result: application.InstallationResult{Complete: true},
+		},
+		runtimeOnboarding: &desktopRuntimePreparer{result: onboarding.PreparationResult{Ready: true}},
+		qualityProfiles:   profiles,
+	}
+
+	result, err := app.InstallSelectedApplications()
+	if err != nil || !result.Complete {
+		t.Fatalf("install for completed legacy setup: result=%#v err=%v", result, err)
+	}
+	if profiles.calls != 0 || setup.completeOnboardingCalls != 0 {
+		t.Fatalf("dashboard install changed legacy quality ownership: profiles=%#v setup=%#v", profiles, setup)
 	}
 }
 
@@ -986,9 +1109,36 @@ type desktopBackgroundRecovery struct {
 }
 
 type desktopConfigurationReconciler struct {
-	result application.ConfigurationReconciliationResult
-	err    error
-	calls  int
+	result     application.ConfigurationReconciliationResult
+	err        error
+	calls      int
+	setupCalls int
+	setup      application.SetupStatus
+}
+
+func (r *desktopConfigurationReconciler) ReconcileSetup(
+	_ context.Context,
+	setup application.SetupStatus,
+) (application.ConfigurationReconciliationResult, error) {
+	r.setupCalls++
+	r.setup = setup
+	return r.result, r.err
+}
+
+type desktopQualityProfileManager struct {
+	result  quality.Result
+	err     error
+	request quality.Request
+	calls   int
+}
+
+func (m *desktopQualityProfileManager) Apply(
+	_ context.Context,
+	request quality.Request,
+) (quality.Result, error) {
+	m.calls++
+	m.request = request
+	return m.result, m.err
 }
 
 func (r *desktopConfigurationReconciler) Reconcile(
@@ -1061,6 +1211,11 @@ func (f *desktopSetupManager) SaveStorage(path string) (application.SetupStatus,
 func (f *desktopSetupManager) SaveApplications(applicationIDs []string) (application.SetupStatus, error) {
 	f.saveApplicationsCalls++
 	f.status.Applications = applicationIDs
+	return f.status, nil
+}
+
+func (f *desktopSetupManager) SaveQualityProfilePreset(preset string) (application.SetupStatus, error) {
+	f.status.QualityProfilePreset = preset
 	return f.status, nil
 }
 

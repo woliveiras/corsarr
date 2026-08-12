@@ -21,6 +21,11 @@ func NewLayoutPreparer() *LayoutPreparer {
 	return &LayoutPreparer{}
 }
 
+// CorsarrRootPath resolves the managed tree below a user-selected storage base.
+func CorsarrRootPath(basePath string) string {
+	return filepath.Join(basePath, "Corsarr")
+}
+
 // Prepare creates only the Corsarr-owned tree below an existing selected directory.
 func (p *LayoutPreparer) Prepare(basePath string, applicationIDs []string) (LayoutStatus, error) {
 	baseInfo, err := os.Stat(basePath)
@@ -36,7 +41,7 @@ func (p *LayoutPreparer) Prepare(basePath string, applicationIDs []string) (Layo
 		return LayoutStatus{}, err
 	}
 
-	rootPath := filepath.Join(basePath, "Corsarr")
+	rootPath := CorsarrRootPath(basePath)
 	configPath := filepath.Join(rootPath, "config")
 	if err := os.MkdirAll(configPath, 0o700); err != nil {
 		return LayoutStatus{}, fmt.Errorf("create private config directory: %w", err)

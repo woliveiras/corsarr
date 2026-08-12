@@ -100,6 +100,22 @@ func TestSeerrClientInitializesFromJellyfinAndCreatesArrConnections(t *testing.T
 	}
 }
 
+func TestSelectSeerrProfilePrefersCorsarrManagedProfile(t *testing.T) {
+	profiles := []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}{
+		{ID: 1, Name: "Any"},
+		{ID: 9, Name: "Corsarr - Equilibrado 1080p"},
+		{ID: 3, Name: "HD"},
+	}
+
+	id, name, ok := selectSeerrProfile(profiles)
+	if !ok || id != 9 || name != "Corsarr - Equilibrado 1080p" {
+		t.Fatalf("expected Corsarr profile, got id=%d name=%q ok=%t", id, name, ok)
+	}
+}
+
 func assertSeerrSession(t *testing.T, request *http.Request) {
 	t.Helper()
 	cookie, err := request.Cookie("connect.sid")

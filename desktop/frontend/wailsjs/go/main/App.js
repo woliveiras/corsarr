@@ -66,6 +66,10 @@ export function GetJellyfinNetworkStatus() {
   return window['go']['main']['App']['GetJellyfinNetworkStatus']();
 }
 
+export function GetProductInfo() {
+  return window['go']['main']['App']['GetProductInfo']();
+}
+
 export function GetQBittorrentAccessStatus() {
   return window['go']['main']['App']['GetQBittorrentAccessStatus']();
 }
@@ -84,6 +88,10 @@ export function ListApplications() {
 
 export function ListLegalNotices() {
   return window['go']['main']['App']['ListLegalNotices']();
+}
+
+export function ListQualityProfilePresets() {
+  return window['go']['main']['App']['ListQualityProfilePresets']();
 }
 
 export function OpenApplication(arg1) {
@@ -116,6 +124,10 @@ export function RestartApplication(arg1) {
 
 export function SaveApplicationSelection(arg1) {
   return window['go']['main']['App']['SaveApplicationSelection'](arg1);
+}
+
+export function SaveQualityProfilePreset(arg1) {
+  return window['go']['main']['App']['SaveQualityProfilePreset'](arg1);
 }
 
 export function SelectRecommendedApplications() {

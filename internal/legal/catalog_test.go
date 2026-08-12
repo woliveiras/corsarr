@@ -5,6 +5,7 @@ import (
 
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/i18n"
+	"github.com/woliveiras/corsarr/internal/quality"
 	"github.com/woliveiras/corsarr/internal/services"
 )
 
@@ -94,5 +95,15 @@ func TestCatalogResolvesOnlyKnownHTTPSLinks(t *testing.T) {
 	}
 	if _, err := catalog.ResolveLink("unknown", LinkOfficial); err == nil {
 		t.Fatal("expected unknown component to be rejected")
+	}
+	for _, componentID := range []string{"runtime-recyclarr", "guide-trash"} {
+		if _, err := catalog.ResolveLink(componentID, LinkLicense); err != nil {
+			t.Fatalf("expected legal notice for %s: %v", componentID, err)
+		}
+	}
+	for _, notice := range catalog.ListNotices() {
+		if notice.ID == "runtime-recyclarr" && notice.ApprovedImage != quality.RecyclarrImage {
+			t.Fatalf("Recyclarr legal notice does not expose the approved digest: %#v", notice)
+		}
 	}
 }

@@ -31,6 +31,9 @@ architecture, and work that still has empirical or platform gates.
   accepted desktop framework.
 - [ADR 0002: Runtime strategy](decisions/0002-docker-first-runtime-with-podman-gate.md)
   records the Docker-first MVP and the evidence gate for promoting Podman.
+- [ADR 0003: Versioned quality profiles](decisions/0003-manage-desktop-quality-profiles-with-recyclarr.md)
+  records the Desktop-only Recyclarr preset boundary and the separate advanced
+  Profilarr direction.
 
 The Desktop is a Wails v2 application in the existing Go module. It persists a
 reviewed storage folder and application selection, validates the first Mac,
@@ -58,6 +61,13 @@ administrator and libraries, and Seerr's Jellyfin/Radarr/Sonarr setup. Updates
 create a private configuration backup, replace the image, verify readiness, and
 restore the previous container image on failure without claiming to reverse a
 database migration.
+
+When Radarr or Sonarr is selected, Desktop also presents a conditional quality
+step. Four versioned Corsarr presets are synchronized by an ephemeral,
+digest-pinned Recyclarr using a commit-pinned TRaSH Guides source; API keys are
+injected only into the child process environment. An unmanaged choice is
+available, and recurring synchronization remains off by default. The CLI does
+not perform this post-install setup.
 
 The Desktop also supports explicit Jellyfin LAN access and local-address
 discovery, optional macOS login recovery for existing resources, redacted

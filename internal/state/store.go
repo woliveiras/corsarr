@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const CurrentSchemaVersion = 5
+const CurrentSchemaVersion = 6
 
 type DesktopState struct {
 	SchemaVersion            int      `json:"schemaVersion"`
@@ -20,6 +20,8 @@ type DesktopState struct {
 	AllowJellyfinLAN         bool     `json:"allowJellyfinLan,omitempty"`
 	OnboardingCompleted      bool     `json:"onboardingCompleted,omitempty"`
 	OnboardingStep           string   `json:"onboardingStep,omitempty"`
+	QualityProfilePreset     string   `json:"qualityProfilePreset,omitempty"`
+	QualityProfileVersion    string   `json:"qualityProfileVersion,omitempty"`
 }
 
 type Store interface {

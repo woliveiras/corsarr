@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/woliveiras/corsarr/internal/autostart"
+	"github.com/woliveiras/corsarr/internal/quality"
 	statefile "github.com/woliveiras/corsarr/internal/state"
 )
 
@@ -25,6 +26,9 @@ type SetupStatus struct {
 	JellyfinLANEnabled           bool     `json:"jellyfinLanEnabled"`
 	OnboardingCompleted          bool     `json:"onboardingCompleted"`
 	OnboardingStep               string   `json:"onboardingStep"`
+	QualityProfileRequired       bool     `json:"qualityProfileRequired"`
+	QualityProfilePreset         string   `json:"qualityProfilePreset,omitempty"`
+	QualityProfileVersion        string   `json:"qualityProfileVersion,omitempty"`
 }
 
 const CurrentTermsVersion = "2026-08-10.2"
@@ -35,6 +39,7 @@ const (
 	OnboardingStepEnvironment  = "environment"
 	OnboardingStepStorage      = "storage"
 	OnboardingStepApplications = "applications"
+	OnboardingStepQuality      = "quality"
 	OnboardingStepComplete     = "complete"
 )
 
@@ -89,7 +94,11 @@ func (s *SetupService) CompleteOnboarding() (SetupStatus, error) {
 	desktopState.Applications = s.knownApplications(desktopState.Applications)
 	termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
 		desktopState.RuntimeConsentAcceptedAt != ""
-	if desktopState.StoragePath == "" || len(desktopState.Applications) == 0 || !termsAccepted {
+	qualityRequired := containsARRApplication(desktopState.Applications)
+	preset := normalizedQualityPreset(desktopState)
+	if desktopState.StoragePath == "" || len(desktopState.Applications) == 0 || !termsAccepted ||
+		(qualityRequired && (!quality.ValidPreset(preset) ||
+			desktopState.QualityProfileVersion != quality.PresetCatalogVersion)) {
 		return SetupStatus{}, fmt.Errorf("onboarding setup is incomplete")
 	}
 	desktopState.OnboardingCompleted = true
@@ -129,7 +138,13 @@ func (s *SetupService) AdvanceOnboarding() (SetupStatus, error) {
 			return SetupStatus{}, fmt.Errorf("storage must be selected before continuing onboarding")
 		}
 		desktopState.OnboardingStep = OnboardingStepApplications
-	case OnboardingStepApplications, OnboardingStepComplete:
+	case OnboardingStepApplications:
+		if containsARRApplication(desktopState.Applications) {
+			desktopState.OnboardingStep = OnboardingStepQuality
+		} else {
+			return s.status(desktopState)
+		}
+	case OnboardingStepQuality, OnboardingStepComplete:
 		return s.status(desktopState)
 	default:
 		return SetupStatus{}, fmt.Errorf("unsupported onboarding step: %s", current)
@@ -184,11 +199,53 @@ func (s *SetupService) SaveApplications(applicationIDs []string) (SetupStatus, e
 		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
 	}
 	desktopState.Applications = applications
+	if containsARRApplication(applications) {
+		if desktopState.OnboardingCompleted {
+			if !quality.ValidPreset(desktopState.QualityProfilePreset) {
+				desktopState.QualityProfilePreset = string(quality.PresetUnmanaged)
+				desktopState.QualityProfileVersion = quality.PresetCatalogVersion
+			}
+		} else {
+			if !quality.ValidPreset(desktopState.QualityProfilePreset) {
+				desktopState.QualityProfilePreset = string(quality.PresetBalanced1080p)
+			}
+			desktopState.QualityProfileVersion = quality.PresetCatalogVersion
+		}
+	} else {
+		desktopState.QualityProfilePreset = ""
+		desktopState.QualityProfileVersion = ""
+		if desktopState.OnboardingStep == OnboardingStepQuality {
+			desktopState.OnboardingStep = OnboardingStepApplications
+		}
+	}
 	if !containsApplication(applications, "jellyfin") {
 		desktopState.AllowJellyfinLAN = false
 	}
 	if err := s.store.Save(desktopState); err != nil {
 		return SetupStatus{}, fmt.Errorf("save desktop applications: %w", err)
+	}
+	return s.status(desktopState)
+}
+
+func (s *SetupService) SaveQualityProfilePreset(preset string) (SetupStatus, error) {
+	if !quality.ValidPreset(preset) {
+		return SetupStatus{}, fmt.Errorf("quality profile preset is not supported: %s", preset)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return SetupStatus{}, fmt.Errorf("load desktop setup: %w", err)
+	}
+	desktopState.Applications = s.knownApplications(desktopState.Applications)
+	if !containsARRApplication(desktopState.Applications) {
+		return SetupStatus{}, fmt.Errorf("Radarr or Sonarr must be selected before choosing a quality profile")
+	}
+	desktopState.QualityProfilePreset = preset
+	desktopState.QualityProfileVersion = quality.PresetCatalogVersion
+	if err := s.store.Save(desktopState); err != nil {
+		return SetupStatus{}, fmt.Errorf("save quality profile preset: %w", err)
 	}
 	return s.status(desktopState)
 }
@@ -289,11 +346,15 @@ func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Stat
 	canPrepare := desktopState.StoragePath != "" && len(desktopState.Applications) > 0
 	termsAccepted := desktopState.RuntimeConsentVersion == CurrentTermsVersion &&
 		desktopState.RuntimeConsentAcceptedAt != ""
+	qualityRequired := containsARRApplication(desktopState.Applications)
+	qualityPreset := normalizedQualityPreset(desktopState)
+	qualityReady := desktopState.OnboardingCompleted || !qualityRequired || (quality.ValidPreset(qualityPreset) &&
+		desktopState.QualityProfileVersion == quality.PresetCatalogVersion)
 	return SetupStatus{
 		StoragePath:                  desktopState.StoragePath,
 		Applications:                 desktopState.Applications,
 		CanPrepare:                   canPrepare,
-		CanInstall:                   canPrepare && termsAccepted,
+		CanInstall:                   canPrepare && termsAccepted && qualityReady,
 		TermsVersion:                 CurrentTermsVersion,
 		TermsAccepted:                termsAccepted,
 		StartAtLogin:                 loginStatus.Enabled || loginStatus.RequiresApproval,
@@ -302,7 +363,27 @@ func setupStatus(desktopState statefile.DesktopState, loginStatus autostart.Stat
 		JellyfinLANEnabled:           desktopState.AllowJellyfinLAN,
 		OnboardingCompleted:          desktopState.OnboardingCompleted,
 		OnboardingStep:               normalizedOnboardingStep(desktopState),
+		QualityProfileRequired:       qualityRequired,
+		QualityProfilePreset:         qualityPreset,
+		QualityProfileVersion:        desktopState.QualityProfileVersion,
 	}
+}
+
+func normalizedQualityPreset(desktopState statefile.DesktopState) string {
+	if !containsARRApplication(desktopState.Applications) {
+		return ""
+	}
+	if quality.ValidPreset(desktopState.QualityProfilePreset) {
+		return desktopState.QualityProfilePreset
+	}
+	if desktopState.OnboardingCompleted {
+		return string(quality.PresetUnmanaged)
+	}
+	return string(quality.PresetBalanced1080p)
+}
+
+func containsARRApplication(applications []string) bool {
+	return containsApplication(applications, "radarr") || containsApplication(applications, "sonarr")
 }
 
 func normalizedOnboardingStep(desktopState statefile.DesktopState) string {

@@ -209,6 +209,11 @@ func selectSeerrProfile(profiles []struct {
 	}
 	sort.Slice(profiles, func(i, j int) bool { return profiles[i].ID < profiles[j].ID })
 	for _, profile := range profiles {
+		if strings.HasPrefix(profile.Name, "Corsarr - ") {
+			return profile.ID, profile.Name, true
+		}
+	}
+	for _, profile := range profiles {
 		if strings.EqualFold(profile.Name, "Any") {
 			return profile.ID, profile.Name, true
 		}

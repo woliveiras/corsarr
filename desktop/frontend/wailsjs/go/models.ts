@@ -254,6 +254,9 @@ export namespace application {
 	    jellyfinLanEnabled: boolean;
 	    onboardingCompleted: boolean;
 	    onboardingStep: string;
+	    qualityProfileRequired: boolean;
+	    qualityProfilePreset?: string;
+	    qualityProfileVersion?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new SetupStatus(source);
@@ -273,6 +276,9 @@ export namespace application {
 	        this.jellyfinLanEnabled = source["jellyfinLanEnabled"];
 	        this.onboardingCompleted = source["onboardingCompleted"];
 	        this.onboardingStep = source["onboardingStep"];
+	        this.qualityProfileRequired = source["qualityProfileRequired"];
+	        this.qualityProfilePreset = source["qualityProfilePreset"];
+	        this.qualityProfileVersion = source["qualityProfileVersion"];
 	    }
 	}
 
@@ -400,6 +406,26 @@ export namespace main {
 	        this.urls = source["urls"];
 	    }
 	}
+	export class ProductInfo {
+	    corsarrVersion: string;
+	    qualityPolicyVersion: string;
+	    recyclarrVersion: string;
+	    trashGuidesCommit: string;
+	    automaticUpdates: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ProductInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.corsarrVersion = source["corsarrVersion"];
+	        this.qualityPolicyVersion = source["qualityPolicyVersion"];
+	        this.recyclarrVersion = source["recyclarrVersion"];
+	        this.trashGuidesCommit = source["trashGuidesCommit"];
+	        this.automaticUpdates = source["automaticUpdates"];
+	    }
+	}
 
 }
 
@@ -421,6 +447,29 @@ export namespace onboarding {
 	        this.installed = source["installed"];
 	        this.started = source["started"];
 	        this.version = source["version"];
+	    }
+	}
+
+}
+
+export namespace quality {
+
+	export class Preset {
+	    id: string;
+	    name: string;
+	    description: string;
+	    summary: string;
+
+	    static createFrom(source: any = {}) {
+	        return new Preset(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.summary = source["summary"];
 	    }
 	}
 
