@@ -288,7 +288,7 @@ func (s *SetupService) SaveQualityProfilePreset(preset string) (SetupStatus, err
 	}
 	desktopState.Applications = s.knownApplications(desktopState.Applications)
 	if !containsARRApplication(desktopState.Applications) {
-		return SetupStatus{}, fmt.Errorf("Radarr or Sonarr must be selected before choosing a quality profile")
+		return SetupStatus{}, fmt.Errorf("radarr or sonarr must be selected before choosing a quality profile")
 	}
 	desktopState.QualityProfilePreset = preset
 	desktopState.QualityProfileVersion = quality.PresetCatalogVersion

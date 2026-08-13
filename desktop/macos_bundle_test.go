@@ -48,10 +48,13 @@ func openImage(path string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-	decoded, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
+	decoded, _, decodeErr := image.Decode(file)
+	closeErr := file.Close()
+	if decodeErr != nil {
+		return nil, decodeErr
+	}
+	if closeErr != nil {
+		return nil, closeErr
 	}
 	return decoded, nil
 }

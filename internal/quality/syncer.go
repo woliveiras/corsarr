@@ -158,7 +158,7 @@ func prepareConfigDirectory(configDirectory string) error {
 		return fmt.Errorf("inspect Recyclarr configuration directory: %w", err)
 	}
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("Recyclarr configuration path is not a regular directory")
+		return fmt.Errorf("recyclarr configuration path is not a regular directory")
 	}
 	if err := os.Chmod(configDirectory, 0o700); err != nil {
 		return fmt.Errorf("secure Recyclarr configuration directory: %w", err)
