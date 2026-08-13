@@ -252,7 +252,7 @@ function localizeOnboardingShell(): void {
   setText('#onboarding-environment .eyebrow', 'onboarding.environmentEyebrow');
   setText('#onboarding-environment h1', 'onboarding.environmentTitle');
   setText(
-    '#onboarding-environment .onboarding-step-copy > p:first-of-type',
+    '#onboarding-environment .onboarding-step-copy > p:not(.eyebrow)',
     'onboarding.environmentDescription',
   );
   setText('#onboarding-environment .onboarding-diagnostic small', 'onboarding.diagnostic');
@@ -265,7 +265,7 @@ function localizeOnboardingShell(): void {
   setText('#onboarding-storage .eyebrow', 'onboarding.storageEyebrow');
   setText('#onboarding-storage h1', 'onboarding.storageTitle');
   setText(
-    '#onboarding-storage .onboarding-step-copy > p:first-of-type',
+    '#onboarding-storage .onboarding-step-copy > p:not(.eyebrow)',
     'onboarding.storageDescription',
   );
   setText('#onboarding-storage-title', 'onboarding.noFolder');
@@ -298,7 +298,7 @@ function localizeOnboardingShell(): void {
   setText('#onboarding-quality .eyebrow', 'onboarding.qualityEyebrow');
   setText('#onboarding-quality h1', 'onboarding.qualityTitle');
   setText(
-    '#onboarding-quality .onboarding-step-copy > p:first-of-type',
+    '#onboarding-quality .onboarding-step-copy > p:not(.eyebrow)',
     'onboarding.qualityDescription',
   );
   document

@@ -96,9 +96,10 @@ body {
 }
 
 .onboarding-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
+  column-gap: 24px;
   min-height: 82px;
   padding: 17px 28px;
   border-bottom: 1px solid rgba(132, 201, 193, 0.09);
@@ -107,6 +108,7 @@ body {
 .onboarding-brand {
   display: flex;
   align-items: center;
+  justify-self: start;
   gap: 12px;
 }
 
@@ -131,8 +133,11 @@ body {
 
 .onboarding-progress {
   display: grid;
+  grid-column: 2;
+  grid-row: 1;
   grid-template-columns: repeat(5, 30px) auto;
   align-items: center;
+  justify-self: center;
   gap: 7px;
 }
 
@@ -151,6 +156,7 @@ body {
   margin-left: 7px;
   color: #718b8c;
   font-size: 9px;
+  white-space: nowrap;
 }
 
 .language-control {
@@ -161,6 +167,12 @@ body {
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+}
+
+.onboarding-header .language-control {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .language-control select {
