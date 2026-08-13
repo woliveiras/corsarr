@@ -43,7 +43,7 @@ bundled with Corsarr and are credited separately in the Desktop licenses screen.
 | `github.com/wailsapp/go-webview2` | `v1.0.22` |
 | `github.com/wailsapp/wails/v2` | `v2.13.0` |
 | `github.com/xo/terminfo` | `v0.0.0-20220910002029-abceb7e1c41e` |
-| `golang.org/x/sys` | `v0.44.0` |
+| `golang.org/x/sys` | `v0.45.0` |
 | `golang.org/x/text` | `v0.37.0` |
 | `gopkg.in/yaml.v3` | `v3.0.1` |
 
@@ -1014,7 +1014,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## golang.org/x/sys v0.44.0
+## golang.org/x/sys v0.45.0
 
 Source file: `LICENSE`
 
