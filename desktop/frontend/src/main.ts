@@ -50,6 +50,7 @@ import {
   toggleApplicationSelection,
 } from './application-selection';
 import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
+import { createEnvironmentRecoveryPoller } from './environment-recovery';
 import {
   currentLocale,
   detectLocale,
@@ -2027,8 +2028,13 @@ async function loadEnvironment(): Promise<void> {
     if (onboardingEnvironmentNext) onboardingEnvironmentNext.disabled = true;
   } finally {
     refreshEnvironmentButton?.removeAttribute('disabled');
+    environmentRecoveryPoller.observe(currentRuntimeState);
   }
 }
+
+const environmentRecoveryPoller = createEnvironmentRecoveryPoller({
+  recheck: loadEnvironment,
+});
 
 refreshEnvironmentButton?.addEventListener('click', () => void loadEnvironment());
 
