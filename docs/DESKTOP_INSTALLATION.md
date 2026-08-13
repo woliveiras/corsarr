@@ -1,6 +1,6 @@
 # Install and maintain Corsarr Desktop
 
-Corsarr Desktop `1.2.1` supports macOS 14 or newer on Apple Silicon and Intel.
+Corsarr Desktop `1.2.2` supports macOS 14 or newer on Apple Silicon and Intel.
 The application manages only resources labeled as owned by Corsarr and keeps
 application configuration separate from downloaded media.
 

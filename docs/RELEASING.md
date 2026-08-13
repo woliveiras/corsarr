@@ -2,7 +2,7 @@
 
 Corsarr uses one version for the CLI and Desktop. `VERSION`, the Desktop bundle
 metadata, the private frontend package, CLI `--version`, and release diagnostics
-must agree. The next prepared version is `1.2.1`.
+must agree. The next prepared version is `1.2.2`.
 
 ## Publication boundary
 

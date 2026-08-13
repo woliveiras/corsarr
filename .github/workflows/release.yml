@@ -148,7 +148,7 @@ jobs:
 
       - name: Set bundle version
         env:
-          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.1' }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.2' }}
           BUILD_VERSION: ${{ github.run_number }}
         run: |
           RELEASE_VERSION="${RELEASE_VERSION#v}"
@@ -158,7 +158,7 @@ jobs:
       - name: Build universal desktop bundle
         working-directory: desktop
         env:
-          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.1' }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.2' }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
           "$(go env GOPATH)/bin/wails" build \
@@ -247,7 +247,7 @@ jobs:
         shell: pwsh
         working-directory: desktop
         env:
-          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.1' }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.2' }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
           $wails = Join-Path (go env GOPATH) "bin\wails.exe"
@@ -363,7 +363,7 @@ jobs:
       - name: Build Linux desktop application
         working-directory: desktop
         env:
-          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.1' }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && github.ref_name || 'v1.2.2' }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
           "$(go env GOPATH)/bin/wails" build \
