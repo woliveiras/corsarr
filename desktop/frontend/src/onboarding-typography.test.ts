@@ -17,7 +17,6 @@ test('onboarding uses viewport-bounded typography for large displays', () => {
     '.onboarding .onboarding-message',
     '.onboarding .installation-progress-item strong',
     '.onboarding .application-info p',
-    '.onboarding .metadata',
   ]) {
     assert.ok(stylesheet.includes(selector), `expected responsive onboarding rule ${selector}`);
   }

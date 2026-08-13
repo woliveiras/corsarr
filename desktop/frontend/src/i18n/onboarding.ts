@@ -120,9 +120,6 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Access required',
     'onboarding.storageAccessPreserved':
       'The folder remains saved, but Docker must be able to access it.',
-    'onboarding.ownContainer': 'Dedicated container',
-    'onboarding.autoUnavailable': 'Automatic setup not yet available',
-    'onboarding.recommends': 'Recommends {{names}} to automate setup',
     'onboarding.integrationWarning':
       'Some Corsarr automation is disabled: {{consequences}} will require manual setup. Your choice will be respected.',
     'onboarding.capability.jellyfin': 'Jellyfin libraries',
@@ -276,9 +273,6 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Acceso necesario',
     'onboarding.storageAccessPreserved':
       'La carpeta sigue guardada, pero Docker debe poder acceder a ella.',
-    'onboarding.ownContainer': 'Contenedor propio',
-    'onboarding.autoUnavailable': 'Configuración automática aún no disponible',
-    'onboarding.recommends': 'Recomienda {{names}} para automatizar la configuración',
     'onboarding.integrationWarning':
       'Parte de la automatización de Corsarr está desactivada: {{consequences}} requerirán configuración manual. Se respetará tu elección.',
     'onboarding.capability.jellyfin': 'bibliotecas de Jellyfin',
@@ -433,9 +427,6 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Acesso necessário',
     'onboarding.storageAccessPreserved':
       'A pasta continua preservada, mas o Docker precisa conseguir acessá-la.',
-    'onboarding.ownContainer': 'Container próprio',
-    'onboarding.autoUnavailable': 'Configuração automática ainda indisponível',
-    'onboarding.recommends': 'Recomenda {{names}} para automatizar a configuração',
     'onboarding.integrationWarning':
       'Parte da automação do Corsarr está desativada: {{consequences}} precisarão de configuração manual. Sua escolha será respeitada.',
     'onboarding.capability.jellyfin': 'bibliotecas do Jellyfin',
@@ -593,9 +584,6 @@ export const onboardingMessages = {
     'onboarding.accessRequired': 'Accesso necessario',
     'onboarding.storageAccessPreserved':
       'La cartella resta salvata, ma Docker deve potervi accedere.',
-    'onboarding.ownContainer': 'Container dedicato',
-    'onboarding.autoUnavailable': 'Configurazione automatica non ancora disponibile',
-    'onboarding.recommends': 'Consiglia {{names}} per automatizzare la configurazione',
     'onboarding.integrationWarning':
       'Parte dell’automazione di Corsarr è disattivata: {{consequences}} richiederanno configurazione manuale. La tua scelta sarà rispettata.',
     'onboarding.capability.jellyfin': 'librerie Jellyfin',

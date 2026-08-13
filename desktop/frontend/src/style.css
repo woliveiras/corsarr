@@ -1668,14 +1668,6 @@ nav {
   text-overflow: clip;
   white-space: normal;
 }
-.metadata {
-  margin-top: 7px;
-  color: #4d9f98;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
 .application-status-details {
   margin-top: 7px;
   color: #c48e85;
@@ -2069,7 +2061,6 @@ nav {
 .onboarding .installation-progress-item small,
 .onboarding .installation-completion small,
 .onboarding .installation-progress-panel > header,
-.onboarding .metadata,
 .onboarding .onboarding-license-button,
 .onboarding .operation-details code {
   font-size: var(--onboarding-font-micro);

@@ -1460,24 +1460,11 @@ function createOnboardingApplicationCard(target: Application): HTMLElement {
   title.textContent = target.name;
   const description = document.createElement('p');
   description.textContent = target.description;
-  const metadata = document.createElement('div');
-  metadata.className = 'metadata';
-  const notice = legalNotices.find((candidate) => candidate.id === target.id);
-  metadata.textContent = `${t('onboarding.ownContainer')}${notice?.license ? ` · ${notice.license}` : ''}`;
-  if (!target.automatedSetup) {
-    metadata.textContent += ` · ${t('onboarding.autoUnavailable')}`;
-  }
-  const dependencies = target.dependencies ?? [];
-  if (dependencies.length > 0) {
-    const dependencyNames = dependencies.map(
-      (id) => availableApplications.find((candidate) => candidate.id === id)?.name ?? id,
-    );
-    metadata.textContent += ` · ${t('onboarding.recommends', { names: dependencyNames.join(', ') })}`;
-  }
-  information.append(title, description, metadata);
+  information.append(title, description);
 
   const actions = document.createElement('div');
   actions.className = 'onboarding-application-actions';
+  const notice = legalNotices.find((candidate) => candidate.id === target.id);
   if (notice?.links.some((link) => link.kind === 'license')) {
     const licenseButton = document.createElement('button');
     licenseButton.type = 'button';
