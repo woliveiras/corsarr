@@ -123,7 +123,7 @@ func (s *DockerService) waitForReady(
 func (s *DockerService) start(ctx context.Context) error {
 	dockerPath, pathErr := s.runner.LookPath("docker")
 	if pathErr == nil {
-		if _, err := s.runner.Run(ctx, dockerPath, "desktop", "start"); err == nil {
+		if _, err := s.runner.Run(ctx, dockerPath, "desktop", "start", "--detach"); err == nil {
 			return nil
 		}
 	}

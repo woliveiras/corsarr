@@ -83,6 +83,62 @@ func TestDockerManagerClassifiesDeniedBindMount(t *testing.T) {
 	}
 }
 
+func TestDockerManagerClassifiesMissingDockerDesktopBindMountSource(t *testing.T) {
+	missingSourceError := errors.New(
+		`Error response from daemon: invalid mount config for type "bind": ` +
+			`bind source path does not exist: /host_mnt/Users/test/Media/Corsarr/config/qbittorrent`,
+	)
+	runner := &recordingCommandRunner{
+		path: "/usr/local/bin/docker",
+		results: []managerCommandResult{
+			{err: missingSourceError},
+			{err: missingSourceError},
+		},
+	}
+	manager := NewDockerManager(runner, time.Second)
+	manager.bindMountRetryDelay = 0
+
+	err := manager.Create(context.Background(), ContainerSpec{
+		ApplicationID: "qbittorrent",
+		Image:         "lscr.io/linuxserver/qbittorrent@" + testImageDigest,
+		Mounts: []BindMount{{
+			HostPath: "/Users/test/Media/Corsarr/config/qbittorrent", ContainerPath: "/config",
+		}},
+	})
+	if !errors.Is(err, ErrBindMountAccessDenied) {
+		t.Fatalf("expected inaccessible Docker Desktop bind mount classification, got %v", err)
+	}
+	if len(runner.calls) != 2 {
+		t.Fatalf("expected exactly one bounded retry before classification, got %d calls", len(runner.calls))
+	}
+}
+
+func TestDockerManagerRetriesMissingDockerDesktopBindMountSource(t *testing.T) {
+	runner := &recordingCommandRunner{
+		path: "/usr/local/bin/docker",
+		results: []managerCommandResult{{err: errors.New(
+			`Error response from daemon: invalid mount config for type "bind": ` +
+				`bind source path does not exist: /host_mnt/Users/test/Media/Corsarr/config/qbittorrent`,
+		)}},
+	}
+	manager := NewDockerManager(runner, time.Second)
+	manager.bindMountRetryDelay = 0
+
+	err := manager.Create(context.Background(), ContainerSpec{
+		ApplicationID: "qbittorrent",
+		Image:         "lscr.io/linuxserver/qbittorrent@" + testImageDigest,
+		Mounts: []BindMount{{
+			HostPath: "/Users/test/Media/Corsarr/config/qbittorrent", ContainerPath: "/config",
+		}},
+	})
+	if err != nil {
+		t.Fatalf("expected Docker Desktop bind mount retry to recover, got %v", err)
+	}
+	if len(runner.calls) != 2 {
+		t.Fatalf("expected one bounded Docker create retry, got %d calls", len(runner.calls))
+	}
+}
+
 func TestDockerManagerRejectsInvalidSpecBeforeRuntimeAccess(t *testing.T) {
 	runner := &recordingCommandRunner{path: "/usr/local/bin/docker"}
 	manager := NewDockerManager(runner, time.Second)

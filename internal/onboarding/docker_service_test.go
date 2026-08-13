@@ -30,7 +30,7 @@ func TestDockerServiceInstallsStartsAndWaitsForReady(t *testing.T) {
 	if !result.Ready || !result.Installed || !result.Started || installer.calls != 1 {
 		t.Fatalf("unexpected preparation result %#v, installer calls %d", result, installer.calls)
 	}
-	if !reflect.DeepEqual(runner.operations, []string{"/usr/local/bin/docker desktop start"}) {
+	if !reflect.DeepEqual(runner.operations, []string{"/usr/local/bin/docker desktop start --detach"}) {
 		t.Fatalf("unexpected start operations %v", runner.operations)
 	}
 }
@@ -69,6 +69,9 @@ func TestDockerServiceRecoveryStartsExistingRuntimeWithoutInstalling(t *testing.
 	}
 	if installer.calls != 0 {
 		t.Fatalf("recovery must not invoke installer, got %d calls", installer.calls)
+	}
+	if !reflect.DeepEqual(runner.operations, []string{"/usr/local/bin/docker desktop start --detach"}) {
+		t.Fatalf("unexpected recovery start operations %v", runner.operations)
 	}
 }
 

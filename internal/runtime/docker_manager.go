@@ -14,14 +14,15 @@ import (
 )
 
 const (
-	CorsarrNetworkName       = "corsarr"
-	managedLabelName         = "io.corsarr.managed"
-	applicationLabelName     = "io.corsarr.application"
-	contractLabelName        = "io.corsarr.contract-fingerprint"
-	managedLabelValue        = "true"
-	containerNamePrefix      = "corsarr-"
-	containerOwnershipFormat = `{{index .Config.Labels "io.corsarr.managed"}}`
-	networkOwnershipFormat   = `{{index .Labels "io.corsarr.managed"}}`
+	CorsarrNetworkName               = "corsarr"
+	dockerDesktopBindMountRetryDelay = 250 * time.Millisecond
+	managedLabelName                 = "io.corsarr.managed"
+	applicationLabelName             = "io.corsarr.application"
+	contractLabelName                = "io.corsarr.contract-fingerprint"
+	managedLabelValue                = "true"
+	containerNamePrefix              = "corsarr-"
+	containerOwnershipFormat         = `{{index .Config.Labels "io.corsarr.managed"}}`
+	networkOwnershipFormat           = `{{index .Labels "io.corsarr.managed"}}`
 )
 
 var (
@@ -62,12 +63,17 @@ type ContainerStatus struct {
 }
 
 type DockerManager struct {
-	runner  CommandRunner
-	timeout time.Duration
+	runner              CommandRunner
+	timeout             time.Duration
+	bindMountRetryDelay time.Duration
 }
 
 func NewDockerManager(runner CommandRunner, timeout time.Duration) *DockerManager {
-	return &DockerManager{runner: runner, timeout: timeout}
+	return &DockerManager{
+		runner:              runner,
+		timeout:             timeout,
+		bindMountRetryDelay: dockerDesktopBindMountRetryDelay,
+	}
 }
 
 func (m *DockerManager) EnsureNetwork(ctx context.Context) error {
@@ -176,13 +182,41 @@ func (m *DockerManager) Create(ctx context.Context, spec ContainerSpec) error {
 	}
 	arguments = append(arguments, spec.Image)
 
-	if _, err := m.run(ctx, arguments...); err != nil {
+	_, err = m.run(ctx, arguments...)
+	if err != nil && indicatesDockerDesktopBindMountPropagationDelay(err.Error()) {
+		if waitErr := waitForBindMountRetry(ctx, m.bindMountRetryDelay); waitErr != nil {
+			return fmt.Errorf("wait for Docker Desktop storage visibility: %w", waitErr)
+		}
+		_, err = m.run(ctx, arguments...)
+	}
+	if err != nil {
 		if indicatesBindMountAccessDenied(err.Error()) {
 			err = errors.Join(ErrBindMountAccessDenied, err)
 		}
 		return fmt.Errorf("create container for %s: %w", spec.ApplicationID, err)
 	}
 	return nil
+}
+
+func indicatesDockerDesktopBindMountPropagationDelay(detail string) bool {
+	normalized := strings.ToLower(detail)
+	return strings.Contains(normalized, "mount config") &&
+		strings.Contains(normalized, "bind source path does not exist") &&
+		strings.Contains(normalized, "/host_mnt/")
+}
+
+func waitForBindMountRetry(ctx context.Context, delay time.Duration) error {
+	if delay <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func indicatesBindMountAccessDenied(detail string) bool {
@@ -193,7 +227,8 @@ func indicatesBindMountAccessDenied(detail string) bool {
 	}
 	return strings.Contains(normalized, "mount config") &&
 		(strings.Contains(normalized, "operation not permitted") ||
-			strings.Contains(normalized, "permission denied"))
+			strings.Contains(normalized, "permission denied") ||
+			strings.Contains(normalized, "bind source path does not exist"))
 }
 
 func (m *DockerManager) Inspect(
