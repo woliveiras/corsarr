@@ -17,11 +17,17 @@ func TestJellyfinClientCompletesStartupAndCreatesApprovedLibraries(t *testing.T)
 	userConfigured := false
 	wizardComplete := false
 	setupAPIReady := false
+	publicStatusChecks := 0
 	setupReadinessChecks := 0
 	createdLibraries := make([]string, 0, 3)
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.Method + " " + request.URL.Path {
 		case "GET /System/Info/Public":
+			publicStatusChecks++
+			if publicStatusChecks == 1 {
+				response.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
 			_ = json.NewEncoder(response).Encode(map[string]any{"StartupWizardCompleted": wizardComplete})
 		case "GET /Startup/User":
 			setupReadinessChecks++
@@ -89,6 +95,9 @@ func TestJellyfinClientCompletesStartupAndCreatesApprovedLibraries(t *testing.T)
 	}
 	if setupReadinessChecks != 2 {
 		t.Fatalf("expected Jellyfin setup API retry, got %d checks", setupReadinessChecks)
+	}
+	if publicStatusChecks != 3 {
+		t.Fatalf("expected Jellyfin public status retry and completion check, got %d checks", publicStatusChecks)
 	}
 	sort.Strings(createdLibraries)
 	want := []string{

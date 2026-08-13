@@ -165,20 +165,44 @@ func (c *JellyfinClient) waitForSetupAPI(ctx context.Context) error {
 }
 
 func (c *JellyfinClient) startupCompleted(ctx context.Context) (bool, error) {
-	response, contents, err := c.do(ctx, http.MethodGet, "/System/Info/Public", "", nil)
-	if err != nil {
-		return false, fmt.Errorf("get Jellyfin public status: %w", err)
+	waitContext, cancel := context.WithTimeout(ctx, jellyfinSetupAPITimeout)
+	defer cancel()
+
+	for {
+		response, contents, err := c.do(
+			waitContext,
+			http.MethodGet,
+			"/System/Info/Public",
+			"",
+			nil,
+		)
+		if err != nil {
+			return false, fmt.Errorf("get Jellyfin public status: %w", err)
+		}
+		if response.StatusCode == http.StatusOK {
+			var status struct {
+				StartupWizardCompleted bool `json:"StartupWizardCompleted"`
+			}
+			if err := json.Unmarshal(contents, &status); err != nil {
+				return false, fmt.Errorf("decode Jellyfin public status: %w", err)
+			}
+			return status.StartupWizardCompleted, nil
+		}
+		if response.StatusCode != http.StatusServiceUnavailable {
+			return false, fmt.Errorf(
+				"get Jellyfin public status: unexpected HTTP status %d",
+				response.StatusCode,
+			)
+		}
+
+		timer := time.NewTimer(jellyfinSetupAPIPollInterval)
+		select {
+		case <-waitContext.Done():
+			timer.Stop()
+			return false, fmt.Errorf("wait for Jellyfin public status: %w", waitContext.Err())
+		case <-timer.C:
+		}
 	}
-	if response.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("get Jellyfin public status: unexpected HTTP status %d", response.StatusCode)
-	}
-	var status struct {
-		StartupWizardCompleted bool `json:"StartupWizardCompleted"`
-	}
-	if err := json.Unmarshal(contents, &status); err != nil {
-		return false, fmt.Errorf("decode Jellyfin public status: %w", err)
-	}
-	return status.StartupWizardCompleted, nil
 }
 
 func (c *JellyfinClient) authenticate(
