@@ -10,6 +10,8 @@ Corsarr helps you install and operate the applications in a local media server.
 
 Use the visual Desktop application or the CLI.
 
+Docker Desktop is optional: [use an existing Docker Engine or install it on Linux](docs/DOCKER_ENGINE.md).
+
 ## Corsarr Desktop
 
 ### Download Desktop

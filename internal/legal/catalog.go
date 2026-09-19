@@ -197,6 +197,18 @@ func newCatalog(
 		return nil, err
 	}
 	if err := catalog.addNotice(Notice{
+		ID: "runtime-docker-engine", Name: "Docker Engine (Moby)", Purpose: "Runtime local sem Docker Desktop",
+		ComponentType: ComponentRuntime, License: "Apache License 2.0; componentes mantêm suas próprias licenças",
+		CopyrightNotice:      "Direitos autorais pertencem aos contribuidores do projeto Moby e dos componentes Docker.",
+		AffiliationStatement: "O Corsarr não é afiliado, patrocinado nem endossado pela Docker, Inc.",
+	}, map[string]string{
+		LinkOfficial: "https://docs.docker.com/engine/",
+		LinkLicense:  "https://github.com/moby/moby/blob/master/LICENSE",
+		LinkSource:   "https://github.com/moby/moby",
+	}); err != nil {
+		return nil, err
+	}
+	if err := catalog.addNotice(Notice{
 		ID: "runtime-podman", Name: "Podman", Purpose: "Runtime open source em avaliação pelo Corsarr",
 		ComponentType: ComponentRuntime, License: "Apache License 2.0",
 		CopyrightNotice:      "Direitos autorais pertencem aos contribuidores do projeto Podman.",

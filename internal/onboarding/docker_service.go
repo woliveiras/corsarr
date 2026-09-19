@@ -15,6 +15,7 @@ type DockerInstaller interface {
 }
 
 type PreparationResult struct {
+	Message   string `json:"message,omitempty"`
 	Ready     bool   `json:"ready"`
 	Installed bool   `json:"installed"`
 	Started   bool   `json:"started"`

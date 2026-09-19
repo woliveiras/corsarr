@@ -1232,6 +1232,11 @@ func (f *desktopSetupManager) Load() (application.SetupStatus, error) {
 	return f.status, nil
 }
 
+func (f *desktopSetupManager) ClearRuntimeConsent() error {
+	f.status.TermsAccepted = false
+	return nil
+}
+
 func (f *desktopSetupManager) SaveLanguagePreference(languageCode string) (application.SetupStatus, error) {
 	f.savedLanguage = languageCode
 	f.status.Language = languageCode

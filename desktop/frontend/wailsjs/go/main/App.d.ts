@@ -6,8 +6,13 @@ import {main} from '../models';
 import {legal} from '../models';
 import {quality} from '../models';
 import {onboarding} from '../models';
+import {execution} from '../models';
 
 export function AcceptCurrentTerms():Promise<application.SetupStatus>;
+
+export function GetExecutionConfiguration():Promise<execution.Config>;
+
+export function SaveExecutionConfiguration(config:execution.Config):Promise<execution.Config>;
 
 export function AdvanceOnboarding():Promise<application.SetupStatus>;
 

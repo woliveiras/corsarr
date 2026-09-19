@@ -4,6 +4,11 @@ Corsarr Desktop `1.2.2` supports macOS 14 or newer on Apple Silicon and Intel.
 The application manages only resources labeled as owned by Corsarr and keeps
 application configuration separate from downloaded media.
 
+For an existing local Docker Engine or native Linux installation, see
+[running without Docker Desktop](DOCKER_ENGINE.md). Choose the environment during
+initial setup, before selecting storage. Linux installation requires the supported
+distribution, systemd, and PolicyKit prerequisites described there.
+
 ## Install on macOS
 
 1. Download

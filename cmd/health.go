@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -188,30 +187,23 @@ func inspectDockerAvailabilityWith(
 }
 
 func runDockerInfo(ctx context.Context, dockerPath string) (string, error) {
-	cmd := exec.CommandContext(ctx, dockerPath, "info")
-	_, err := cmd.Output()
-	if err == nil {
-		return "", nil
+	_, err := runSelectedDocker(ctx, "info")
+	if err != nil {
+		return err.Error(), err
 	}
-
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		return string(exitErr.Stderr), err
-	}
-	return "", err
+	return "", nil
 }
 
 func getContainerStatus(dir string) ([]ContainerInfo, error) {
 	ctx := context.Background()
 
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", filepath.Join(dir, "docker-compose.yml"), "ps", "--format", "json")
-	output, err := cmd.Output()
+	output, err := runSelectedDocker(ctx, "compose", "-f", filepath.Join(dir, "docker-compose.yml"), "ps", "--format", "json")
 	if err != nil {
 		return getContainerStatusFallback(dir)
 	}
 
 	var entries []composePSOutput
-	if err := json.Unmarshal(output, &entries); err != nil {
+	if err := json.Unmarshal([]byte(output), &entries); err != nil {
 		return getContainerStatusFallback(dir)
 	}
 
@@ -241,8 +233,7 @@ func getContainerStatus(dir string) ([]ContainerInfo, error) {
 func getContainerStatusFallback(dir string) ([]ContainerInfo, error) {
 	ctx := context.Background()
 
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", dir+"/docker-compose.yml", "ps")
-	output, err := cmd.Output()
+	output, err := runSelectedDocker(ctx, "compose", "-f", dir+"/docker-compose.yml", "ps")
 	if err != nil {
 		return nil, err
 	}
@@ -272,8 +263,7 @@ func enrichContainerInfo(info *ContainerInfo) {
 	ctx := context.Background()
 
 	// Get container stats
-	cmd := exec.CommandContext(ctx, "docker", "stats", "--no-stream", "--format", "{{.CPUPerc}}\t{{.MemUsage}}", info.Name)
-	output, err := cmd.Output()
+	output, err := runSelectedDocker(ctx, "stats", "--no-stream", "--format", "{{.CPUPerc}}\t{{.MemUsage}}", info.Name)
 	if err == nil {
 		parts := strings.Split(strings.TrimSpace(string(output)), "\t")
 		if len(parts) >= 2 {
@@ -283,8 +273,7 @@ func enrichContainerInfo(info *ContainerInfo) {
 	}
 
 	// Get container inspect for more details
-	cmd = exec.CommandContext(ctx, "docker", "inspect", "--format", "{{.State.Status}}\t{{.State.Health.Status}}", info.Name)
-	output, err = cmd.Output()
+	output, err = runSelectedDocker(ctx, "inspect", "--format", "{{.State.Status}}\t{{.State.Health.Status}}", info.Name)
 	if err == nil {
 		parts := strings.Split(strings.TrimSpace(string(output)), "\t")
 		if len(parts) >= 1 {

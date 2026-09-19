@@ -6,6 +6,14 @@ export function AcceptCurrentTerms() {
   return window['go']['main']['App']['AcceptCurrentTerms']();
 }
 
+export function GetExecutionConfiguration() {
+  return window['go']['main']['App']['GetExecutionConfiguration']();
+}
+
+export function SaveExecutionConfiguration(arg1) {
+  return window['go']['main']['App']['SaveExecutionConfiguration'](arg1);
+}
+
 export function AdvanceOnboarding() {
   return window['go']['main']['App']['AdvanceOnboarding']();
 }

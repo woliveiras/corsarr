@@ -68,6 +68,22 @@ distinguishes an unavailable client, a stopped runtime, a ready runtime, and an
 unexpected error. Raw runtime access remains inside Go; the frontend receives a
 bounded status object.
 
+`internal/execution` supplies a shared environment factory for Desktop and CLI.
+It selects Docker Desktop, an existing local Docker context, or native Linux
+Engine. The scoped command runner is used by container management, detection,
+Compose operations and quality jobs, and never changes Docker's global context.
+Existing contexts are resolved and checked for local endpoints before execution;
+the probe also verifies that the server runs Linux containers. Selection lives
+in a separate private `execution.json` file and is locked after Desktop storage
+or applications have been selected. Changing it clears runtime consent.
+
+Native Linux preparation uses an embedded installer for signed official APT
+packages on supported Ubuntu/Debian releases, with PolicyKit elevation in the
+Desktop. Existing packages and administrator-managed Docker repositories are
+not replaced. Account groups are not modified. Existing-runtime preparation and
+background recovery never install software or request elevation. See
+[Docker Engine setup](DOCKER_ENGINE.md) for support boundaries and release checks.
+
 `internal/onboarding` implements the first macOS runtime preparation path. A
 stopped Docker Desktop is started with the official Desktop CLI, with a fixed
 `open` fallback for older installations. When absent, Corsarr downloads the

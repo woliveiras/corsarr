@@ -2185,3 +2185,18 @@ nav {
 html [hidden] {
   display: none;
 }
+/* The execution choice remains part of the existing permissions step. */
+.execution-selection label {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.execution-selection label[hidden] {
+  display: none;
+}
+.execution-selection select,
+.execution-selection input {
+  font: inherit;
+  padding: 0.6rem;
+  max-width: 100%;
+}

@@ -51,6 +51,13 @@ import {
 } from './application-selection';
 import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
 import { createEnvironmentRecoveryPoller } from './environment-recovery';
+import {
+  executionConfirmation,
+  executionDescription,
+  executionLegalID,
+  executionRequiresConfirmation,
+  loadExecutionSelection,
+} from './execution-selection';
 import { currentLocale, normalizeLocale, type TranslationKey, translate as t } from './i18n';
 import {
   applyInstallationProgress,
@@ -1891,9 +1898,14 @@ async function loadEnvironment(): Promise<void> {
 
   try {
     const environment = await GetEnvironmentStatus();
+    await loadExecutionSelection(environment.platform, loadEnvironment);
     currentRuntimeState = environment.runtime.state;
     currentHostReady = environment.host.ready;
-    const runtimeMessage = runtimeMessages[environment.runtime.state] ?? runtimeMessages.error;
+    const baseMessage = runtimeMessages[environment.runtime.state] ?? runtimeMessages.error;
+    const runtimeMessage = {
+      ...baseMessage,
+      description: executionDescription(environment.runtime.state, baseMessage.description),
+    };
 
     if (platformElement) {
       platformElement.textContent = platformNames[environment.platform] ?? environment.platform;
@@ -2037,7 +2049,10 @@ async function prepareRuntime(): Promise<void> {
     }
     return;
   }
-  if (currentRuntimeState === 'unavailable' && !window.confirm(t('runtime.installConfirm'))) {
+  if (
+    executionRequiresConfirmation(currentRuntimeState) &&
+    !window.confirm(executionConfirmation(t('runtime.installConfirm')))
+  ) {
     return;
   }
 
@@ -2053,7 +2068,7 @@ async function prepareRuntime(): Promise<void> {
   try {
     applySetupStatus(await AcceptCurrentTerms());
     const result = await PrepareRuntime();
-    if (!result.ready) throw new Error('runtime not ready');
+    if (!result.ready) throw new Error(result.message || t('runtime.incomplete'));
     await loadEnvironment();
     if (messageElement) {
       messageElement.textContent = result.installed
@@ -2061,12 +2076,12 @@ async function prepareRuntime(): Promise<void> {
         : t('runtime.startedReady');
       messageElement.classList.remove('error');
     }
-  } catch {
+  } catch (error) {
     if (environmentDescriptionElement) {
       environmentDescriptionElement.textContent = t('runtime.incomplete');
     }
     if (messageElement) {
-      messageElement.textContent = t('runtime.error');
+      messageElement.textContent = error instanceof Error ? error.message : String(error);
       messageElement.classList.add('error');
     }
   } finally {
@@ -2288,10 +2303,8 @@ async function installApplications(): Promise<void> {
     return;
   }
   if (
-    currentRuntimeState === 'unavailable' &&
-    !window.confirm(
-      'O Corsarr precisa preparar este computador antes de instalar os aplicativos. O Docker Desktop 4.86.0 será baixado da fonte oficial, verificado e o macOS pedirá sua autorização. Continuar?',
-    )
+    executionRequiresConfirmation(currentRuntimeState) &&
+    !window.confirm(executionConfirmation(t('runtime.installConfirm')))
   ) {
     return;
   }
@@ -2377,7 +2390,7 @@ onboardingTermsCheckbox?.addEventListener('change', () => {
 onboardingOpenDockerTerms?.addEventListener('click', async () => {
   onboardingOpenDockerTerms.disabled = true;
   try {
-    await OpenLegalLink('runtime-docker', 'license');
+    await OpenLegalLink(executionLegalID(), 'license');
   } finally {
     onboardingOpenDockerTerms.disabled = false;
   }
@@ -2412,7 +2425,10 @@ onboardingPermissionsNext?.addEventListener('click', async () => {
 
 onboardingPrepareRuntime?.addEventListener('click', async () => {
   if (!onboardingPrepareRuntime || !currentHostReady) return;
-  if (currentRuntimeState === 'unavailable' && !window.confirm(t('runtime.installConfirm'))) {
+  if (
+    executionRequiresConfirmation(currentRuntimeState) &&
+    !window.confirm(executionConfirmation(t('runtime.installConfirm')))
+  ) {
     return;
   }
   onboardingPrepareRuntime.disabled = true;
@@ -2424,19 +2440,20 @@ onboardingPrepareRuntime?.addEventListener('click', async () => {
   }
   try {
     const result = await PrepareRuntime();
-    if (!result.ready) throw new Error('runtime not ready');
+    if (!result.ready) throw new Error(result.message || t('runtime.incomplete'));
     await loadEnvironment();
     if (onboardingEnvironmentMessage) {
       onboardingEnvironmentMessage.textContent = result.installed
         ? t('runtime.installedReady')
         : t('runtime.startedReady');
     }
-  } catch {
+  } catch (error) {
+    await loadEnvironment();
     if (onboardingEnvironmentMessage) {
-      onboardingEnvironmentMessage.textContent = t('onboarding.runtimeIncomplete');
+      onboardingEnvironmentMessage.textContent =
+        error instanceof Error ? error.message : String(error);
       onboardingEnvironmentMessage.classList.add('error');
     }
-    await loadEnvironment();
   }
 });
 

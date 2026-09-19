@@ -1,11 +1,16 @@
 package validator
 
 import (
+	"context"
 	"fmt"
-	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/woliveiras/corsarr/internal/execution"
+	containerruntime "github.com/woliveiras/corsarr/internal/runtime"
 )
 
 // DockerValidator checks Docker and Docker Compose installation
@@ -72,8 +77,7 @@ func (dv *DockerValidator) Validate() *ValidationResult {
 
 // checkDocker checks if Docker is installed and returns version
 func (dv *DockerValidator) checkDocker() (bool, string) {
-	cmd := exec.Command("docker", "--version")
-	output, err := cmd.CombinedOutput()
+	output, err := selectedDocker("--version")
 	if err != nil {
 		return false, ""
 	}
@@ -91,8 +95,7 @@ func (dv *DockerValidator) checkDocker() (bool, string) {
 // checkDockerCompose checks if Docker Compose is installed and returns version
 func (dv *DockerValidator) checkDockerCompose() (bool, string) {
 	// Try "docker compose" first (modern)
-	cmd := exec.Command("docker", "compose", "version")
-	output, err := cmd.CombinedOutput()
+	output, err := selectedDocker("compose", "version")
 	if err == nil {
 		// Parse version: "Docker Compose version v2.23.0"
 		versionRegex := regexp.MustCompile(`version v?([\d.]+)`)
@@ -103,28 +106,34 @@ func (dv *DockerValidator) checkDockerCompose() (bool, string) {
 		return true, "unknown"
 	}
 
-	// Try "docker-compose" (legacy)
-	cmd = exec.Command("docker-compose", "--version")
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		return false, ""
-	}
-
-	// Parse version: "docker-compose version 1.29.2"
-	versionRegex := regexp.MustCompile(`version ([\d.]+)`)
-	matches := versionRegex.FindStringSubmatch(string(output))
-	if len(matches) > 1 {
-		return true, matches[1]
-	}
-
-	return true, "unknown"
+	// Compose v1 cannot reliably share the explicitly selected endpoint and is
+	// below Corsarr's minimum supported version.
+	return false, ""
 }
 
 // isDockerRunning checks if Docker daemon is running
 func (dv *DockerValidator) isDockerRunning() bool {
-	cmd := exec.Command("docker", "ps")
-	err := cmd.Run()
+	_, err := selectedDocker("ps")
 	return err == nil
+}
+
+func selectedDocker(args ...string) (string, error) {
+	path, err := execution.DefaultPath()
+	if err != nil {
+		return "", err
+	}
+	selection, err := execution.Open(path, runtime.GOOS)
+	if err != nil {
+		return "", err
+	}
+	runner := execution.Runner{Selection: selection, Base: containerruntime.OSCommandRunner{}}
+	docker, err := runner.LookPath("docker")
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return runner.Run(ctx, docker, args...)
 }
 
 // isDockerVersionValid checks if Docker version meets minimum requirements
@@ -182,17 +191,17 @@ func parseVersion(version string) [3]int {
 // GetDockerInfo returns information about Docker installation
 func GetDockerInfo() map[string]string {
 	info := make(map[string]string)
-	
+
 	dv := NewDockerValidator()
-	
+
 	dockerInstalled, dockerVersion := dv.checkDocker()
 	info["docker_installed"] = fmt.Sprintf("%v", dockerInstalled)
 	info["docker_version"] = dockerVersion
 	info["docker_running"] = fmt.Sprintf("%v", dv.isDockerRunning())
-	
+
 	composeInstalled, composeVersion := dv.checkDockerCompose()
 	info["compose_installed"] = fmt.Sprintf("%v", composeInstalled)
 	info["compose_version"] = composeVersion
-	
+
 	return info
 }

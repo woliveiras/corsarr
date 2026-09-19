@@ -29,6 +29,81 @@ assert.ok('output' in output);
 const script = output.output.find((item) => item.type === 'chunk');
 assert.ok(script?.type === 'chunk');
 
+test('Linux onboarding saves Engine selection, renews consent and preserves permission guidance', async () => {
+  const window = new Window({ url: 'http://localhost/' });
+  const schedule = window.setTimeout.bind(window);
+  // Recovery polling is tested separately; keep this test finite while the
+  // simulated daemon stays unavailable.
+  window.setTimeout = (handler, delay, ...args) =>
+    delay === 5_000 ? 0 : schedule(handler, delay, ...args);
+  const saved: { kind: string; context?: string }[] = [];
+  let configuration = { kind: 'docker-desktop', context: '' };
+  const status = {
+    language: 'pt-BR',
+    applications: [],
+    onboardingCompleted: false,
+    onboardingStep: 'permissions',
+  };
+  try {
+    window.go = {
+      main: {
+        App: new Proxy(
+          {
+            GetSetupStatus: async () => status,
+            GetExecutionConfiguration: async () => configuration,
+            SaveExecutionConfiguration: async (next: typeof configuration) => {
+              saved.push(next);
+              configuration = next;
+              return configuration;
+            },
+            GetEnvironmentStatus: async () => ({
+              platform: 'linux',
+              host: { ready: true, issues: [] },
+              runtime: { state: 'unavailable' },
+            }),
+            PrepareRuntime: async () => ({
+              installed: true,
+              ready: false,
+              message: 'Ask your administrator to grant Docker socket access.',
+            }),
+          },
+          { get: (target, key) => target[key] ?? (async () => []) },
+        ),
+      },
+    };
+    window.runtime = { EventsOnMultiple: () => () => {} };
+    window.confirm = () => true;
+    window.document.body.innerHTML = '<div id="app"></div>';
+    window.eval(script.code);
+    await window.happyDOM.waitUntilComplete();
+    const select = window.document.querySelector('#execution-kind');
+    const terms = window.document.querySelector('#onboarding-terms');
+    assert.ok(select && terms);
+    select.value = 'docker-engine';
+    select.dispatchEvent(new window.Event('change'));
+    assert.equal(terms.disabled, true, 'unsaved selection must not be authorized');
+    window.document.querySelector('#execution-selection button').click();
+    await window.happyDOM.waitUntilComplete();
+    assert.equal(saved.at(-1)?.kind, 'docker-engine');
+    assert.equal(terms.disabled, false);
+    assert.equal(terms.checked, false);
+    assert.ok(
+      !window.document
+        .querySelector('#onboarding-terms + span')
+        .textContent.includes('Docker Desktop'),
+    );
+    window.document.querySelector('#onboarding-prepare-runtime').click();
+    await window.happyDOM.waitUntilComplete();
+    assert.ok(
+      window.document
+        .querySelector('#onboarding-environment-message')
+        .textContent.includes('socket access'),
+    );
+  } finally {
+    await window.happyDOM.close();
+  }
+});
+
 for (const scenario of [
   { name: 'new onboarding', language: '', completed: false, storage: 'denied' },
   { name: 'an upgraded installation', language: 'it', completed: true, storage: 'denied' },

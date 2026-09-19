@@ -4,6 +4,10 @@ The Corsarr CLI generates `docker-compose.yml`, `.env`, and the directories
 needed by a selected media stack. Docker with Docker Compose v2 is required to
 run the generated stack.
 
+Docker Desktop is optional. See [Docker Engine setup](DOCKER_ENGINE.md) for
+existing local runtimes, native Linux installation, and the `corsarr runtime`
+commands that select the same environment as Desktop.
+
 ## Install
 
 Download the archive for your operating system from the

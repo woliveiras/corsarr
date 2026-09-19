@@ -433,9 +433,28 @@ export namespace main {
 
 }
 
+export namespace execution {
+
+	export class Config {
+	    kind: string;
+	    context?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new Config(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.context = source["context"];
+	    }
+	}
+}
+
 export namespace onboarding {
 
 	export class PreparationResult {
+	    message?: string;
 	    ready: boolean;
 	    installed: boolean;
 	    started: boolean;
@@ -449,6 +468,7 @@ export namespace onboarding {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ready = source["ready"];
 	        this.installed = source["installed"];
+	        this.message = source["message"];
 	        this.started = source["started"];
 	        this.version = source["version"];
 	    }

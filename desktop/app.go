@@ -19,6 +19,7 @@ import (
 	runtimecatalog "github.com/woliveiras/corsarr/internal/catalog"
 	"github.com/woliveiras/corsarr/internal/credentials"
 	"github.com/woliveiras/corsarr/internal/diagnostics"
+	"github.com/woliveiras/corsarr/internal/execution"
 	"github.com/woliveiras/corsarr/internal/hostprofile"
 	"github.com/woliveiras/corsarr/internal/hostreadiness"
 	"github.com/woliveiras/corsarr/internal/i18n"
@@ -49,6 +50,7 @@ type setupManager interface {
 	SaveApplications(applicationIDs []string) (application.SetupStatus, error)
 	SaveQualityProfilePreset(preset string) (application.SetupStatus, error)
 	AcceptCurrentTerms() (application.SetupStatus, error)
+	ClearRuntimeConsent() error
 	CompleteOnboarding() (application.SetupStatus, error)
 	AdvanceOnboarding() (application.SetupStatus, error)
 	SetStartAtLogin(enabled bool) (application.SetupStatus, error)
@@ -189,6 +191,7 @@ func (wailsEventPublisher) Emit(ctx context.Context, name string, data ...interf
 
 // App is the narrow bridge between the desktop UI and Corsarr's application layer.
 type App struct {
+	executionEnvironment    *execution.Environment
 	changeMu                sync.Mutex
 	supportReportMu         sync.RWMutex
 	lastInstallationReport  string
@@ -234,8 +237,18 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve user cache: %w", err)
 	}
-	dockerDetector := runtimeenv.NewDockerDetector(runtimeenv.OSCommandRunner{}, 5*time.Second)
-	hostReadiness := hostreadiness.NewChecker(goruntime.GOOS, goruntime.GOARCH, cacheRoot)
+	executionPath, err := execution.DefaultPath()
+	if err != nil {
+		return nil, err
+	}
+	selection, err := execution.Open(executionPath, goruntime.GOOS)
+	if err != nil {
+		return nil, err
+	}
+	executionEnvironment := execution.New(selection, runtimeenv.OSCommandRunner{}, goruntime.GOOS, goruntime.GOARCH)
+	executionEnvironment.DesktopHost = hostreadiness.NewChecker(goruntime.GOOS, goruntime.GOARCH, cacheRoot)
+	dockerDetector := executionEnvironment.Probe
+	var hostReadiness hostreadiness.Checker = executionEnvironment
 	environment := application.NewEnvironmentService(
 		dockerDetector,
 		goruntime.GOOS,
@@ -255,6 +268,8 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create runtime onboarding: %w", err)
 	}
+	executionEnvironment.Desktop = runtimeOnboarding
+	runtimeOnboarding = executionEnvironment
 	approvedCatalog, err := runtimecatalog.NewRuntimeCatalog(registry)
 	if err != nil {
 		return nil, fmt.Errorf("create approved runtime catalog: %w", err)
@@ -263,7 +278,7 @@ func NewApp() (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create legal catalog: %w", err)
 	}
-	dockerManager := runtimeenv.NewDockerManager(runtimeenv.OSCommandRunner{}, 10*time.Minute)
+	dockerManager := executionEnvironment.Manager
 	readiness := provisioning.NewHTTPReadiness(catalog, 2*time.Minute, time.Second)
 	installer := orchestrator.NewInstaller(dockerManager, approvedCatalog, readiness)
 	updater := orchestrator.NewUpdater(
@@ -315,7 +330,7 @@ func NewApp() (*App, error) {
 		credentialStore,
 	)
 	qualityProfiles := quality.NewSyncer(
-		quality.NewPlatformDockerRunner(10*time.Minute),
+		quality.NewDockerRunner(executionEnvironment.Runner, 10*time.Minute),
 		quality.NewARRCredentialSource(arrCredentials),
 	)
 	provisioner := provisioning.NewChainProvisioner(
@@ -364,6 +379,7 @@ func NewApp() (*App, error) {
 	hostProfile := hostprofile.NewProfiler().Current(goruntime.GOOS)
 
 	return &App{
+		executionEnvironment:    executionEnvironment,
 		catalog:                 catalog,
 		legal:                   legalCatalog,
 		environment:             environment,

@@ -1,6 +1,6 @@
 module github.com/woliveiras/corsarr
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/charmbracelet/huh v0.8.0

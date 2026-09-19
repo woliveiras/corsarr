@@ -54,6 +54,20 @@ func (s *SetupService) SaveLanguagePreference(languageCode string) (SetupStatus,
 
 const CurrentTermsVersion = "2026-08-10.2"
 
+// ClearRuntimeConsent requires authorization again after the execution
+// environment changes, even if the terms version itself has not changed.
+func (s *SetupService) ClearRuntimeConsent() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	desktopState, err := s.store.Load()
+	if err != nil {
+		return err
+	}
+	desktopState.RuntimeConsentVersion = ""
+	desktopState.RuntimeConsentAcceptedAt = ""
+	return s.store.Save(desktopState)
+}
+
 const (
 	OnboardingStepWelcome      = "welcome"
 	OnboardingStepPermissions  = "permissions"
