@@ -87,6 +87,12 @@ release candidate from a clean installation.
 - [ ] Change the language from both onboarding and the installed-app sidebar,
   relaunch Corsarr, and verify the persisted language across onboarding,
   application operations, storage errors, quality profiles, and legal links.
+- [ ] For issue #8, replace a working 1.2.1 macOS Apple Silicon bundle with the
+  candidate while preserving Desktop state. Confirm the dashboard opens, then
+  change the language and relaunch. Repeat with WebView local storage unavailable
+  or cleared; the backend language preference must still load without a blank
+  window or repeated reloads. The frontend startup regression tests simulate
+  these storage failures, but do not replace this native macOS check.
 - [x] On the completed dashboard, confirm that the hero reports running services
   against all installed services, updates after stop/start/remove actions, and
   that installed or attention-required applications appear before applications

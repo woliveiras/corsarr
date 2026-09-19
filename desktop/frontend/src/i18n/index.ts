@@ -5,7 +5,6 @@ export type { TranslationKey } from './resources.ts';
 
 export const supportedLocales = ['en', 'es', 'pt-BR', 'it'] as const;
 export type SupportedLocale = (typeof supportedLocales)[number];
-export const languageStorageKey = 'corsarr.desktop.language';
 
 export function normalizeLocale(locale: string | null | undefined): SupportedLocale | undefined {
   const normalized = locale?.trim().replace(/_/g, '-').toLowerCase();

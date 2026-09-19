@@ -51,15 +51,7 @@ import {
 } from './application-selection';
 import { runningServicesSummary, sortApplicationsByInstallation } from './dashboard-applications';
 import { createEnvironmentRecoveryPoller } from './environment-recovery';
-import {
-  currentLocale,
-  detectLocale,
-  initializeLocalization,
-  languageStorageKey,
-  normalizeLocale,
-  type TranslationKey,
-  translate as t,
-} from './i18n';
+import { currentLocale, normalizeLocale, type TranslationKey, translate as t } from './i18n';
 import {
   applyInstallationProgress,
   createInstallationProgress,
@@ -74,11 +66,6 @@ type ManagedStatus = application.ManagedApplicationStatus;
 type DataStatus = storage.ApplicationDataStatus;
 type LegalNotice = legal.Notice;
 type QualityPreset = quality.Preset;
-const detectedLocale = detectLocale(
-  window.localStorage.getItem(languageStorageKey),
-  navigator.languages,
-);
-initializeLocalization(detectedLocale);
 const root = document.querySelector<HTMLDivElement>('#app');
 
 if (!root) {
@@ -529,7 +516,6 @@ for (const select of languageSelects) {
     for (const control of languageSelects) control.disabled = true;
     try {
       await SetLanguagePreference(locale);
-      window.localStorage.setItem(languageStorageKey, locale);
       window.location.reload();
     } catch {
       for (const control of languageSelects) {
@@ -1852,18 +1838,15 @@ async function loadSetup(): Promise<void> {
   try {
     let status = await GetSetupStatus();
     const persistedLocale = normalizeLocale(status.language);
-    if (persistedLocale && persistedLocale !== currentLocale()) {
-      window.localStorage.setItem(languageStorageKey, persistedLocale);
-      window.location.reload();
-      return;
-    }
     if (!persistedLocale) {
       status = await SetLanguagePreference(currentLocale());
     }
     applySetupStatus(status);
   } catch {
-    if (installationSummaryElement) {
-      installationSummaryElement.textContent = t('setup.loadError');
+    if (dashboardShell) dashboardShell.hidden = false;
+    if (messageElement) {
+      messageElement.textContent = t('setup.loadError');
+      messageElement.classList.add('error');
     }
     if (prepareStorageButton) prepareStorageButton.disabled = true;
   }
